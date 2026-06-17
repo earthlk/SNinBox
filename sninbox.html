@@ -148,28 +148,23 @@ tr:hover td{background:rgba(91,141,238,.04)}
 /* Print */
 @media print{
   .zone-bar,.left,.right-top,.no-print,.hdr{display:none!important}
-  body{height:auto;overflow:visible;background:#fff;color:#000;margin:0;padding:0}
+  body{height:auto;overflow:visible;background:#fff;color:#000}
   .body,.right{display:block;height:auto;overflow:visible}
-  .right-body{padding:12mm 10mm;overflow:visible;height:auto}
+  .right-body{padding:0;overflow:visible;height:auto}
   .sn-block{display:none!important}
-  .tbl-wrap{border:1px solid #ccc;border-radius:0;overflow:visible;box-shadow:none}
-  table{font-size:11px;min-width:unset;width:100%}
-  th{background:#f3f4f6!important;color:#374151!important;padding:6px 10px!important}
-  td{border-top:1px solid #e5e7eb!important;color:#111!important;padding:5px 10px!important}
-  .mono{color:#000!important;font-weight:700}
-  tr:hover td{background:none!important}
+  .tbl-wrap{border:1px solid #ccc;border-radius:0;overflow:visible}
+  table{font-size:11px;min-width:unset}
+  th{background:#f3f4f6!important;color:#374151!important}
+  td{border-top:1px solid #e5e7eb!important;color:#111!important}
+  .mono{color:#1d4ed8!important}
+  .zone-tag{background:#ede9fe!important;color:#5b21b6!important}
   .print-hdr{display:block!important}
-  .print-info{display:flex!important}
-  .barcode-cell svg{display:block!important}
-  @page{margin:12mm 10mm}
+  tr:hover td{background:none!important}
+  @page{margin:15mm}
 }
-.print-hdr{display:none;margin-bottom:10px;padding-bottom:10px;border-bottom:2px solid #111}
-.print-hdr h2{font-size:18px;font-weight:900;color:#000;margin-bottom:6px}
-.print-info{display:none;gap:24px;flex-wrap:wrap;margin-bottom:12px}
-.print-info-item{font-size:12px;color:#333}
-.print-info-item b{font-size:13px;color:#000}
-.barcode-cell{line-height:1}
-.barcode-cell svg{display:none}
+.print-hdr{display:none;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111}
+.print-hdr h2{font-size:17px;font-weight:900;color:#000}
+.print-hdr p{font-size:11px;color:#555;margin-top:3px}
 </style>
 </head>
 <body>
@@ -213,10 +208,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
       </div>
     </div>
     <div class="right-body">
-      <div class="print-hdr" id="printHdr">
-        <h2 id="pTitle"></h2>
-        <div class="print-info" id="printInfo"></div>
-      </div>
+      <div class="print-hdr" id="printHdr"><h2 id="pTitle"></h2><p id="pSub"></p></div>
 
       <!-- SN Input -->
       <div id="snInputArea" style="display:none">
@@ -430,58 +422,30 @@ async function loadBoxSNs(forceRefresh) {
   }
 }
 
-// สร้าง barcode SVG แบบ Code128 (simple subset)
-function makeBarcodeHTML(text) {
-  var CODE128_START = 104, CODE128_STOP = 106;
-  var vals = [text.split('').map(function(c){ return c.charCodeAt(0)-32; })];
-  // simple approach: ใช้ img จาก barcodeapi.org เมื่อ print
-  return '<img src="https://barcodeapi.org/api/128/' + encodeURIComponent(text) + '" style="height:36px;max-width:160px;display:block" alt="' + text + '">';
-}
-
-function renderSNTable(rows, mode) {
+function renderSNTable(rows) {
   if (!rows.length) {
     document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128219;</div><p>ยังไม่มี SN<br><small>สแกน SN ด้านบนเพื่อบันทึก</small></p></div>';
     return;
   }
-  var isPrint = mode === 'print';
   var tbody = '';
-
   rows.forEach(function(r, i) {
     var sn      = String(r.sn || '-');
+    var name    = String(r.shortname || r.item_name || '-');
     var snDate  = fmtDate(r.sn_date);
     var addDate = fmtDate(r.added_date);
-    var name    = String(r.shortname || r.item_name || '-');
-    var barcode = isPrint ? makeBarcodeHTML(sn) : '';
-
-    if (isPrint) {
-      // print mode: # | Barcode+SN | SN Date | บันทึกเมื่อ
-      tbody += '<tr>'
-        + '<td class="row-n">' + (i+1) + '</td>'
-        + '<td class="barcode-cell">' + barcode + '<span class="mono" style="font-size:11px">' + sn + '</span></td>'
-        + '<td>' + snDate + '</td>'
-        + '<td>' + addDate + '</td>'
-        + '</tr>';
-    } else {
-      // normal mode
-      tbody += '<tr>'
-        + '<td class="row-n">' + (i+1) + '</td>'
-        + '<td><span class="mono">' + sn + '</span></td>'
-        + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
-        + '<td>' + name + '</td>'
-        + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
-        + '<td style="font-size:11px;color:var(--muted)">' + snDate + '</td>'
-        + '<td style="font-size:11px;color:var(--muted)">' + addDate + '</td>'
-        + '<td class="no-print"><button class="btn btn-danger btn-xs" data-rmsn="' + encodeURIComponent(sn) + '">del</button></td>'
-        + '</tr>';
-    }
+    tbody += '<tr>'
+      + '<td class="row-n">' + (i+1) + '</td>'
+      + '<td><span class="mono">' + sn + '</span></td>'
+      + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
+      + '<td>' + name + '</td>'
+      + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
+      + '<td style="font-size:11px;color:var(--muted)">' + snDate + '</td>'
+      + '<td style="font-size:11px;color:var(--muted)">' + addDate + '</td>'
+      + '<td class="no-print"><button class="btn btn-danger btn-xs" data-rmsn="' + encodeURIComponent(sn) + '">del</button></td>'
+      + '</tr>';
   });
-
-  var thead = isPrint
-    ? '<tr><th>#</th><th>SN / Barcode</th><th>SN Date</th><th>บันทึกเมื่อ</th></tr>'
-    : '<tr><th>#</th><th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>บันทึกเมื่อ</th><th class="no-print">ลบ</th></tr>';
-
   document.getElementById('tblWrap').innerHTML =
-    '<table><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
+    '<table><thead><tr><th>#</th><th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>บันทึกเมื่อ</th><th class="no-print">ลบ</th></tr></thead><tbody>' + tbody + '</tbody></table>';
 }
 
 // Event delegation - SN table delete
@@ -615,9 +579,25 @@ function clearSN() {
 // ---- Save SN ----
 async function saveSN() {
   if (!curBox || !curSNData) return;
-  var boxId   = curBox.box_id;
+  var boxId = curBox.box_id;
+  var sn    = String(curSNData.sn).trim();
+
+  // ตรวจ SN ซ้ำใน cache ก่อนเลย
+  if (_cacheBoxSNs[boxId] && _cacheBoxSNs[boxId].find(function(r) { return String(r.sn).trim() === sn; })) {
+    showSNErr('SN "' + sn + '" มีอยู่ใน Box นี้แล้ว');
+    return;
+  }
+
+  // ตรวจ Code ตรงกับ Box ไหม (single type) — เช็คจาก cache ก่อน render
+  if (curBox.type === 'single' && curBox.code) {
+    if (String(curSNData.code).trim() !== String(curBox.code).trim()) {
+      showSNErr('Box นี้รับเฉพาะ Code ' + curBox.code + ' (SN นี้มี Code: ' + curSNData.code + ')');
+      return;
+    }
+  }
+
   var snEntry = {
-    sn:        curSNData.sn,
+    sn:        sn,
     code:      curSNData.code,
     shortname: curSNData.shortname || curSNData.item_name || '',
     zone:      curSNData.zone || curZone,
@@ -627,7 +607,10 @@ async function saveSN() {
     added_date: new Date().toLocaleString('th-TH')
   };
 
-  // 1. อัปเดต UI ทันที (ไม่รอ GAS)
+  // snapshot ก่อน clear
+  var snDataSnapshot = JSON.parse(JSON.stringify(snEntry));
+
+  // 1. อัปเดต UI ทันที
   if (!_cacheBoxSNs[boxId]) _cacheBoxSNs[boxId] = [];
   _cacheBoxSNs[boxId].push(snEntry);
   if (window._boxes && window._boxes[boxId]) {
@@ -636,16 +619,21 @@ async function saveSN() {
     if (countEl) countEl.textContent = _cacheBoxSNs[boxId].length + ' SN';
   }
   renderSNTable(_cacheBoxSNs[boxId]);
-  // snapshot ก่อน clear (เพราะ clearSN จะล้าง curSNData)
-  var snDataSnapshot = JSON.parse(JSON.stringify(snEntry));
-  clearSN(); // พร้อมรับ SN ถัดไปทันที
+  clearSN();
 
-  // 2. ส่งไป GAS แบบ background (fire and forget)
+  // 2. ส่งไป GAS background
   api({ action: 'addSNToBox', zone: curZone, box_id: boxId, sn_data: snDataSnapshot }, 'POST')
     .then(function(res) {
       if (res.error) {
-        // ถ้า GAS error ให้ rollback cache และแจ้งเตือน
-        _cacheBoxSNs[boxId] = _cacheBoxSNs[boxId].filter(function(r) { return r.sn !== snEntry.sn; });
+        // rollback เฉพาะ entry สุดท้ายที่เพิ่งเพิ่ม (ไม่ใช้ filter by sn)
+        var idx = _cacheBoxSNs[boxId].lastIndexOf(snEntry);
+        if (idx === -1) {
+          // หา by reference ไม่เจอ หา by sn+added_date แทน
+          idx = _cacheBoxSNs[boxId].findIndex(function(r) {
+            return r.sn === snEntry.sn && r.added_date === snEntry.added_date;
+          });
+        }
+        if (idx !== -1) _cacheBoxSNs[boxId].splice(idx, 1);
         if (window._boxes && window._boxes[boxId]) {
           window._boxes[boxId].sn_count = _cacheBoxSNs[boxId].length;
           var countEl2 = document.querySelector('#bc_' + boxId + ' .bcard-count');
@@ -708,29 +696,9 @@ async function reloadBoxList() {
 // ---- Print ----
 function doPrint() {
   if (!curBox) return;
-  var isSingle = curBox.type === 'single';
-  document.getElementById('pTitle').textContent = curBox.box_id + (curBox.box_name ? ' - ' + curBox.box_name : '');
-
-  // Info bar สำหรับ single code
-  var infoEl = document.getElementById('printInfo');
-  if (isSingle) {
-    infoEl.innerHTML =
-      '<div class="print-info-item">Box: <b>' + curBox.box_id + '</b></div>' +
-      '<div class="print-info-item">Code: <b>' + (curBox.code || '-') + '</b></div>' +
-      '<div class="print-info-item">ชื่อสินค้า: <b>' + (curBox.box_name || '-') + '</b></div>' +
-      '<div class="print-info-item">Zone: <b>' + (curBox.data_zone || curZone) + '</b></div>' +
-      '<div class="print-info-item">พิมพ์: <b>' + new Date().toLocaleString('th-TH') + '</b></div>';
-  } else {
-    infoEl.innerHTML =
-      '<div class="print-info-item">Box: <b>' + curBox.box_id + '</b></div>' +
-      '<div class="print-info-item">Zone: <b>' + (curBox.data_zone || curZone) + '</b></div>' +
-      '<div class="print-info-item">พิมพ์: <b>' + new Date().toLocaleString('th-TH') + '</b></div>';
-  }
-
-  // Re-render table สำหรับ print (single = SN, SN Date, บันทึกเมื่อ + barcode เท่านั้น)
-  var rows = _cacheBoxSNs[curBox.box_id] || [];
-  renderSNTable(rows, isSingle ? 'print' : 'normal');
-  setTimeout(function() { window.print(); }, 300);
+  document.getElementById('pTitle').textContent = curBox.box_id + ' - ' + (curBox.box_name || '') + ' (Zone ' + (curBox.data_zone || curZone) + ')';
+  document.getElementById('pSub').textContent   = 'พิมพ์: ' + new Date().toLocaleString('th-TH');
+  window.print();
 }
 
 // ---- Create Box Modal ----
