@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SN Manager</title>
+<style>
+:root {
+  --bg:      #0d0f18;
+  --surface: #13161f;
+  --card:    #1a1d2e;
+  --card2:   #1f2236;
+  --border:  #272b40;
+  --accent:  #5b8dee;
+  --accent2: #7c5cfc;
+  --green:   #34d399;
+  --red:     #f87171;
+  --yellow:  #fbbf24;
+  --text:    #e2e6f0;
+  --muted:   #6b7280;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* Header */
+.hdr{height:50px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:14px;flex-shrink:0}
+.logo{font-size:15px;font-weight:800}.logo b{color:var(--accent)}
+.pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;margin-left:auto}
+.p-ok{background:rgba(52,211,153,.15);color:var(--green)}
+.p-err{background:rgba(248,113,113,.15);color:var(--red)}
+.p-dim{background:rgba(107,114,128,.12);color:var(--muted)}
+
+/* Zone Bar */
+.zone-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ztabs{display:flex;gap:5px;background:var(--card);padding:4px;border-radius:10px;border:1px solid var(--border)}
+.ztab{padding:6px 22px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:.15s;letter-spacing:.5px}
+.ztab:hover{color:var(--text);background:var(--card2)}
+.ztab.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(91,141,238,.4)}
+
+/* Body */
+.body{display:flex;flex:1;overflow:hidden}
+
+/* LEFT */
+.left{width:270px;min-width:270px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.left-hdr{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.left-title{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
+.box-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px}
+
+/* Box Card */
+.bcard{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;cursor:pointer;transition:.15s;position:relative}
+.bcard:hover{border-color:var(--accent)}
+.bcard.sel{border-color:var(--accent);background:rgba(91,141,238,.08)}
+.bcard.sel::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);border-radius:3px 0 0 3px}
+.bcard-head{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.bcard-id{font-size:15px;font-weight:900;color:var(--accent)}
+.bcard-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px}
+.badge-single{background:rgba(52,211,153,.15);color:var(--green)}
+.badge-multi{background:rgba(251,191,36,.15);color:var(--yellow)}
+.bcard-count{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(91,141,238,.15);color:var(--accent)}
+.bcard-info{display:flex;flex-direction:column;gap:2px}
+.binfo-row{display:flex;gap:6px;font-size:11px;align-items:baseline}
+.binfo-lbl{color:var(--muted);min-width:38px;font-weight:600;flex-shrink:0}
+.binfo-val{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcard-del{position:absolute;top:7px;right:7px;opacity:0;transition:.15s;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red);border-radius:5px;padding:1px 7px;font-size:11px;cursor:pointer}
+.bcard:hover .bcard-del{opacity:1}
+.left-foot{padding:8px 10px;border-top:1px solid var(--border);flex-shrink:0}
+
+/* RIGHT */
+.right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.right-top{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.right-title{font-size:14px;font-weight:800}
+.right-sub{font-size:12px;color:var(--muted)}
+.right-actions{margin-left:auto;display:flex;gap:7px}
+.right-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+
+/* SN Input */
+.sn-block{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.sn-row{display:flex;gap:8px;align-items:center}
+.sn-field{flex:1;background:var(--card2);border:2px solid var(--border);color:var(--text);padding:10px 14px;border-radius:9px;font-size:15px;font-family:'Courier New',monospace;font-weight:700;outline:none;letter-spacing:.5px;transition:.2s}
+.sn-field:focus{border-color:var(--accent)}
+.sn-field.found{border-color:var(--green)}
+.sn-field.notfound{border-color:var(--red)}
+.sn-result{display:none;border-radius:9px;padding:12px 14px;border:1px solid var(--border);background:var(--card2)}
+.sn-result.show-ok{display:block;border-color:rgba(52,211,153,.35)}
+.sn-result.show-err{display:block;border-color:rgba(248,113,113,.35)}
+.sn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sn-gi label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:2px}
+.sn-gi span{font-size:13px;font-weight:600;color:var(--text)}
+.sn-err-msg{font-size:13px;color:var(--red);font-weight:600}
+
+/* Table */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+thead{background:var(--surface);position:sticky;top:0;z-index:5}
+th{padding:8px 13px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap}
+td{padding:8px 13px;border-top:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:rgba(91,141,238,.04)}
+.mono{font-family:'Courier New',monospace;font-weight:700;color:var(--accent);font-size:12px}
+.cost-v{font-weight:700;color:var(--green)}
+.zone-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(124,92,252,.15);color:var(--accent2)}
+.row-n{color:var(--muted);font-size:11px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:.15s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.85}
+.btn-ghost{background:var(--card2);border:1px solid var(--border);color:var(--text)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-print{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff}.btn-print:hover{opacity:.85}
+.btn-danger{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.25);color:var(--red)}.btn-danger:hover{background:rgba(248,113,113,.22)}
+.btn-xs{padding:3px 9px;font-size:11px;border-radius:6px}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:5px 12px}
+
+/* States */
+.spin{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-ico{font-size:32px;margin-bottom:8px}
+.sec-lbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:400px;max-width:95vw}
+.modal h3{font-size:16px;font-weight:800;margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+.fg{margin-bottom:12px}
+.fg label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;display:block;margin-bottom:4px;text-transform:uppercase}
+.fg input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13px;outline:none;transition:.15s}
+.fg input:focus{border-color:var(--accent)}
+.type-row{display:flex;gap:8px;margin-bottom:14px}
+.ttype{flex:1;padding:10px 8px;border-radius:9px;border:2px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;text-align:center;transition:.15s;line-height:1.5}
+.ttype:hover{border-color:var(--muted);color:var(--text)}
+.ttype.sel-s{border-color:var(--green);background:rgba(52,211,153,.08);color:var(--green)}
+.ttype.sel-m{border-color:var(--yellow);background:rgba(251,191,36,.08);color:var(--yellow)}
+.next-id{background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:var(--accent);padding:6px 12px;border-radius:8px;font-size:14px;font-family:monospace;font-weight:800;text-align:center;margin-bottom:14px;letter-spacing:1px}
+.name-preview{padding:8px 11px;border-radius:7px;font-size:13px;font-weight:600;margin-top:5px;display:none}
+.name-preview.ok{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.3);display:block}
+.name-preview.err{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3);display:block}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:12px;font-weight:700;z-index:999;opacity:0;transform:translateY(8px);transition:.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+/* Print */
+@media print{
+  .zone-bar,.left,.right-top,.no-print,.hdr{display:none!important}
+  body{height:auto;overflow:visible;background:#fff;color:#000}
+  .body,.right{display:block;height:auto;overflow:visible}
+  .right-body{padding:0;overflow:visible;height:auto}
+  .sn-block{display:none}
+  .tbl-wrap{border:1px solid #ccc;border-radius:0;overflow:visible}
+  table{font-size:11px;min-width:unset}
+  th{background:#f3f4f6!important;color:#374151!important}
+  td{border-top:1px solid #e5e7eb!important;color:#111!important}
+  .mono{color:#1d4ed8!important}.cost-v{color:#059669!important}
+  .zone-tag{background:#ede9fe!important;color:#5b21b6!important}
+  .print-hdr{display:block!important}
+  tr:hover td{background:none!important}
+}
+.print-hdr{display:none;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111}
+.print-hdr h2{font-size:17px;font-weight:900;color:#000}
+.print-hdr p{font-size:11px;color:#555;margin-top:3px}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="logo">&#128230; <b>SN</b> Manager</div>
+  <span id="statusPill" class="pill p-dim">-- เลือกโซน</span>
+</div>
+
+<!-- Zone Tabs -->
+<div class="zone-bar">
+  <div class="ztabs" id="zoneTabs"></div>
+</div>
+
+<!-- Body -->
+<div class="body">
+  <!-- LEFT: Box List -->
+  <div class="left">
+    <div class="left-hdr">
+      <span class="left-title">กล่อง (Box)</span>
+      <span id="boxCountLbl" style="font-size:11px;color:var(--muted)">--</span>
+    </div>
+    <div class="box-list" id="boxList">
+      <div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:12px">เลือกโซนก่อน</p></div>
+    </div>
+    <div class="left-foot">
+      <button class="btn btn-primary btn-full btn-sm no-print" onclick="openCreateBox()">+ สร้าง Box</button>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="right-top no-print">
+      <div>
+        <div class="right-title" id="rightTitle">-- เลือก Box</div>
+        <div class="right-sub" id="rightSub">กดเลือก Box ทางซ้ายเพื่อบันทึก SN</div>
+      </div>
+      <div class="right-actions">
+        <button class="btn btn-print no-print" id="btnPrint" onclick="doPrint()" style="display:none">&#128424; ปริ้น</button>
+      </div>
+    </div>
+    <div class="right-body">
+      <div class="print-hdr" id="printHdr"><h2 id="pTitle"></h2><p id="pSub"></p></div>
+
+      <!-- SN Input -->
+      <div id="snInputArea" style="display:none">
+        <div class="sec-lbl">บันทึก SN</div>
+        <div class="sn-block">
+          <div class="sn-row">
+            <input class="sn-field" id="snField" type="text"
+              placeholder="กรอก หรือ สแกน SN แล้วกด Enter..."
+              autocomplete="off"
+              oninput="onSNInput()"
+              onkeydown="if(event.key==='Enter'){clearTimeout(_lt);doLookupAndSave(this.value.trim())}">
+            <button class="btn btn-ghost btn-sm no-print" onclick="clearSN()">&#10005;</button>
+          </div>
+          <div class="sn-result" id="snResult">
+            <div class="sn-grid" id="snGrid"></div>
+            <div class="sn-err-msg" id="snErrMsg"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SN Table -->
+      <div id="snTableArea" style="display:none">
+        <div class="sec-lbl" id="snTableLbl">รายการ SN ใน Box</div>
+        <div class="tbl-wrap" id="tblWrap">
+          <div class="empty-state"><span class="spin"></span></div>
+        </div>
+      </div>
+
+      <!-- Default -->
+      <div id="defaultEmpty" class="empty-state" style="margin-top:60px">
+        <div class="empty-ico">&#128230;</div>
+        <p>เลือกโซน แล้วเลือก Box ทางซ้าย</p>
+        <p style="font-size:12px;margin-top:4px;color:var(--muted)">หรือกด <b style="color:var(--accent)">+ สร้าง Box</b></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Box Modal -->
+<div class="overlay" id="createModal">
+  <div class="modal">
+    <h3>&#128230; สร้าง Box ใหม่</h3>
+    <div class="modal-sub" id="modalSub">Zone -- · Box ID ถัดไป</div>
+    <div class="next-id" id="nextIdBadge">--</div>
+    <div class="fg">
+      <label>หมวดหมู่กล่อง</label>
+      <div class="type-row">
+        <div class="ttype sel-s" id="tt_s" onclick="setBoxType('single')">
+          1 Code<br><small style="font-weight:400">กำหนด Code เดียว</small>
+        </div>
+        <div class="ttype" id="tt_m" onclick="setBoxType('multi')">
+          หลาย Code<br><small style="font-weight:400">รับได้ทุก Code</small>
+        </div>
+      </div>
+    </div>
+    <div id="singleArea">
+      <div class="fg">
+        <label>Code (8 หลัก)</label>
+        <input type="text" id="nb_code" placeholder="xxxxxxxx" maxlength="8"
+          style="font-family:monospace;font-size:16px;letter-spacing:2px"
+          oninput="onCodeInput()">
+        <div class="name-preview" id="namePreview"></div>
+      </div>
+    </div>
+    <div id="multiArea" style="display:none">
+      <div class="fg">
+        <label>ชื่อกล่อง</label>
+        <input type="text" id="nb_name_m" placeholder="เช่น สินค้าคละ Batch 01">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeCreateBox()">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnCreate" onclick="doCreateBox()" disabled style="opacity:.5">สร้าง Box</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== CONFIG ======
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwL7e52tHLN5tGJzJBvvm6UZnht_ywa-uzfi4Ig_GtlAm9UEixsYLPFWTjOZAuh6Ud7/exec';
+const ZONES   = ['A','B','C','D','E','J'];
+// ====================
+
+var curZone    = null;
+var curBox     = null;
+var curSNData  = null;
+var nextBoxId  = null;
+var boxType    = 'single';
+var previewName = '';
+var _lt        = null;
+var _ct        = null;
+
+// ---- Init ----
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('zoneTabs').innerHTML = ZONES.map(function(z) {
+    return '<button class="ztab" id="ztab_' + z + '" onclick="selectZone(\'' + z + '\')">' + z + '</button>';
+  }).join('');
+});
+
+// ---- Zone ----
+async function selectZone(z) {
+  curZone = z; curBox = null; curSNData = null;
+  document.querySelectorAll('.ztab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('ztab_' + z).classList.add('active');
+  setStatus('dim', 'Zone ' + z + '...');
+  resetRight();
+  document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+  document.getElementById('boxCountLbl').textContent = '--';
+  try {
+    var res = await api({ action: 'getBoxes', zone: z });
+    if (res.error) throw new Error(res.error);
+    nextBoxId = res.next_box_id;
+    setStatus('ok', 'Zone ' + z + ' (' + (res.boxes || []).length + ' boxes)');
+    renderBoxList(res.boxes || []);
+  } catch(e) {
+    setStatus('err', e.message);
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:12px">' + e.message + '</p></div>';
+  }
+}
+
+// ---- Box List ----
+function renderBoxList(boxes) {
+  window._boxes = {};
+  boxes.forEach(function(b) { window._boxes[b.box_id] = b; });
+  document.getElementById('boxCountLbl').textContent = boxes.length + ' กล่อง';
+  if (!boxes.length) {
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128219;</div><p style="font-size:12px">ยังไม่มี Box<br>กด + สร้าง Box</p></div>';
+    return;
+  }
+  document.getElementById('boxList').innerHTML = boxes.map(function(b) {
+    var sel   = curBox && curBox.box_id === b.box_id ? 'sel' : '';
+    var badge = b.type === 'single' ? 'badge-single' : 'badge-multi';
+    var label = b.type === 'single' ? '1 Code' : 'หลาย Code';
+    var date  = fmtDate(b.created_date);
+    var codeRow = (b.type === 'single' && b.code)
+      ? '<div class="binfo-row"><span class="binfo-lbl">Code</span><span class="binfo-val" style="font-family:monospace;color:var(--accent)">' + b.code + '</span></div>'
+      : '';
+    return '<div class="bcard ' + sel + '" id="bc_' + b.box_id + '" data-id="' + b.box_id + '">'
+      + '<button class="bcard-del no-print" data-del="' + b.box_id + '">&#10005;</button>'
+      + '<div class="bcard-head">'
+        + '<span class="bcard-id">' + b.box_id + '</span>'
+        + '<span class="bcard-badge ' + badge + '">' + label + '</span>'
+        + '<span class="bcard-count">' + b.sn_count + ' SN</span>'
+      + '</div>'
+      + '<div class="bcard-info">'
+        + '<div class="binfo-row"><span class="binfo-lbl">Name</span><span class="binfo-val">' + (b.box_name || '-') + '</span></div>'
+        + codeRow
+        + '<div class="binfo-row"><span class="binfo-lbl">Zone</span><span class="binfo-val">' + curZone + '</span></div>'
+        + '<div class="binfo-row"><span class="binfo-lbl">Date</span><span class="binfo-val">' + date + '</span></div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// Event delegation - box list
+document.getElementById('boxList').addEventListener('click', function(e) {
+  var delBtn = e.target.closest('[data-del]');
+  if (delBtn) { e.stopPropagation(); doDeleteBox(delBtn.dataset.del); return; }
+  var card = e.target.closest('[data-id]');
+  if (card) selectBox(card.dataset.id);
+});
+
+function selectBox(boxId) {
+  var box = window._boxes && window._boxes[boxId];
+  if (!box) return;
+  curBox = box; curSNData = null;
+  document.querySelectorAll('.bcard').forEach(function(c) { c.classList.remove('sel'); });
+  var el = document.getElementById('bc_' + boxId);
+  if (el) el.classList.add('sel');
+  document.getElementById('rightTitle').textContent = box.box_id + (box.box_name ? ' - ' + box.box_name : '');
+  document.getElementById('rightSub').textContent   = 'Zone ' + curZone + ' | ' + (box.type === 'single' ? 'Code: ' + box.code : 'หลาย Code');
+  document.getElementById('defaultEmpty').style.display  = 'none';
+  document.getElementById('snInputArea').style.display   = '';
+  document.getElementById('snTableArea').style.display   = '';
+  document.getElementById('btnPrint').style.display      = '';
+  document.getElementById('snTableLbl').textContent      = 'รายการ SN ใน ' + box.box_id;
+  clearSN();
+  loadBoxSNs();
+}
+
+// ---- Load SN Table ----
+async function loadBoxSNs() {
+  if (!curBox) return;
+  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+  try {
+    var res = await api({ action: 'getBoxSNs', zone: curZone, box_id: curBox.box_id });
+    if (res.error) throw new Error(res.error);
+    renderSNTable(res.rows || []);
+  } catch(e) {
+    document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><p style="color:var(--red)">' + e.message + '</p></div>';
+  }
+}
+
+function renderSNTable(rows) {
+  if (!rows.length) {
+    document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128219;</div><p>ยังไม่มี SN<br><small>สแกน SN ด้านบนเพื่อบันทึก</small></p></div>';
+    return;
+  }
+  var tbody = '';
+  rows.forEach(function(r, i) {
+    var name = String(r.shortname || r.item_name || '-');
+    tbody += '<tr>'
+      + '<td class="row-n">' + (i+1) + '</td>'
+      + '<td><span class="mono">' + (r.sn || '-') + '</span></td>'
+      + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
+      + '<td>' + name + '</td>'
+      + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
+      + '<td style="font-size:11px;color:var(--muted)">' + fmtDate(r.sn_date) + '</td>'
+      + '<td class="cost-v">' + (r.cost ? Number(r.cost).toLocaleString('th-TH') : '-') + '</td>'
+      + '<td class="no-print"><button class="btn btn-danger btn-xs" data-rmsn="' + encodeURIComponent(String(r.sn || '')) + '">del</button></td>'
+      + '</tr>';
+  });
+  document.getElementById('tblWrap').innerHTML =
+    '<table><thead><tr><th>#</th><th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>Cost</th><th class="no-print">ลบ</th></tr></thead><tbody>' + tbody + '</tbody></table>';
+}
+
+// Event delegation - SN table delete
+document.getElementById('tblWrap').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-rmsn]');
+  if (btn) doRemoveSN(decodeURIComponent(btn.dataset.rmsn));
+});
+
+// ---- SN Lookup ----
+function onSNInput() {
+  clearTimeout(_lt);
+  var sn = document.getElementById('snField').value.trim();
+  resetSNResult();
+  if (!sn) return;
+  _lt = setTimeout(function() { doLookup(sn); }, 500);
+}
+
+async function doLookup(sn) {
+  if (!sn || !curZone) return;
+  document.getElementById('snField').className = 'sn-field';
+  var res = await api({ action: 'lookupSN', zone: curZone, sn: sn });
+  if (res.error || !res.found) {
+    showSNErr(res.error || res.message || 'ไม่พบ SN "' + sn + '"');
+  } else {
+    showSNOk(res.data);
+  }
+}
+
+async function doLookupAndSave(sn) {
+  if (!sn || !curZone || !curBox) return;
+  document.getElementById('snField').className = 'sn-field';
+  var res = await api({ action: 'lookupSN', zone: curZone, sn: sn });
+  if (res.error || !res.found) {
+    showSNErr(res.error || res.message || 'ไม่พบ SN "' + sn + '"');
+    return;
+  }
+  showSNOk(res.data);
+  await saveSN();
+}
+
+function showSNOk(d) {
+  curSNData = d;
+  document.getElementById('snField').classList.add('found');
+  var name = String(d.shortname || d.item_name || '-');
+  document.getElementById('snGrid').innerHTML = [
+    ['Code',     d.code || '-'],
+    ['ชื่อสินค้า', name],
+    ['Zone',     d.zone || '-'],
+    ['SN Date',  fmtDate(d.sn_date)],
+    ['Aging',    d.agging || '-'],
+    ['Cost',     d.cost ? Number(d.cost).toLocaleString('th-TH') : '-']
+  ].map(function(p) {
+    return '<div class="sn-gi"><label>' + p[0] + '</label><span>' + p[1] + '</span></div>';
+  }).join('');
+  document.getElementById('snErrMsg').textContent = '';
+  document.getElementById('snResult').className = 'sn-result show-ok';
+}
+
+function showSNErr(msg) {
+  curSNData = null;
+  var field = document.getElementById('snField');
+  if (field) field.classList.add('notfound');
+  document.getElementById('snGrid').innerHTML = '';
+  document.getElementById('snErrMsg').textContent = msg;
+  document.getElementById('snResult').className = 'sn-result show-err';
+}
+
+function resetSNResult() {
+  curSNData = null;
+  var field  = document.getElementById('snField');
+  var result = document.getElementById('snResult');
+  if (field)  field.className  = 'sn-field';
+  if (result) result.className = 'sn-result';
+}
+
+function clearSN() {
+  var f = document.getElementById('snField');
+  if (f) { f.value = ''; f.focus(); }
+  resetSNResult();
+}
+
+// ---- Save SN ----
+async function saveSN() {
+  if (!curBox || !curSNData) return;
+  var res = await api({ action: 'addSNToBox', zone: curZone, box_id: curBox.box_id, sn_data: curSNData }, 'POST');
+  if (res.error) { showToast(res.error, 'err'); return; }
+  showToast(res.message || 'บันทึกสำเร็จ', 'ok');
+  clearSN();
+  loadBoxSNs();
+  reloadBoxList();
+}
+
+// ---- Remove SN ----
+async function doRemoveSN(sn) {
+  if (!confirm('ลบ SN: ' + sn + ' ?')) return;
+  var res = await api({ action: 'removeSN', zone: curZone, box_id: curBox.box_id, sn: sn }, 'POST');
+  if (res.error) { showToast(res.error, 'err'); return; }
+  showToast('ลบแล้ว', 'ok');
+  loadBoxSNs(); reloadBoxList();
+}
+
+// ---- Delete Box ----
+async function doDeleteBox(box_id) {
+  if (!confirm('ลบ Box "' + box_id + '" และ SN ทั้งหมด?')) return;
+  var res = await api({ action: 'deleteBox', zone: curZone, box_id: box_id }, 'POST');
+  if (res.error) { showToast(res.error, 'err'); return; }
+  showToast(res.message || 'ลบแล้ว', 'ok');
+  if (curBox && curBox.box_id === box_id) { curBox = null; resetRight(); }
+  reloadBoxList();
+}
+
+async function reloadBoxList() {
+  var res = await api({ action: 'getBoxes', zone: curZone });
+  if (res.success) { nextBoxId = res.next_box_id; renderBoxList(res.boxes || []); }
+}
+
+// ---- Print ----
+function doPrint() {
+  if (!curBox) return;
+  document.getElementById('pTitle').textContent = curBox.box_id + ' - ' + (curBox.box_name || '') + ' (Zone ' + curZone + ')';
+  document.getElementById('pSub').textContent   = 'พิมพ์: ' + new Date().toLocaleString('th-TH');
+  window.print();
+}
+
+// ---- Create Box Modal ----
+function openCreateBox() {
+  if (!curZone) { showToast('เลือกโซนก่อน', 'err'); return; }
+  document.getElementById('nb_code').value   = '';
+  document.getElementById('nb_name_m').value = '';
+  document.getElementById('namePreview').className = 'name-preview';
+  document.getElementById('namePreview').textContent = '';
+  document.getElementById('modalSub').textContent    = 'Zone ' + curZone + ' - Box ID ถัดไป';
+  document.getElementById('nextIdBadge').textContent = nextBoxId || '--';
+  setBoxType('single');
+  enableCreate(false);
+  document.getElementById('createModal').classList.add('open');
+  setTimeout(function() { document.getElementById('nb_code').focus(); }, 100);
+}
+
+function closeCreateBox() { document.getElementById('createModal').classList.remove('open'); previewName = ''; }
+
+function setBoxType(t) {
+  boxType = t; previewName = '';
+  document.getElementById('tt_s').className = 'ttype' + (t === 'single' ? ' sel-s' : '');
+  document.getElementById('tt_m').className = 'ttype' + (t === 'multi'  ? ' sel-m' : '');
+  document.getElementById('singleArea').style.display = t === 'single' ? '' : 'none';
+  document.getElementById('multiArea').style.display  = t === 'multi'  ? '' : 'none';
+  document.getElementById('nb_code').value = '';
+  document.getElementById('namePreview').className = 'name-preview';
+  document.getElementById('namePreview').textContent = '';
+  enableCreate(false);
+  if (t === 'multi') {
+    document.getElementById('nb_name_m').oninput = function() {
+      enableCreate(this.value.trim().length > 0);
+    };
+    setTimeout(function() { document.getElementById('nb_name_m').focus(); }, 50);
+  }
+}
+
+function onCodeInput() {
+  var code = document.getElementById('nb_code').value.trim();
+  document.getElementById('namePreview').className = 'name-preview';
+  document.getElementById('namePreview').textContent = '';
+  enableCreate(false);
+  clearTimeout(_ct);
+  if (code.length !== 8) return;
+  _ct = setTimeout(function() { doCodePreview(code); }, 600);
+}
+
+async function doCodePreview(code) {
+  var el = document.getElementById('namePreview');
+  el.textContent = 'กำลังค้นหา...';
+  el.style.display = 'block';
+  var res = await api({ action: 'previewBox', zone: curZone, code: code });
+  if (res.found && res.name) {
+    previewName = res.name;
+    el.className = 'name-preview ok';
+    el.textContent = res.name;
+    enableCreate(true);
+  } else {
+    previewName = '';
+    el.className = 'name-preview err';
+    el.textContent = res.message || 'ไม่พบ Code นี้';
+    enableCreate(false);
+  }
+}
+
+function enableCreate(ok) {
+  var btn = document.getElementById('btnCreate');
+  btn.disabled = !ok;
+  btn.style.opacity = ok ? '1' : '.5';
+}
+
+async function doCreateBox() {
+  var code  = document.getElementById('nb_code').value.trim();
+  var nameM = document.getElementById('nb_name_m').value.trim();
+  var name  = boxType === 'single' ? previewName : nameM;
+  if (boxType === 'single' && (!previewName || code.length !== 8)) { showToast('กรอก Code 8 หลักที่ถูกต้อง', 'err'); return; }
+  if (boxType === 'multi' && !name) { showToast('กรุณาตั้งชื่อกล่อง', 'err'); return; }
+  var res = await api({ action: 'createBox', zone: curZone, type: boxType, code: code, box_name: name }, 'POST');
+  if (res.error) { showToast(res.error, 'err'); return; }
+  showToast(res.message || 'สร้าง Box สำเร็จ', 'ok');
+  closeCreateBox();
+  reloadBoxList();
+}
+
+// ---- Helpers ----
+function resetRight() {
+  document.getElementById('rightTitle').textContent   = '-- เลือก Box';
+  document.getElementById('rightSub').textContent     = 'กดเลือก Box ทางซ้ายเพื่อบันทึก SN';
+  document.getElementById('defaultEmpty').style.display = '';
+  document.getElementById('snInputArea').style.display  = 'none';
+  document.getElementById('snTableArea').style.display  = 'none';
+  document.getElementById('btnPrint').style.display     = 'none';
+}
+
+function setStatus(t, txt) {
+  var el = document.getElementById('statusPill');
+  el.textContent = txt;
+  el.className = 'pill ' + (t === 'ok' ? 'p-ok' : t === 'err' ? 'p-err' : 'p-dim');
+}
+
+function fmtDate(raw) {
+  if (!raw) return '-';
+  var s = String(raw);
+  if (s.indexOf('T') !== -1) {
+    try {
+      var d = new Date(s);
+      return d.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch(e) {}
+  }
+  return s;
+}
+
+// ---- API ----
+async function api(params, method) {
+  var u = new URL(GAS_URL);
+  if (method === 'POST') {
+    u.searchParams.set('payload', JSON.stringify(params));
+  } else {
+    Object.entries(params).forEach(function(kv) { u.searchParams.set(kv[0], kv[1]); });
+  }
+  var res  = await fetch(u.toString(), { redirect: 'follow' });
+  var text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { return { error: 'Response error: ' + text.substring(0, 80) }; }
+}
+
+// ---- Toast ----
+var _tt;
+function showToast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast ' + (type || 'ok') + ' show';
+  clearTimeout(_tt); _tt = setTimeout(function() { el.classList.remove('show'); }, 3500);
+}
+
+document.getElementById('createModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCreateBox();
+});
+</script>
+</body>
+</html>
