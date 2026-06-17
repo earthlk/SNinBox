@@ -270,6 +270,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
           style="font-family:monospace;font-size:16px;letter-spacing:2px"
           oninput="onCodeInput()">
         <div class="name-preview" id="namePreview"></div>
+        <div class="name-preview" id="zonePreview" style="margin-top:4px"></div>
       </div>
     </div>
     <div id="multiArea" style="display:none">
@@ -491,13 +492,37 @@ function showSNOk(d) {
   document.getElementById('snResult').className = 'sn-result show-ok';
 }
 
+function playErrorSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(220, ctx.currentTime);
+    osc.frequency.setValueAtTime(180, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
 function showSNErr(msg) {
   curSNData = null;
   var field = document.getElementById('snField');
-  if (field) field.classList.add('notfound');
+  if (field) {
+    field.classList.add('notfound');
+    field.value = '';
+  }
   document.getElementById('snGrid').innerHTML = '';
   document.getElementById('snErrMsg').textContent = msg;
   document.getElementById('snResult').className = 'sn-result show-err';
+  // เสียงแจ้งเตือน
+  playErrorSound();
+  // Popup
+  setTimeout(function() { alert(msg); }, 50);
 }
 
 function resetSNResult() {
@@ -583,6 +608,8 @@ function setBoxType(t) {
   document.getElementById('nb_code').value = '';
   document.getElementById('namePreview').className = 'name-preview';
   document.getElementById('namePreview').textContent = '';
+  var zp = document.getElementById('zonePreview');
+  if (zp) { zp.className = 'name-preview'; zp.textContent = ''; }
   enableCreate(false);
   if (t === 'multi') {
     document.getElementById('nb_name_m').oninput = function() {
@@ -596,6 +623,8 @@ function onCodeInput() {
   var code = document.getElementById('nb_code').value.trim();
   document.getElementById('namePreview').className = 'name-preview';
   document.getElementById('namePreview').textContent = '';
+  var zp = document.getElementById('zonePreview');
+  if (zp) { zp.className = 'name-preview'; zp.textContent = ''; }
   enableCreate(false);
   clearTimeout(_ct);
   if (code.length !== 8) return;
@@ -611,11 +640,18 @@ async function doCodePreview(code) {
     previewName = res.name;
     el.className = 'name-preview ok';
     el.textContent = res.name;
+    var zEl = document.getElementById('zonePreview');
+    if (zEl) {
+      zEl.className = 'name-preview ok';
+      zEl.textContent = 'Zone: ' + (res.zone || curZone);
+    }
     enableCreate(true);
   } else {
     previewName = '';
     el.className = 'name-preview err';
     el.textContent = res.message || 'ไม่พบ Code นี้';
+    var zEl2 = document.getElementById('zonePreview');
+    if (zEl2) { zEl2.className = 'name-preview'; zEl2.textContent = ''; }
     enableCreate(false);
   }
 }
