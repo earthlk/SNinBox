@@ -443,6 +443,10 @@ function onSNInput() {
 
 async function doLookup(sn) {
   if (!sn || !curZone) return;
+  if (!/^[0-9]{10}$/.test(sn)) {
+    showSNErr('SN ต้องเป็นตัวเลข 10 หลักเท่านั้น');
+    return;
+  }
   document.getElementById('snField').className = 'sn-field';
   var res = await api({ action: 'lookupSN', zone: curZone, sn: sn });
   if (res.error || !res.found) {
@@ -454,6 +458,11 @@ async function doLookup(sn) {
 
 async function doLookupAndSave(sn) {
   if (!sn || !curZone || !curBox) return;
+  // ตรวจ format: ตัวเลข 10 หลักเท่านั้น
+  if (!/^[0-9]{10}$/.test(sn)) {
+    showSNErr('SN ต้องเป็นตัวเลข 10 หลักเท่านั้น (ได้รับ: "' + sn + '")');
+    return;
+  }
   document.getElementById('snField').className = 'sn-field';
   var res = await api({ action: 'lookupSN', zone: curZone, sn: sn });
   if (res.error || !res.found) {
