@@ -1192,8 +1192,6 @@ async function doUpload() {
   document.getElementById('btnUploadCancel').textContent   = 'ปิด';
   document.getElementById('btnUploadCancel').onclick = closeUpload;
   console.log('4. UI updated');
-  var zones  = Object.keys(_csvData).filter(function(k){ return k !== '_unknown'; }).sort();
-  var total  = zones.length;
 
   document.getElementById('uploadPreview').style.display   = 'none';
   document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
