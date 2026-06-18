@@ -1134,7 +1134,8 @@ function validateAndPreviewCSV(text) {
   document.getElementById('previewBody').innerHTML = tbody;
   document.getElementById('uploadPreview').style.display = '';
   document.getElementById('previewErr').style.display = 'none';
-  enableUpload(!hasErr && Object.keys(zoneMap).filter(function(k){ return k !== '_unknown'; }).length > 0);
+  var validZones = Object.keys(zoneMap).filter(function(k){ return k !== '_unknown'; });
+  enableUpload(validZones.length > 0);
 }
 
 function showUploadErr(msg) {
