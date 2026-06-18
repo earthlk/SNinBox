@@ -385,9 +385,6 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // ---- Zone ----
 async function selectZone(z) {
-    clearInterval(window._autoRefresh);
-    var btn = document.getElementById('btnRefresh');
-    if (btn) btn.style.display = 'none';
   curZone = z; curBox = null; curSNData = null;
   _cacheDataSN = null; _cacheBoxSNs = {};
   document.querySelectorAll('.ztab').forEach(function(t) { t.classList.remove('active'); });
@@ -407,18 +404,7 @@ async function selectZone(z) {
     _cacheDataSN = resData.rows || [];
     _cacheBoxSNs = {};
     setStatus('ok', 'Zone ' + z + ' | Data SN: ' + _cacheDataSN.length + ' รายการ');
-
-        // โชว์ปุ่ม Refresh
-        var btn = document.getElementById('btnRefresh');
-        if (btn) btn.style.display = '';
-
-        // Auto-refresh ทุก 15 นาที
-        clearInterval(window._autoRefresh);
-        window._autoRefresh = setInterval(function() {
-        if (curZone) refreshDataSN();
-        }, 15 * 60 * 1000);
-
-  renderBoxList(resBoxes.boxes || []);
+    renderBoxList(resBoxes.boxes || []);
   } catch(e) {
     setStatus('err', e.message);
     document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:12px">' + e.message + '</p></div>';
@@ -1023,20 +1009,28 @@ function fmtDate(raw) {
 
 // ---- API ----
 async function api(params, method) {
-  var u = new URL(GAS_URL);
   if (method === 'POST') {
-    u.searchParams.set('payload', JSON.stringify(params));
-  } else {
-    Object.entries(params).forEach(function(kv) { u.searchParams.set(kv[0], kv[1]); });
+    var res  = await fetch(GAS_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(params)
+    });
+    var text = await res.text();
+    try { return JSON.parse(text); }
+    catch(e) { return { error: 'Response error: ' + text.substring(0,80) }; }
   }
+  var u = new URL(GAS_URL);
+  Object.entries(params).forEach(function(kv) { u.searchParams.set(kv[0], kv[1]); });
   var res  = await fetch(u.toString(), { redirect: 'follow' });
   var text = await res.text();
   try { return JSON.parse(text); }
-  catch(e) { return { error: 'Response error: ' + text.substring(0, 80) }; }
+  catch(e) { return { error: 'Response error: ' + text.substring(0,80) }; }
 }
 
 // ======== UPLOAD CSV ========
-var _csvData = null;
+var _csvData = null; // { zone: [rows] }
+
 const REQUIRED_COLS = ['zone','item','item_name','code','shortname','sn','sn_date','agging','cost'];
 
 function openUpload() {
@@ -1052,15 +1046,19 @@ function openUpload() {
   enableUpload(false);
   document.getElementById('btnUploadCancel').textContent = 'ยกเลิก';
   document.getElementById('btnUploadCancel').onclick = closeUpload;
-  document.getElementById('btnUploadConfirm').style.display = '';
   document.getElementById('uploadModal').classList.add('open');
 }
 
 function closeUpload() {
+  if (window._uploading) { 
+    showToast('กำลัง Upload อยู่ ห้ามปิด', 'err'); 
+    return; 
+  }
   document.getElementById('uploadModal').classList.remove('open');
   _csvData = null;
 }
 
+// Drag & Drop
 var dropEl = document.getElementById('uploadDrop');
 dropEl.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag'); });
 dropEl.addEventListener('dragleave', function() { this.classList.remove('drag'); });
@@ -1075,12 +1073,23 @@ function onCSVSelected(input) {
 }
 
 function processCSV(file) {
-  if (!file.name.endsWith('.csv')) { showToast('รองรับเฉพาะ .csv', 'err'); return; }
+  if (!file.name.toLowerCase().endsWith('.csv')) { showToast('รองรับเฉพาะ .csv', 'err'); return; }
   document.getElementById('uploadDrop').innerHTML =
     '<div class="upload-drop-ico">&#128196;</div><p><b>' + file.name + '</b></p>' +
     '<p style="font-size:11px;margin-top:4px;color:var(--green)">&#10003; เลือกไฟล์แล้ว</p>';
+  // ลอง UTF-8 ก่อน ถ้ามีตัวแทน (replacement char) ให้ลอง TIS-620
   var reader = new FileReader();
-  reader.onload = function(e) { validateAndPreviewCSV(e.target.result); };
+  reader.onload = function(e) {
+    var text = e.target.result;
+    if (text.indexOf('\ufffd') !== -1) {
+      // มีตัวอักษรเสียหาย → ลอง TIS-620 (windows-874)
+      var reader2 = new FileReader();
+      reader2.onload = function(e2) { validateAndPreviewCSV(e2.target.result); };
+      reader2.readAsText(file, 'windows-874');
+    } else {
+      validateAndPreviewCSV(text);
+    }
+  };
   reader.readAsText(file, 'UTF-8');
 }
 
@@ -1106,39 +1115,55 @@ function parseCSV(text) {
 
 function validateAndPreviewCSV(text) {
   var parsed = parseCSV(text);
-  if (!parsed) { showUploadErr('ไม่สามารถอ่านไฟล์ได้'); return; }
+  if (!parsed) { showErr('ไม่สามารถอ่านไฟล์ได้'); return; }
+
+  // เช็ค columns
   var missing = REQUIRED_COLS.filter(function(c){ return parsed.headers.indexOf(c) === -1; });
-  if (missing.length > 0) { showUploadErr('คอลัมน์ไม่ครบ: ขาด ' + missing.join(', ')); return; }
+  if (missing.length > 0) {
+    showErr('คอลัมน์ไม่ครบ: ขาด ' + missing.join(', '));
+    return;
+  }
+
+  // แยกตาม zone
   var zoneMap = {};
   parsed.rows.forEach(function(r) {
     var z = String(r.zone || '').trim();
     if (!z) return;
+    // หา Zone key (A-J) จากตัวแรกของ zone value
     var zKey = null;
-    ZONES.forEach(function(k) { if (z.toUpperCase().startsWith(k.toUpperCase())) zKey = k; });
+    ZONES.forEach(function(k) {
+      if (z.toUpperCase().startsWith(k.toUpperCase())) zKey = k;
+    });
     if (!zKey) zKey = '_unknown';
     if (!zoneMap[zKey]) zoneMap[zKey] = [];
     zoneMap[zKey].push(r);
   });
+
   _csvData = zoneMap;
+
+  // แสดง preview
   var hasErr = false;
   var tbody = '';
   Object.keys(zoneMap).sort().forEach(function(zKey) {
     var rows = zoneMap[zKey];
-    if (zKey === '_unknown') {
-      tbody += '<tr><td style="color:var(--red)">ไม่ระบุ</td><td>' + rows.length + '</td><td class="preview-err">&#10007; ตรวจสอบ zone</td></tr>';
+    var isUnknown = zKey === '_unknown';
+    if (isUnknown) {
+      tbody += '<tr><td style="color:var(--red)">ไม่ระบุ</td><td>' + rows.length + '</td><td class="preview-err">&#10007; ตรวจสอบคอลัมน์ zone</td></tr>';
       hasErr = true;
     } else {
       tbody += '<tr><td><b>Zone ' + zKey + '</b></td><td>' + rows.length + ' rows</td><td class="preview-ok">&#10003; พร้อม Upload</td></tr>';
     }
   });
+
   document.getElementById('previewBody').innerHTML = tbody;
   document.getElementById('uploadPreview').style.display = '';
   document.getElementById('previewErr').style.display = 'none';
+  // Upload ได้เสมอถ้ามี zone ที่ระบุได้อย่างน้อย 1 zone
   var validZones = Object.keys(zoneMap).filter(function(k){ return k !== '_unknown'; });
   enableUpload(validZones.length > 0);
 }
 
-function showUploadErr(msg) {
+function showErr(msg) {
   document.getElementById('uploadPreview').style.display = '';
   document.getElementById('previewBody').innerHTML = '';
   document.getElementById('previewErr').style.display = '';
@@ -1153,56 +1178,106 @@ function enableUpload(ok) {
 }
 
 async function doUpload() {
-  if (!_csvData) return;
+  window._uploading = true;
+  console.log('1. doUpload called');
+  if (!_csvData) { console.log('_csvData is null'); return; }
   var zones = Object.keys(_csvData).filter(function(k){ return k !== '_unknown'; }).sort();
-  var total  = zones.length;
-  document.getElementById('uploadPreview').style.display  = 'none';
-  document.getElementById('progressWrap').style.display   = '';
-  document.getElementById('btnUploadConfirm').style.display = 'none';
-  document.getElementById('btnUploadCancel').textContent  = 'ปิด';
+  console.log('2. zones:', zones);
+  var total = zones.length;
+  console.log('3. progressWrap:', document.getElementById('progressWrap'));
+  document.getElementById('uploadPreview').style.display   = 'none';
+  document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
+  document.getElementById('btnUploadConfirm').style.display = '';
+    document.getElementById('btnUploadConfirm').disabled = false;
+    document.getElementById('btnUploadConfirm').style.opacity = '0.5';
+    document.getElementById('progressWrap').style.display = 'none';
+    document.getElementById('uploadModal').classList.add('open');
+  document.getElementById('btnUploadCancel').textContent   = 'ปิด';
   document.getElementById('btnUploadCancel').onclick = closeUpload;
+  console.log('4. UI updated');
+  var zones  = Object.keys(_csvData).filter(function(k){ return k !== '_unknown'; }).sort();
+  var total  = zones.length;
+
+  document.getElementById('uploadPreview').style.display   = 'none';
+  document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
+  document.getElementById('btnUploadConfirm').style.display = 'none';
+  document.getElementById('btnUploadCancel').textContent   = 'ปิด';
+  document.getElementById('btnUploadCancel').onclick = closeUpload;
+
   var stepsEl = document.getElementById('progressSteps');
   stepsEl.innerHTML = zones.map(function(z) {
     return '<div class="progress-step step-pending" id="step_' + z + '">&#9679; Zone ' + z + ' (' + _csvData[z].length + ' rows)</div>';
   }).join('');
-  var done = 0;
+
   function setProgress(pct, text) {
     document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressPct').textContent  = pct + '%';
+    document.getElementById('progressPct').textContent  = Math.min(pct, 100) + '%';
     document.getElementById('progressText').textContent = text;
   }
+
+  var done = 0;
+    console.log('5. starting loop, zones.length:', zones.length);
   for (var i = 0; i < zones.length; i++) {
-    var z = zones[i];
+    var z      = zones[i];
+        console.log('6. processing zone:', z);console.log('6. processing zone:', z);
     var stepEl = document.getElementById('step_' + z);
+        console.log('7. stepEl:', stepEl);
     stepEl.className = 'progress-step step-running';
     stepEl.innerHTML = '&#9654; Zone ' + z + ' — กำลัง Clear...';
     setProgress(Math.round((i / total) * 100), 'Zone ' + z + ' (' + (i+1) + '/' + total + ')');
+
     try {
+      // Clear ก่อน
       var resClear = await api({ action: 'clearDataSN', zone: z }, 'POST');
       if (resClear.error) throw new Error(resClear.error);
-      stepEl.innerHTML = '&#9654; Zone ' + z + ' — กำลัง Upload ' + _csvData[z].length + ' rows...';
-      var resUp = await api({ action: 'uploadDataSN', zone: z, rows: _csvData[z] }, 'POST');
-      if (resUp.error) throw new Error(resUp.error);
+      await new Promise(function(r){ setTimeout(r, 0); });
+
+      // Upload แบ่ง batch
+      var allRows   = _csvData[z];
+      var batchSize = 10000;
+      var total_b   = Math.ceil(allRows.length / batchSize);
+
+      for (var b = 0; b < allRows.length; b += batchSize) {
+        var batch = allRows.slice(b, b + batchSize);
+        var cur_b = Math.floor(b / batchSize) + 1;
+        stepEl.innerHTML = '&#9654; Zone ' + z
+          + ' — ' + Math.min(b + batchSize, allRows.length)
+          + '/' + allRows.length + ' rows';
+        var resUp = await api({ action: 'uploadDataSN', zone: z, rows: batch }, 'POST');
+        if (resUp.error) throw new Error(resUp.error);
+        var subPct = Math.round(((i + cur_b / total_b) / total) * 100);
+        setProgress(subPct, 'Zone ' + z + ' batch ' + cur_b + '/' + total_b);
+        await new Promise(function(r){ setTimeout(r, 0); });
+      }
+
       stepEl.className = 'progress-step step-done';
-      stepEl.innerHTML = '&#10003; Zone ' + z + ' — ' + _csvData[z].length + ' rows สำเร็จ';
+      stepEl.innerHTML = '&#10003; Zone ' + z + ' — ' + allRows.length + ' rows สำเร็จ';
+
     } catch(e) {
       stepEl.className = 'progress-step step-err';
       stepEl.innerHTML = '&#10007; Zone ' + z + ' — ' + e.message;
     }
+
     done++;
-    setProgress(Math.round((done / total) * 100), done === total ? 'เสร็จสิ้น!' : 'Zone ' + z);
+    setProgress(Math.round((done / total) * 100), done === total ? 'เสร็จสิ้น!' : 'Zone ' + (zones[i+1] || ''));
   }
+
   setProgress(100, 'Upload เสร็จสิ้น!');
   showToast('Upload เสร็จสิ้น', 'ok');
+
+  // Refresh cache ถ้า curZone มีข้อมูลใหม่
   if (curZone && _csvData[curZone]) {
     var res = await api({ action: 'getDataSN', zone: curZone });
-    if (res.rows) { _cacheDataSN = res.rows; setStatus('ok', 'Zone ' + curZone + ' | Data SN: ' + _cacheDataSN.length + ' รายการ (updated)'); }
+    if (res.rows) {
+      _cacheDataSN = res.rows;
+      setStatus('ok', 'Zone ' + curZone + ' | Data SN: ' + _cacheDataSN.length + ' รายการ (updated)');
+    }
   }
+  window._uploading = false;
+  document.getElementById('btnUploadConfirm').style.display = '';
+  document.getElementById('btnUploadCancel').textContent = 'ยกเลิก';
+  document.getElementById('btnUploadCancel').onclick = closeUpload;
 }
-
-document.getElementById('uploadModal').addEventListener('click', function(e) {
-  if (e.target === this) closeUpload();
-});
 // ======== END UPLOAD ========
 
 // ---- Toast ----
@@ -1216,21 +1291,16 @@ function showToast(msg, type) {
 document.getElementById('createModal').addEventListener('click', function(e) {
   if (e.target === this) closeCreateBox();
 });
+document.getElementById('uploadModal').addEventListener('click', function(e) {
+  if (e.target === this) closeUpload();
+});
 
-async function refreshDataSN() {
-  if (!curZone) return;
-  var btn = document.getElementById('btnRefresh');
-  if (btn) btn.textContent = '⏳ โหลด...';
-  try {
-    var res = await api({ action: 'getDataSN', zone: curZone });
-    _cacheDataSN = res.rows || [];
-    setStatus('ok', 'Zone ' + curZone + ' | Data SN: ' + _cacheDataSN.length + ' รายการ (updated)');
-    if (btn) btn.textContent = '↻ Refresh';
-  } catch(e) {
-    setStatus('err', 'Refresh ไม่สำเร็จ: ' + e.message);
-    if (btn) btn.textContent = '↻ Refresh';
+window.addEventListener('beforeunload', function(e) {
+  if (window._uploading) {
+    e.preventDefault();
+    e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
   }
-}
+});
 </script>
 </body>
 </html>
