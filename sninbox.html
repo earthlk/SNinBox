@@ -145,6 +145,27 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .toast.ok{border-color:var(--green);color:var(--green)}
 .toast.err{border-color:var(--red);color:var(--red)}
 
+/* Print */
+@media print{
+  .zone-bar,.left,.right-top,.no-print,.hdr{display:none!important}
+  body{height:auto;overflow:visible;background:#fff;color:#000}
+  .body,.right{display:block;height:auto;overflow:visible}
+  .right-body{padding:0;overflow:visible;height:auto}
+  .sn-block{display:none!important}
+  .tbl-wrap{border:1px solid #ccc;border-radius:0;overflow:visible}
+  table{font-size:11px;min-width:unset}
+  th{background:#f3f4f6!important;color:#374151!important}
+  td{border-top:1px solid #e5e7eb!important;color:#111!important}
+  .mono{color:#1d4ed8!important}
+  .zone-tag{background:#ede9fe!important;color:#5b21b6!important}
+  .print-hdr{display:block!important}
+  tr:hover td{background:none!important}
+  @page{margin:15mm}
+}
+.print-hdr{display:none;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111}
+.print-hdr h2{font-size:17px;font-weight:900;color:#000}
+.print-hdr p{font-size:11px;color:#555;margin-top:3px}
+
 /* Upload Modal */
 .upload-modal{width:520px}
 .upload-drop{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:14px}
@@ -405,6 +426,7 @@ async function selectZone(z) {
     _cacheDataSN = resData.rows || [];
     _cacheBoxSNs = {};
     setStatus('ok', 'Zone ' + z + ' | Data SN: ' + _cacheDataSN.length + ' รายการ');
+    renderBoxList(resBoxes.boxes || []);
     document.getElementById('btnRefresh').style.display = '';  // ← เพิ่ม
   } catch(e) {
     setStatus('err', e.message);
@@ -1189,9 +1211,15 @@ async function doUpload() {
   document.getElementById('uploadPreview').style.display   = 'none';
   document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
   document.getElementById('btnUploadConfirm').style.display = '';
+    document.getElementById('btnUploadConfirm').disabled = false;
+    document.getElementById('btnUploadConfirm').style.opacity = '0.5';
+    document.getElementById('progressWrap').style.display = 'none';
+    document.getElementById('uploadModal').classList.add('open');
   document.getElementById('btnUploadCancel').textContent   = 'ปิด';
   document.getElementById('btnUploadCancel').onclick = closeUpload;
   console.log('4. UI updated');
+  var zones  = Object.keys(_csvData).filter(function(k){ return k !== '_unknown'; }).sort();
+  var total  = zones.length;
 
   document.getElementById('uploadPreview').style.display   = 'none';
   document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
