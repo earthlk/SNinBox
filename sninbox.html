@@ -848,46 +848,38 @@ function setBoxType(t) {
   document.getElementById('namePreview').textContent = '';
   var zp = document.getElementById('zonePreview');
   if (zp) { zp.className = 'name-preview'; zp.textContent = ''; }
-  enableCreate(false);
-  // populate datalist code จาก _cacheDataSN
+  // ล้าง datalist ทั้งคู่
   var cdl = document.getElementById('codeOptions');
-  if (cdl) {
-    cdl.innerHTML = '';
-    if (_cacheDataSN && _cacheDataSN.length > 0) {
-      var uniqueCodes = [];
-      _cacheDataSN.forEach(function(r) {
-        var c = String(r.code || '').trim();
-        if (c && uniqueCodes.indexOf(c) === -1) uniqueCodes.push(c);
-      });
-      uniqueCodes.sort().forEach(function(c) {
-        var opt = document.createElement('option');
-        opt.value = c;
-        cdl.appendChild(opt);
-      });
-    }
-  }
+  if (cdl) cdl.innerHTML = '';
+  enableCreate(false);
   if (t === 'multi') {
-    // populate datalist จาก _cacheDataSN
-    var dl = document.getElementById('zoneOptions');
-    dl.innerHTML = '';
-    if (_cacheDataSN && _cacheDataSN.length > 0) {
-      var uniqueZones = [];
-      _cacheDataSN.forEach(function(r) {
-        var z = String(r.zone || '').trim();
-        if (z && uniqueZones.indexOf(z) === -1) uniqueZones.push(z);
-      });
-      uniqueZones.sort().forEach(function(z) {
-        var opt = document.createElement('option');
-        opt.value = z;
-        dl.appendChild(opt);
-      });
-    }
     document.getElementById('nb_zone_m').value = '';
     function checkMultiReady() {
       var z = document.getElementById('nb_zone_m').value.trim();
       var n = document.getElementById('nb_name_m').value.trim();
       enableCreate(z.length > 0 && n.length > 0);
     }
+    // populate zone datalist เมื่อพิมพ์
+    document.getElementById('nb_zone_m').oninput = function() {
+      var val = this.value.trim();
+      var dl  = document.getElementById('zoneOptions');
+      if (dl) {
+        dl.innerHTML = '';
+        if (val.length >= 1 && _cacheDataSN) {
+          var uniqueZones = [];
+          _cacheDataSN.forEach(function(r) {
+            var z = String(r.zone || '').trim();
+            if (z && z.toLowerCase().startsWith(val.toLowerCase()) && uniqueZones.indexOf(z) === -1) uniqueZones.push(z);
+          });
+          uniqueZones.sort().slice(0, 50).forEach(function(z) {
+            var opt = document.createElement('option');
+            opt.value = z;
+            dl.appendChild(opt);
+          });
+        }
+      }
+      checkMultiReady();
+    };
     document.getElementById('nb_zone_m').onchange = checkMultiReady;
     document.getElementById('nb_name_m').oninput  = checkMultiReady;
     checkMultiReady();
@@ -902,6 +894,25 @@ function onCodeInput() {
   var zp = document.getElementById('zonePreview');
   if (zp) { zp.className = 'name-preview'; zp.textContent = ''; }
   enableCreate(false);
+
+  // populate datalist เฉพาะตอนพิมพ์
+  var cdl = document.getElementById('codeOptions');
+  if (cdl) {
+    cdl.innerHTML = '';
+    if (code.length >= 1 && _cacheDataSN) {
+      var uniqueCodes = [];
+      _cacheDataSN.forEach(function(r) {
+        var c = String(r.code || '').trim();
+        if (c && c.toLowerCase().startsWith(code.toLowerCase()) && uniqueCodes.indexOf(c) === -1) uniqueCodes.push(c);
+      });
+      uniqueCodes.sort().slice(0, 50).forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c;
+        cdl.appendChild(opt);
+      });
+    }
+  }
+
   clearTimeout(_ct);
   if (code.length !== 8) return;
   _ct = setTimeout(function() { doCodePreview(code); }, 100);
@@ -1201,31 +1212,17 @@ function enableUpload(ok) {
 }
 
 async function doUpload() {
+  if (!_csvData) return;
   window._uploading = true;
-  console.log('1. doUpload called');
-  if (!_csvData) { console.log('_csvData is null'); return; }
-  var zones = Object.keys(_csvData).filter(function(k){ return k !== '_unknown'; }).sort();
-  console.log('2. zones:', zones);
-  var total = zones.length;
-  console.log('3. progressWrap:', document.getElementById('progressWrap'));
-  document.getElementById('uploadPreview').style.display   = 'none';
-  document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
-  document.getElementById('btnUploadConfirm').style.display = '';
-    document.getElementById('btnUploadConfirm').disabled = false;
-    document.getElementById('btnUploadConfirm').style.opacity = '0.5';
-    document.getElementById('progressWrap').style.display = 'none';
-    document.getElementById('uploadModal').classList.add('open');
-  document.getElementById('btnUploadCancel').textContent   = 'ปิด';
-  document.getElementById('btnUploadCancel').onclick = closeUpload;
-  console.log('4. UI updated');
-  var zones  = Object.keys(_csvData).filter(function(k){ return k !== '_unknown'; }).sort();
-  var total  = zones.length;
 
-  document.getElementById('uploadPreview').style.display   = 'none';
+  var zones = Object.keys(_csvData).filter(function(k){ return k !== '_unknown'; }).sort();
+  var total = zones.length;
+
+  document.getElementById('uploadPreview').style.display    = 'none';
   document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
   document.getElementById('btnUploadConfirm').style.display = 'none';
-  document.getElementById('btnUploadCancel').textContent   = 'ปิด';
-  document.getElementById('btnUploadCancel').onclick = closeUpload;
+  document.getElementById('btnUploadCancel').textContent    = 'ปิด';
+  document.getElementById('btnUploadCancel').onclick        = closeUpload;
 
   var stepsEl = document.getElementById('progressSteps');
   stepsEl.innerHTML = zones.map(function(z) {
@@ -1233,29 +1230,24 @@ async function doUpload() {
   }).join('');
 
   function setProgress(pct, text) {
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressPct').textContent  = Math.min(pct, 100) + '%';
-    document.getElementById('progressText').textContent = text;
+    document.getElementById('progressFill').style.width    = Math.min(pct,100) + '%';
+    document.getElementById('progressPct').textContent     = Math.min(pct,100) + '%';
+    document.getElementById('progressText').textContent    = text;
   }
 
   var done = 0;
-    console.log('5. starting loop, zones.length:', zones.length);
   for (var i = 0; i < zones.length; i++) {
     var z      = zones[i];
-        console.log('6. processing zone:', z);console.log('6. processing zone:', z);
     var stepEl = document.getElementById('step_' + z);
-        console.log('7. stepEl:', stepEl);
     stepEl.className = 'progress-step step-running';
     stepEl.innerHTML = '&#9654; Zone ' + z + ' — กำลัง Clear...';
     setProgress(Math.round((i / total) * 100), 'Zone ' + z + ' (' + (i+1) + '/' + total + ')');
+    await new Promise(function(r){ setTimeout(r, 50); });
 
     try {
-      // Clear ก่อน
       var resClear = await api({ action: 'clearDataSN', zone: z }, 'POST');
       if (resClear.error) throw new Error(resClear.error);
-      await new Promise(function(r){ setTimeout(r, 0); });
 
-      // Upload แบ่ง batch
       var allRows   = _csvData[z];
       var batchSize = 10000;
       var total_b   = Math.ceil(allRows.length / batchSize);
@@ -1263,19 +1255,16 @@ async function doUpload() {
       for (var b = 0; b < allRows.length; b += batchSize) {
         var batch = allRows.slice(b, b + batchSize);
         var cur_b = Math.floor(b / batchSize) + 1;
-        stepEl.innerHTML = '&#9654; Zone ' + z
-          + ' — ' + Math.min(b + batchSize, allRows.length)
-          + '/' + allRows.length + ' rows';
+        stepEl.innerHTML = '&#9654; Zone ' + z + ' — ' + Math.min(b+batchSize, allRows.length) + '/' + allRows.length + ' rows';
         var resUp = await api({ action: 'uploadDataSN', zone: z, rows: batch }, 'POST');
         if (resUp.error) throw new Error(resUp.error);
         var subPct = Math.round(((i + cur_b / total_b) / total) * 100);
         setProgress(subPct, 'Zone ' + z + ' batch ' + cur_b + '/' + total_b);
-        await new Promise(function(r){ setTimeout(r, 0); });
+        await new Promise(function(r){ setTimeout(r, 50); });
       }
 
       stepEl.className = 'progress-step step-done';
       stepEl.innerHTML = '&#10003; Zone ' + z + ' — ' + allRows.length + ' rows สำเร็จ';
-
     } catch(e) {
       stepEl.className = 'progress-step step-err';
       stepEl.innerHTML = '&#10007; Zone ' + z + ' — ' + e.message;
@@ -1288,7 +1277,6 @@ async function doUpload() {
   setProgress(100, 'Upload เสร็จสิ้น!');
   showToast('Upload เสร็จสิ้น', 'ok');
 
-  // Refresh cache ถ้า curZone มีข้อมูลใหม่
   if (curZone && _csvData[curZone]) {
     var res = await api({ action: 'getDataSN', zone: curZone });
     if (res.rows) {
@@ -1296,10 +1284,11 @@ async function doUpload() {
       setStatus('ok', 'Zone ' + curZone + ' | Data SN: ' + _cacheDataSN.length + ' รายการ (updated)');
     }
   }
+
   window._uploading = false;
-  document.getElementById('btnUploadConfirm').style.display = '';
-  document.getElementById('btnUploadCancel').textContent = 'ยกเลิก';
-  document.getElementById('btnUploadCancel').onclick = closeUpload;
+  document.getElementById('btnUploadConfirm').style.display = 'none';
+  document.getElementById('btnUploadCancel').textContent    = 'ยกเลิก';
+  document.getElementById('btnUploadCancel').onclick        = closeUpload;
 }
 
 async function refreshDataSN() {
