@@ -1189,10 +1189,6 @@ async function doUpload() {
   document.getElementById('uploadPreview').style.display   = 'none';
   document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
   document.getElementById('btnUploadConfirm').style.display = '';
-    document.getElementById('btnUploadConfirm').disabled = false;
-    document.getElementById('btnUploadConfirm').style.opacity = '0.5';
-    document.getElementById('progressWrap').style.display = 'none';
-    document.getElementById('uploadModal').classList.add('open');
   document.getElementById('btnUploadCancel').textContent   = 'ปิด';
   document.getElementById('btnUploadCancel').onclick = closeUpload;
   console.log('4. UI updated');
