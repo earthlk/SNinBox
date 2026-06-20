@@ -813,21 +813,52 @@ async function reloadBoxList() {
 }
 
 // ---- Print via GAS PDF ----
+function showPrintProgress(msg, pct) {
+  var el = document.getElementById('printProgress');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'printProgress';
+    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 32px;z-index:999;min-width:260px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">' + msg + '</div>'
+    + '<div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden">'
+      + '<div style="background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;border-radius:20px;transition:width .3s;width:' + pct + '%"></div>'
+    + '</div>'
+    + '<div style="font-size:11px;color:var(--muted);margin-top:8px">' + pct + '%</div>';
+}
+
+function hidePrintProgress() {
+  var el = document.getElementById('printProgress');
+  if (el) el.remove();
+}
+
 async function doPrint() {
   if (!curBox || curBox.type !== 'single') {
     showToast('รองรับเฉพาะ Box แบบ 1 Code', 'err');
     return;
   }
-  showToast('กำลังสร้าง PDF...', 'ok');
   var btn = document.getElementById('btnPrint');
-  btn.textContent = '⏳ กำลังสร้าง...';
+  btn.textContent = '⏳...';
   btn.disabled = true;
 
+  showPrintProgress('กำลังเตรียมข้อมูล...', 10);
+
   try {
+    // simulate progress ระหว่างรอ GAS
+    var pct = 10;
+    var ticker = setInterval(function() {
+      pct = Math.min(pct + 5, 85);
+      showPrintProgress('กำลังสร้าง PDF...', pct);
+    }, 800);
+
     var res = await api({ action: 'printBox', zone: curZone, box_id: curBox.box_id }, 'POST');
-    console.log('res:', JSON.stringify(res).substring(0, 300));
+    clearInterval(ticker);
+
     if (res.error) throw new Error(res.error);
-    if (!res.pdf) throw new Error('ไม่ได้รับ PDF: ' + JSON.stringify(res).substring(0, 100));
+    if (!res.pdf) throw new Error('ไม่ได้รับ PDF');
+
+    showPrintProgress('กำลัง Download...', 95);
 
     var b64clean = res.pdf.replace(/[\s]/g, '');
     var binary   = atob(b64clean);
@@ -842,8 +873,13 @@ async function doPrint() {
     a.click();
     document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+
+    showPrintProgress('เสร็จสิ้น!', 100);
+    setTimeout(hidePrintProgress, 1000);
     showToast('Download PDF สำเร็จ', 'ok');
   } catch(e) {
+    clearInterval(ticker);
+    hidePrintProgress();
     showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
   }
 
