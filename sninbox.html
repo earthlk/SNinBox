@@ -736,69 +736,63 @@ async function saveSN() {
 
 // ---- Remove SN ----
 async function doRemoveSN(sn) {
-  if (!confirm('ลบ SN: ' + sn + ' ?')) return;
-  var bid = curBox.box_id;
+  showConfirm('ลบ SN: ' + sn + ' ?', async function() {
+    var bid = curBox.box_id;
 
-  // 1. อัปเดต UI ทันที
-  if (_cacheBoxSNs[bid]) {
-    _cacheBoxSNs[bid] = _cacheBoxSNs[bid].filter(function(r) { return String(r.sn).trim() !== String(sn).trim(); });
-    renderSNTable(_cacheBoxSNs[bid]);
-    if (window._boxes && window._boxes[bid]) {
-      window._boxes[bid].sn_count = _cacheBoxSNs[bid].length;
-      var countEl = document.querySelector('#bc_' + bid + ' .bcard-count');
-      if (countEl) countEl.textContent = _cacheBoxSNs[bid].length + ' SN';
-    }
-  }
-
-  // 2. ส่ง GAS background
-  api({ action: 'removeSN', zone: curZone, box_id: bid, sn: sn }, 'POST')
-    .then(function(res) {
-      if (res.error) {
-        showToast('ลบไม่สำเร็จ: ' + res.error, 'err');
-        // reload จาก GAS เพื่อ restore
-        loadBoxSNs(true);
+    if (_cacheBoxSNs[bid]) {
+      _cacheBoxSNs[bid] = _cacheBoxSNs[bid].filter(function(r) { return String(r.sn).trim() !== String(sn).trim(); });
+      renderSNTable(_cacheBoxSNs[bid]);
+      if (window._boxes && window._boxes[bid]) {
+        window._boxes[bid].sn_count = _cacheBoxSNs[bid].length;
+        var countEl = document.querySelector('#bc_' + bid + ' .bcard-count');
+        if (countEl) countEl.textContent = _cacheBoxSNs[bid].length + ' SN';
       }
-    })
-    .catch(function(e) {
-      showToast('Network error: ' + e.message, 'err');
-      loadBoxSNs(true);
-    });
+    }
+
+    api({ action: 'removeSN', zone: curZone, box_id: bid, sn: sn }, 'POST')
+      .then(function(res) {
+        if (res.error) {
+          showToast('ลบไม่สำเร็จ: ' + res.error, 'err');
+          loadBoxSNs(true);
+        }
+      })
+      .catch(function(e) {
+        showToast('Network error: ' + e.message, 'err');
+        loadBoxSNs(true);
+      });
+  });
 }
 
 // ---- Delete Box ----
 async function doDeleteBox(box_id) {
-  if (!confirm('ลบ Box "' + box_id + '" และ SN ทั้งหมด?')) return;
+  showConfirm('ลบ Box "' + box_id + '" และ SN ทั้งหมด?', async function() {
+    var deletedBox = window._boxes && window._boxes[box_id] ? Object.assign({}, window._boxes[box_id]) : null;
+    var deletedSNs = _cacheBoxSNs[box_id] ? _cacheBoxSNs[box_id].slice() : [];
 
-  // snapshot เผื่อ rollback
-  var deletedBox = window._boxes && window._boxes[box_id] ? Object.assign({}, window._boxes[box_id]) : null;
-  var deletedSNs = _cacheBoxSNs[box_id] ? _cacheBoxSNs[box_id].slice() : [];
+    delete _cacheBoxSNs[box_id];
+    if (window._boxes) delete window._boxes[box_id];
+    if (curBox && curBox.box_id === box_id) { curBox = null; resetRight(); }
+    reloadBoxList();
+    showToast('ลบ Box ' + box_id + ' แล้ว', 'ok');
 
-  // 1. อัปเดต UI ทันที
-  delete _cacheBoxSNs[box_id];
-  if (window._boxes) delete window._boxes[box_id];
-  if (curBox && curBox.box_id === box_id) { curBox = null; resetRight(); }
-  reloadBoxList();
-  showToast('ลบ Box ' + box_id + ' แล้ว', 'ok');
-
-  // 2. ส่ง GAS background
-  api({ action: 'deleteBox', zone: curZone, box_id: box_id }, 'POST')
-    .then(function(res) {
-      if (res.error) {
-        showToast('ลบ Box ไม่สำเร็จ: ' + res.error, 'err');
-        // rollback cache
+    api({ action: 'deleteBox', zone: curZone, box_id: box_id }, 'POST')
+      .then(function(res) {
+        if (res.error) {
+          showToast('ลบ Box ไม่สำเร็จ: ' + res.error, 'err');
+          if (deletedBox) window._boxes[box_id] = deletedBox;
+          if (deletedSNs.length) _cacheBoxSNs[box_id] = deletedSNs;
+          reloadBoxList();
+        }
+      })
+      .catch(function(e) {
+        showToast('Network error: ' + e.message, 'err');
         if (deletedBox) window._boxes[box_id] = deletedBox;
         if (deletedSNs.length) _cacheBoxSNs[box_id] = deletedSNs;
         reloadBoxList();
-      }
-    })
-    .catch(function(e) {
-      showToast('Network error: ' + e.message, 'err');
-      if (deletedBox) window._boxes[box_id] = deletedBox;
-      if (deletedSNs.length) _cacheBoxSNs[box_id] = deletedSNs;
-      reloadBoxList();
-    });
+      });
+  });
 }
-
+  
 async function reloadBoxList() {
   // ใช้ _boxes cache แทน reload จาก GAS
   if (window._boxes) {
@@ -1390,6 +1384,27 @@ window.addEventListener('beforeunload', function(e) {
     e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
   }
 });
+
+function showConfirm(msg, onYes) {
+  var ov = document.createElement('div');
+  ov.className = 'err-modal';
+  ov.innerHTML = '<div class="err-modal-box">'
+    + '<div class="err-modal-ico">&#9888;</div>'
+    + '<div class="err-modal-msg">' + msg + '</div>'
+    + '<div style="display:flex;gap:10px;justify-content:center">'
+      + '<button class="err-modal-btn" id="cfmYesBtn" style="background:var(--accent)">Yes</button>'
+      + '<button class="err-modal-btn" id="cfmNoBtn">No</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  setTimeout(function() {
+    var yesBtn = document.getElementById('cfmYesBtn');
+    var noBtn  = document.getElementById('cfmNoBtn');
+    if (noBtn) noBtn.focus();
+    yesBtn.onclick = function() { ov.remove(); onYes(); };
+    noBtn.onclick  = function() { ov.remove(); };
+  }, 50);
+}
 </script>
 </body>
 </html>
