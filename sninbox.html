@@ -839,10 +839,7 @@ function hidePrintProgress() {
 }
 
 async function doPrint() {
-  if (!curBox || curBox.type !== 'single') {
-    showToast('รองรับเฉพาะ Box แบบ 1 Code', 'err');
-    return;
-  }
+  if (!curBox) return;
   var btn = document.getElementById('btnPrint');
   btn.textContent = '⏳...';
   btn.disabled = true;
