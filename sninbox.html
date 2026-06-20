@@ -825,8 +825,9 @@ async function doPrint() {
 
   try {
     var res = await api({ action: 'printBox', zone: curZone, box_id: curBox.box_id }, 'POST');
+    console.log('res:', JSON.stringify(res).substring(0, 300));
     if (res.error) throw new Error(res.error);
-    if (!res.pdf) throw new Error('ไม่ได้รับ PDF');
+    if (!res.pdf) throw new Error('ไม่ได้รับ PDF: ' + JSON.stringify(res).substring(0, 100));
 
     var b64clean = res.pdf.replace(/[\s]/g, '');
     var binary   = atob(b64clean);
