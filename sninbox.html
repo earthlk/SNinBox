@@ -209,6 +209,17 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .print-hdr{display:none;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111}
 .print-hdr h2{font-size:17px;font-weight:900;color:#000}
 .print-hdr p{font-size:11px;color:#555;margin-top:3px}
+
+.err-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center}
+.err-modal-box{background:var(--surface);border:2px solid var(--red);border-radius:14px;padding:28px 32px;min-width:280px;max-width:420px;text-align:center}
+.err-modal-ico{font-size:36px;margin-bottom:10px}
+.err-modal-msg{font-size:14px;font-weight:700;color:var(--text);margin-bottom:18px;line-height:1.5}
+.err-modal-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 28px;font-size:13px;font-weight:700;cursor:pointer}
+.err-modal-btn:hover{opacity:.85}
+
+.err-modal-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 28px;font-size:13px;font-weight:700;cursor:pointer}
+.err-modal-btn:hover{opacity:.85}
+.err-modal-btn:focus{outline:2px solid var(--accent)}
 </style>
 </head>
 <body>
