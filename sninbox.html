@@ -1509,6 +1509,7 @@ function setMode(mode) {
 
 // ---- Warehouse ----
 async function selectWarehouse(w) {
+  console.log('selectWarehouse called:', w);
   curWarehouse = w; curSet = null; curSNData = null;
   _cacheSetDataSN = null; _cacheSetSNs = {};
   document.querySelectorAll('#warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
