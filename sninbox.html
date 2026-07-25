@@ -139,6 +139,10 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .name-preview.err{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3);display:block}
 .modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 
+/* BoxSet Mode */
+.mode-btn-active{background:var(--accent)!important;color:#fff!important}
+.mode-btn-inactive{background:transparent!important;color:var(--muted)!important}
+
 /* Toast */
 .toast{position:fixed;bottom:20px;right:20px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:12px;font-weight:700;z-index:999;opacity:0;transform:translateY(8px);transition:.3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -209,17 +213,6 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .print-hdr{display:none;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111}
 .print-hdr h2{font-size:17px;font-weight:900;color:#000}
 .print-hdr p{font-size:11px;color:#555;margin-top:3px}
-
-.err-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center}
-.err-modal-box{background:var(--surface);border:2px solid var(--red);border-radius:14px;padding:28px 32px;min-width:280px;max-width:420px;text-align:center}
-.err-modal-ico{font-size:36px;margin-bottom:10px}
-.err-modal-msg{font-size:14px;font-weight:700;color:var(--text);margin-bottom:18px;line-height:1.5}
-.err-modal-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 28px;font-size:13px;font-weight:700;cursor:pointer}
-.err-modal-btn:hover{opacity:.85}
-
-.err-modal-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 28px;font-size:13px;font-weight:700;cursor:pointer}
-.err-modal-btn:hover{opacity:.85}
-.err-modal-btn:focus{outline:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -227,19 +220,31 @@ tr:hover td{background:rgba(91,141,238,.04)}
 <!-- Header -->
 <div class="hdr">
   <div class="logo">&#128230; <b>SN</b> Manager</div>
+  <div style="display:flex;gap:4px;background:var(--card);padding:3px;border-radius:8px;border:1px solid var(--border)">
+    <button id="modeSN"  onclick="setMode('sn')"  class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:6px">Box SN</button>
+    <button id="modeSet" onclick="setMode('set')" class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:transparent;color:var(--muted);border-radius:6px">Box Set</button>
+  </div>
   <button class="btn btn-ghost btn-sm no-print" onclick="refreshDataSN()" id="btnRefresh" style="display:none;font-size:11px">&#8635; Refresh</button>
   <span id="statusPill" class="pill p-dim">-- เลือกโซน</span>
   <button class="btn btn-ghost btn-sm no-print" onclick="openUpload()" style="font-size:11px;margin-left:8px">&#8679; Upload CSV</button>
 </div>
 
-<!-- Zone Tabs -->
-<div class="zone-bar">
+<!-- Zone Tabs (Box SN mode) -->
+<div class="zone-bar" id="snZoneBar">
   <div class="ztabs" id="zoneTabs"></div>
   <div class="right">
     <div class="right-top no-print">
-      <div class="right-title" id="rightTitle">-- เลือก Zone และ Box </div>
-      <div class="right-sub" id="rightSub">หากไม่มี Box ที่ต้แงการ กด สร้าง Box ใหม่</div>
+      <div class="right-title" id="rightTitle">-- เลือก Zone และ Box</div>
+      <div class="right-sub" id="rightSub">หากไม่มี Box ที่ต้องการ กด สร้าง Box ใหม่</div>
     </div>
+  </div>
+</div>
+
+<!-- Warehouse Tabs (Box Set mode) -->
+<div class="zone-bar" id="setZoneBar" style="display:none">
+  <div class="ztabs" id="warehouseTabs">
+    <button class="ztab" id="wtab_001" onclick="selectWarehouse('001')">001</button>
+    <button class="ztab" id="wtab_002" onclick="selectWarehouse('002')">002</button>
   </div>
 </div>
 
@@ -255,7 +260,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
       <div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:12px">เลือกโซนก่อน</p></div>
     </div>
     <div class="left-foot">
-      <button class="btn btn-primary btn-full btn-sm no-print" onclick="openCreateBox()">+ สร้าง Box</button>
+      <button class="btn btn-primary btn-full btn-sm no-print" id="btnCreateMain" onclick="curMode==='set'?openCreateSet():openCreateBox()">+ สร้าง Box</button>
     </div>
   </div>
 
@@ -391,9 +396,42 @@ tr:hover td{background:rgba(91,141,238,.04)}
 
 <div class="toast" id="toast"></div>
 
+<!-- Create BoxSet Modal -->
+<div class="overlay" id="createSetModal">
+  <div class="modal">
+    <h3>&#128218; สร้าง BoxSet ใหม่</h3>
+    <div class="modal-sub" id="setModalSub">คลัง -- · Set ID ถัดไป</div>
+    <div class="next-id" id="nextSetIdBadge">--</div>
+    <div class="fg">
+      <label>ชื่อ Set</label>
+      <input type="text" id="ns_name" placeholder="เช่น Set สินค้า Batch 01" oninput="checkSetReady()">
+    </div>
+    <div class="fg">
+      <label>Code A (8 หลัก) — พิมพ์แล้วกด Enter เพื่อเพิ่ม</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="ns_code_input" list="setCodeOptions" placeholder="xxxxxxxx" maxlength="8"
+          style="font-family:monospace;font-size:14px;letter-spacing:2px;flex:1"
+          autocomplete="off"
+          onkeydown="if(event.key==='Enter'){addSetCode()}">
+        <datalist id="setCodeOptions"></datalist>
+        <button class="btn btn-ghost btn-sm" onclick="addSetCode()">+ เพิ่ม</button>
+      </div>
+      <div id="setCodePreview" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+    </div>
+    <div class="fg">
+      <label>Code ที่เลือก</label>
+      <div id="setCodeList" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:6px;background:var(--card);border:1px solid var(--border);border-radius:8px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeCreateSet()">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnCreateSet" onclick="doCreateSet()" disabled style="opacity:.5">สร้าง BoxSet</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ====== CONFIG ======
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzQwTW3kw27FbfOnF_RVyGfQKe5jv24wpQh3oiAJ3sqW8VXrGOX6kuxrxLmrrp8GOCm/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwL7e52tHLN5tGJzJBvvm6UZnht_ywa-uzfi4Ig_GtlAm9UEixsYLPFWTjOZAuh6Ud7/exec';
 const ZONES   = ['A','B','C','D','E','J'];
 // ====================
 
@@ -507,6 +545,7 @@ function selectBox(boxId) {
 
 // ---- Load SN Table ----
 async function loadBoxSNs(forceRefresh) {
+  if (curMode === 'set') { await doPrintSet(); return; }
   if (!curBox) return;
   var boxId = curBox.box_id;
   // ใช้ cache ถ้ามี
@@ -585,20 +624,26 @@ async function doLookup(sn) {
 }
 
 async function doLookupAndSave(sn) {
-  if (!sn || !curZone || !curBox) return;
+  if (!sn) return;
   if (!/^[0-9]{10}$/.test(sn)) {
     showSNErr('SN ต้องเป็นตัวเลข 10 หลักเท่านั้น (ได้รับ: "' + sn + '")');
     return;
   }
   document.getElementById('snField').className = 'sn-field';
-  // ค้นจาก cache ก่อน (เร็วมาก)
-  var cached = lookupSNFromCache(sn);
-  if (cached) {
-    showSNOk(cached);
-    await saveSN();
+
+  if (curMode === 'set') {
+    // BoxSet mode
+    if (!curWarehouse || !curSet) return;
+    var cachedSet = lookupSNFromSetCache(sn);
+    if (cachedSet) { showSNOk(cachedSet); await saveSNToSet(); return; }
+    showSNErr('ไม่พบ SN "' + sn + '" ใน Data SN คลัง ' + curWarehouse);
     return;
   }
-  // ไม่เจอใน cache = ไม่มีใน Data SN
+
+  // Box SN mode
+  if (!curZone || !curBox) return;
+  var cached = lookupSNFromCache(sn);
+  if (cached) { showSNOk(cached); await saveSN(); return; }
   showSNErr('ไม่พบ SN "' + sn + '" ใน Data SN');
 }
 
@@ -747,63 +792,69 @@ async function saveSN() {
 
 // ---- Remove SN ----
 async function doRemoveSN(sn) {
-  showConfirm('ลบ SN: ' + sn + ' ?', async function() {
-    var bid = curBox.box_id;
+  if (!confirm('ลบ SN: ' + sn + ' ?')) return;
+  var bid = curBox.box_id;
 
-    if (_cacheBoxSNs[bid]) {
-      _cacheBoxSNs[bid] = _cacheBoxSNs[bid].filter(function(r) { return String(r.sn).trim() !== String(sn).trim(); });
-      renderSNTable(_cacheBoxSNs[bid]);
-      if (window._boxes && window._boxes[bid]) {
-        window._boxes[bid].sn_count = _cacheBoxSNs[bid].length;
-        var countEl = document.querySelector('#bc_' + bid + ' .bcard-count');
-        if (countEl) countEl.textContent = _cacheBoxSNs[bid].length + ' SN';
-      }
+  // 1. อัปเดต UI ทันที
+  if (_cacheBoxSNs[bid]) {
+    _cacheBoxSNs[bid] = _cacheBoxSNs[bid].filter(function(r) { return String(r.sn).trim() !== String(sn).trim(); });
+    renderSNTable(_cacheBoxSNs[bid]);
+    if (window._boxes && window._boxes[bid]) {
+      window._boxes[bid].sn_count = _cacheBoxSNs[bid].length;
+      var countEl = document.querySelector('#bc_' + bid + ' .bcard-count');
+      if (countEl) countEl.textContent = _cacheBoxSNs[bid].length + ' SN';
     }
+  }
 
-    api({ action: 'removeSN', zone: curZone, box_id: bid, sn: sn }, 'POST')
-      .then(function(res) {
-        if (res.error) {
-          showToast('ลบไม่สำเร็จ: ' + res.error, 'err');
-          loadBoxSNs(true);
-        }
-      })
-      .catch(function(e) {
-        showToast('Network error: ' + e.message, 'err');
+  // 2. ส่ง GAS background
+  api({ action: 'removeSN', zone: curZone, box_id: bid, sn: sn }, 'POST')
+    .then(function(res) {
+      if (res.error) {
+        showToast('ลบไม่สำเร็จ: ' + res.error, 'err');
+        // reload จาก GAS เพื่อ restore
         loadBoxSNs(true);
-      });
-  });
+      }
+    })
+    .catch(function(e) {
+      showToast('Network error: ' + e.message, 'err');
+      loadBoxSNs(true);
+    });
 }
 
 // ---- Delete Box ----
 async function doDeleteBox(box_id) {
-  showConfirm('ลบ Box "' + box_id + '" และ SN ทั้งหมด?', async function() {
-    var deletedBox = window._boxes && window._boxes[box_id] ? Object.assign({}, window._boxes[box_id]) : null;
-    var deletedSNs = _cacheBoxSNs[box_id] ? _cacheBoxSNs[box_id].slice() : [];
+  if (!confirm('ลบ Box "' + box_id + '" และ SN ทั้งหมด?')) return;
 
-    delete _cacheBoxSNs[box_id];
-    if (window._boxes) delete window._boxes[box_id];
-    if (curBox && curBox.box_id === box_id) { curBox = null; resetRight(); }
-    reloadBoxList();
-    showToast('ลบ Box ' + box_id + ' แล้ว', 'ok');
+  // snapshot เผื่อ rollback
+  var deletedBox = window._boxes && window._boxes[box_id] ? Object.assign({}, window._boxes[box_id]) : null;
+  var deletedSNs = _cacheBoxSNs[box_id] ? _cacheBoxSNs[box_id].slice() : [];
 
-    api({ action: 'deleteBox', zone: curZone, box_id: box_id }, 'POST')
-      .then(function(res) {
-        if (res.error) {
-          showToast('ลบ Box ไม่สำเร็จ: ' + res.error, 'err');
-          if (deletedBox) window._boxes[box_id] = deletedBox;
-          if (deletedSNs.length) _cacheBoxSNs[box_id] = deletedSNs;
-          reloadBoxList();
-        }
-      })
-      .catch(function(e) {
-        showToast('Network error: ' + e.message, 'err');
+  // 1. อัปเดต UI ทันที
+  delete _cacheBoxSNs[box_id];
+  if (window._boxes) delete window._boxes[box_id];
+  if (curBox && curBox.box_id === box_id) { curBox = null; resetRight(); }
+  reloadBoxList();
+  showToast('ลบ Box ' + box_id + ' แล้ว', 'ok');
+
+  // 2. ส่ง GAS background
+  api({ action: 'deleteBox', zone: curZone, box_id: box_id }, 'POST')
+    .then(function(res) {
+      if (res.error) {
+        showToast('ลบ Box ไม่สำเร็จ: ' + res.error, 'err');
+        // rollback cache
         if (deletedBox) window._boxes[box_id] = deletedBox;
         if (deletedSNs.length) _cacheBoxSNs[box_id] = deletedSNs;
         reloadBoxList();
-      });
-  });
+      }
+    })
+    .catch(function(e) {
+      showToast('Network error: ' + e.message, 'err');
+      if (deletedBox) window._boxes[box_id] = deletedBox;
+      if (deletedSNs.length) _cacheBoxSNs[box_id] = deletedSNs;
+      reloadBoxList();
+    });
 }
-  
+
 async function reloadBoxList() {
   // ใช้ _boxes cache แทน reload จาก GAS
   if (window._boxes) {
@@ -839,7 +890,10 @@ function hidePrintProgress() {
 }
 
 async function doPrint() {
-  if (!curBox) return;
+  if (!curBox || curBox.type !== 'single') {
+    showToast('รองรับเฉพาะ Box แบบ 1 Code', 'err');
+    return;
+  }
   var btn = document.getElementById('btnPrint');
   btn.textContent = '⏳...';
   btn.disabled = true;
@@ -868,8 +922,13 @@ async function doPrint() {
     for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
     var blob = new Blob([bytes], { type: 'application/pdf' });
     var url  = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-        setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = curBox.box_id + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
 
     showPrintProgress('เสร็จสิ้น!', 100);
     setTimeout(hidePrintProgress, 1000);
@@ -1371,6 +1430,395 @@ async function refreshDataSN() {
 }
 // ======== END UPLOAD ========
 
+// ---- Print BoxSet ----
+async function doPrintSet() {
+  if (!curSet) return;
+  var btn = document.getElementById('btnPrint');
+  btn.textContent = '⏳...'; btn.disabled = true;
+  showPrintProgress('กำลังสร้าง PDF...', 10);
+  try {
+    var pct = 10;
+    var ticker = setInterval(function(){ pct = Math.min(pct+5, 85); showPrintProgress('กำลังสร้าง PDF...', pct); }, 800);
+    var res = await api({ action: 'printBoxSet', warehouse: curWarehouse, set_id: curSet.set_id }, 'POST');
+    clearInterval(ticker);
+    if (res.error) throw new Error(res.error);
+    if (!res.pdf) throw new Error('ไม่ได้รับ PDF');
+    showPrintProgress('กำลัง Download...', 95);
+    var b64clean = res.pdf.replace(/[\s]/g, '');
+    var binary = atob(b64clean);
+    var bytes  = new Uint8Array(binary.length);
+    for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
+    var blob = new Blob([bytes], { type: 'application/pdf' });
+    var url  = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+    showPrintProgress('เสร็จสิ้น!', 100);
+    setTimeout(hidePrintProgress, 1000);
+    showToast('Download PDF สำเร็จ', 'ok');
+  } catch(e) {
+    hidePrintProgress();
+    showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
+  }
+  btn.textContent = '🖨 ปริ้น'; btn.disabled = false;
+}
+
+// ======== BOX SET SYSTEM ========
+var curMode      = 'sn';       // 'sn' หรือ 'set'
+var curWarehouse = null;
+var curSet       = null;
+var nextSetId    = null;
+var _cacheSetDataSN  = null;
+var _cacheSetSNs     = {};
+var _setSelectedCodes = [];
+
+function setMode(mode) {
+  curMode = mode;
+  var snBtn  = document.getElementById('modeSN');
+  var setBtn = document.getElementById('modeSet');
+  var snBar  = document.getElementById('snZoneBar');
+  var setBar = document.getElementById('setZoneBar');
+
+  if (mode === 'sn') {
+    snBtn.style.background  = 'var(--accent)';
+    snBtn.style.color       = '#fff';
+    setBtn.style.background = 'transparent';
+    setBtn.style.color      = 'var(--muted)';
+    snBar.style.display     = '';
+    setBar.style.display    = 'none';
+    // reset set state
+    curWarehouse = null; curSet = null;
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:12px">เลือกโซนก่อน</p></div>';
+    document.getElementById('boxCountLbl').textContent = '--';
+    resetRight();
+    setStatus('dim', '-- เลือกโซน');
+  } else {
+    setBtn.style.background = 'var(--accent)';
+    setBtn.style.color      = '#fff';
+    snBtn.style.background  = 'transparent';
+    snBtn.style.color       = 'var(--muted)';
+    snBar.style.display     = 'none';
+    setBar.style.display    = '';
+    // reset sn state
+    curZone = null; curBox = null;
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:12px">เลือกคลังก่อน</p></div>';
+    document.getElementById('boxCountLbl').textContent = '--';
+    resetRight();
+    setStatus('dim', '-- เลือกคลัง');
+  }
+}
+
+// ---- Warehouse ----
+async function selectWarehouse(w) {
+  curWarehouse = w; curSet = null; curSNData = null;
+  _cacheSetDataSN = null; _cacheSetSNs = {};
+  document.querySelectorAll('#warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('wtab_' + w).classList.add('active');
+  setStatus('dim', 'คลัง ' + w + '...');
+  resetRight();
+  document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+  document.getElementById('boxCountLbl').textContent = '--';
+
+  try {
+    var [resSets, resData] = await Promise.all([
+      api({ action: 'getBoxSets', warehouse: w }),
+      api({ action: 'getDataSNWarehouse', warehouse: w })
+    ]);
+    if (resSets.error) throw new Error(resSets.error);
+    nextSetId       = resSets.next_set_id;
+    _cacheSetDataSN = resData.rows || [];
+    _cacheSetSNs    = {};
+    setStatus('ok', 'คลัง ' + w + ' | Data SN: ' + _cacheSetDataSN.length + ' รายการ');
+    renderSetList(resSets.sets || []);
+  } catch(e) {
+    setStatus('err', e.message);
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:12px">' + e.message + '</p></div>';
+  }
+}
+
+// ---- Set List ----
+function renderSetList(sets) {
+  window._sets = {};
+  sets.forEach(function(s){ window._sets[s.set_id] = s; });
+  document.getElementById('boxCountLbl').textContent = sets.length + ' Set';
+  if (!sets.length) {
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128218;</div><p style="font-size:12px">ยังไม่มี BoxSet<br>กด + สร้าง BoxSet</p></div>';
+    // แก้ปุ่มล่าง
+    updateFootBtn();
+    return;
+  }
+  document.getElementById('boxList').innerHTML = sets.map(function(s) {
+    var sel    = curSet && curSet.set_id === s.set_id ? 'sel' : '';
+    var codes  = String(s.codes || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean);
+    var codesHtml = codes.map(function(c){ return '<span style="font-family:monospace;font-size:10px;background:rgba(91,141,238,.15);color:var(--accent);padding:1px 5px;border-radius:4px">' + c + '</span>'; }).join(' ');
+    return '<div class="bcard ' + sel + '" id="bc_' + s.set_id + '" data-sid="' + s.set_id + '">'
+      + '<button class="bcard-del no-print" data-delset="' + s.set_id + '">&#10005;</button>'
+      + '<div class="bcard-head">'
+        + '<span class="bcard-id">' + s.set_id + '</span>'
+        + '<span class="bcard-count">' + s.sn_count + ' SN</span>'
+      + '</div>'
+      + '<div class="bcard-info">'
+        + '<div class="binfo-row"><span class="binfo-lbl">Name</span><span class="binfo-val">' + (s.set_name || '-') + '</span></div>'
+        + '<div class="binfo-row"><span class="binfo-lbl">Code</span><span class="binfo-val" style="flex-wrap:wrap;display:flex;gap:3px">' + codesHtml + '</span></div>'
+        + '<div class="binfo-row"><span class="binfo-lbl">Date</span><span class="binfo-val">' + fmtDate(s.created_date) + '</span></div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+  updateFootBtn();
+}
+
+function updateFootBtn() {
+  var foot = document.querySelector('.left-foot button');
+  if (!foot) return;
+  if (curMode === 'set') {
+    foot.textContent = '+ สร้าง BoxSet';
+    foot.onclick = openCreateSet;
+  } else {
+    foot.textContent = '+ สร้าง Box';
+    foot.onclick = openCreateBox;
+  }
+}
+
+// Event delegation - set list
+document.getElementById('boxList').addEventListener('click', function(e) {
+  if (curMode !== 'set') return;
+  var delBtn = e.target.closest('[data-delset]');
+  if (delBtn) { e.stopPropagation(); doDeleteSet(delBtn.dataset.delset); return; }
+  var card = e.target.closest('[data-sid]');
+  if (card) selectSet(card.dataset.sid);
+});
+
+function selectSet(setId) {
+  var s = window._sets && window._sets[setId];
+  if (!s) return;
+  curSet = s; curSNData = null;
+  document.querySelectorAll('.bcard').forEach(function(c){ c.classList.remove('sel'); });
+  var el = document.getElementById('bc_' + setId);
+  if (el) el.classList.add('sel');
+  document.getElementById('rightTitle').textContent = s.set_id + ' - ' + (s.set_name || '');
+  document.getElementById('rightSub').textContent   = 'คลัง ' + curWarehouse + ' | ' + String(s.codes || '').split(',').length + ' Code';
+  document.getElementById('defaultEmpty').style.display = 'none';
+  document.getElementById('snInputArea').style.display  = '';
+  document.getElementById('snTableArea').style.display  = '';
+  document.getElementById('btnPrint').style.display     = '';
+  document.getElementById('snTableLbl').textContent     = 'รายการ SN ใน ' + s.set_id;
+  clearSN();
+  loadSetSNs();
+}
+
+// ---- Load Set SNs ----
+async function loadSetSNs(forceRefresh) {
+  if (!curSet) return;
+  var setId = curSet.set_id;
+  if (!forceRefresh && _cacheSetSNs[setId]) {
+    renderSNTable(_cacheSetSNs[setId]);
+    return;
+  }
+  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+  try {
+    var res = await api({ action: 'getBoxSetSNs', warehouse: curWarehouse, set_id: setId });
+    if (res.error) throw new Error(res.error);
+    _cacheSetSNs[setId] = res.rows || [];
+    renderSNTable(_cacheSetSNs[setId]);
+  } catch(e) {
+    document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><p style="color:var(--red)">' + e.message + '</p></div>';
+  }
+}
+
+// ---- Create BoxSet Modal ----
+function openCreateSet() {
+  if (!curWarehouse) { showToast('เลือกคลังก่อน', 'err'); return; }
+  _setSelectedCodes = [];
+  document.getElementById('ns_name').value       = '';
+  document.getElementById('ns_code_input').value = '';
+  document.getElementById('setCodeList').innerHTML = '';
+  document.getElementById('setCodePreview').textContent = '';
+  document.getElementById('setModalSub').textContent    = 'คลัง ' + curWarehouse + ' · Set ID ถัดไป';
+  document.getElementById('nextSetIdBadge').textContent = nextSetId || '--';
+  document.getElementById('btnCreateSet').disabled    = true;
+  document.getElementById('btnCreateSet').style.opacity = '.5';
+
+  // populate datalist codes
+  var dl = document.getElementById('setCodeOptions');
+  dl.innerHTML = '';
+  if (_cacheSetDataSN) {
+    var uniqueCodes = [];
+    _cacheSetDataSN.forEach(function(r) {
+      var c = String(r.code || '').trim();
+      if (c && uniqueCodes.indexOf(c) === -1) uniqueCodes.push(c);
+    });
+    uniqueCodes.sort().forEach(function(c) {
+      var opt = document.createElement('option'); opt.value = c; dl.appendChild(opt);
+    });
+  }
+
+  document.getElementById('createSetModal').classList.add('open');
+  setTimeout(function(){ document.getElementById('ns_name').focus(); }, 100);
+}
+
+function closeCreateSet() {
+  document.getElementById('createSetModal').classList.remove('open');
+  _setSelectedCodes = [];
+}
+
+function addSetCode() {
+  var input = document.getElementById('ns_code_input');
+  var code  = input.value.trim();
+  if (!code || code.length !== 8) { showToast('Code ต้องมี 8 หลัก', 'err'); return; }
+  if (_setSelectedCodes.indexOf(code) !== -1) { showToast('Code นี้เพิ่มแล้ว', 'err'); return; }
+
+  // เช็คว่า code มีใน Data SN ไหม
+  var found = _cacheSetDataSN && _cacheSetDataSN.find(function(r){ return String(r.code).trim() === code; });
+  if (!found) { showToast('ไม่พบ Code "' + code + '" ใน Data SN', 'err'); return; }
+
+  _setSelectedCodes.push(code);
+  input.value = '';
+
+  // render code tags
+  var listEl = document.getElementById('setCodeList');
+  listEl.innerHTML = _setSelectedCodes.map(function(c) {
+    return '<span style="background:rgba(91,141,238,.15);color:var(--accent);padding:3px 8px;border-radius:6px;font-size:12px;font-family:monospace;display:flex;align-items:center;gap:4px">'
+      + c + '<span style="cursor:pointer;color:var(--red)" onclick="removeSetCode(\'' + c + '\')">&#10005;</span></span>';
+  }).join('');
+  checkSetReady();
+}
+
+function removeSetCode(code) {
+  _setSelectedCodes = _setSelectedCodes.filter(function(c){ return c !== code; });
+  var listEl = document.getElementById('setCodeList');
+  listEl.innerHTML = _setSelectedCodes.map(function(c) {
+    return '<span style="background:rgba(91,141,238,.15);color:var(--accent);padding:3px 8px;border-radius:6px;font-size:12px;font-family:monospace;display:flex;align-items:center;gap:4px">'
+      + c + '<span style="cursor:pointer;color:var(--red)" onclick="removeSetCode(\'' + c + '\')">&#10005;</span></span>';
+  }).join('');
+  checkSetReady();
+}
+
+function checkSetReady() {
+  var name = document.getElementById('ns_name').value.trim();
+  var ok   = name.length > 0 && _setSelectedCodes.length > 0;
+  document.getElementById('btnCreateSet').disabled    = !ok;
+  document.getElementById('btnCreateSet').style.opacity = ok ? '1' : '.5';
+}
+
+async function doCreateSet() {
+  var name = document.getElementById('ns_name').value.trim();
+  if (!name || _setSelectedCodes.length === 0) return;
+
+  var newSetId = nextSetId;
+  var newSet   = {
+    set_id: newSetId, set_name: name,
+    codes: _setSelectedCodes.join(','),
+    created_date: new Date().toLocaleString('th-TH'),
+    sn_count: 0
+  };
+  if (!window._sets) window._sets = {};
+  window._sets[newSetId]    = newSet;
+  _cacheSetSNs[newSetId]    = [];
+  closeCreateSet();
+  renderSetList(Object.values(window._sets));
+  showToast('สร้าง BoxSet ' + newSetId + ' สำเร็จ', 'ok');
+
+  api({ action: 'createBoxSet', warehouse: curWarehouse, set_name: name, codes: _setSelectedCodes }, 'POST')
+    .then(function(res) {
+      if (res.error) {
+        showToast('สร้าง BoxSet ไม่สำเร็จ: ' + res.error, 'err');
+        delete window._sets[newSetId];
+        delete _cacheSetSNs[newSetId];
+        renderSetList(Object.values(window._sets));
+      } else if (res.set_id && res.set_id !== newSetId) {
+        window._sets[res.set_id] = Object.assign({}, newSet, { set_id: res.set_id });
+        delete window._sets[newSetId];
+        _cacheSetSNs[res.set_id] = [];
+        delete _cacheSetSNs[newSetId];
+        renderSetList(Object.values(window._sets));
+      }
+    });
+}
+
+// ---- Delete BoxSet ----
+async function doDeleteSet(set_id) {
+  showConfirm('ลบ BoxSet "' + set_id + '" และ SN ทั้งหมด?', async function() {
+    var deletedSet = window._sets && window._sets[set_id] ? Object.assign({}, window._sets[set_id]) : null;
+    var deletedSNs = _cacheSetSNs[set_id] ? _cacheSetSNs[set_id].slice() : [];
+
+    delete _cacheSetSNs[set_id];
+    if (window._sets) delete window._sets[set_id];
+    if (curSet && curSet.set_id === set_id) { curSet = null; resetRight(); }
+    renderSetList(Object.values(window._sets || {}));
+    showToast('ลบ BoxSet ' + set_id + ' แล้ว', 'ok');
+
+    api({ action: 'deleteBoxSet', warehouse: curWarehouse, set_id: set_id }, 'POST')
+      .then(function(res) {
+        if (res.error) {
+          showToast('ลบ BoxSet ไม่สำเร็จ: ' + res.error, 'err');
+          if (deletedSet) window._sets[set_id] = deletedSet;
+          if (deletedSNs.length) _cacheSetSNs[set_id] = deletedSNs;
+          renderSetList(Object.values(window._sets));
+        }
+      });
+  });
+}
+
+// ---- SN Lookup for BoxSet ----
+function lookupSNFromSetCache(sn) {
+  if (!_cacheSetDataSN) return null;
+  return _cacheSetDataSN.find(function(r){ return String(r.sn).trim() === String(sn).trim(); }) || null;
+}
+
+// ---- Save SN to BoxSet ----
+async function saveSNToSet() {
+  if (!curSet || !curSNData) return;
+  var setId = curSet.set_id;
+  var sn    = String(curSNData.sn).trim();
+
+  // ตรวจ SN ซ้ำ
+  if (_cacheSetSNs[setId] && _cacheSetSNs[setId].find(function(r){ return String(r.sn).trim() === sn; })) {
+    showSNErr('SN "' + sn + '" มีอยู่ใน Set นี้แล้ว'); return;
+  }
+
+  // ตรวจ Code ว่าอยู่ใน Set ไหม
+  var allowedCodes = String(curSet.codes || '').split(',').map(function(c){ return c.trim(); });
+  if (allowedCodes.indexOf(String(curSNData.code).trim()) === -1) {
+    showSNErr('Code "' + curSNData.code + '" ไม่ได้อยู่ใน Set นี้'); return;
+  }
+
+  var snEntry = {
+    set_id: setId, sn: sn,
+    code:      curSNData.code,
+    shortname: curSNData.shortname || curSNData.item_name || '',
+    zone:      curSNData.zone || '',
+    sn_date:   curSNData.sn_date || '',
+    added_date: new Date().toLocaleString('th-TH')
+  };
+  var snDataSnapshot = JSON.parse(JSON.stringify(snEntry));
+
+  if (!_cacheSetSNs[setId]) _cacheSetSNs[setId] = [];
+  _cacheSetSNs[setId].push(snEntry);
+  if (window._sets && window._sets[setId]) {
+    window._sets[setId].sn_count = _cacheSetSNs[setId].length;
+    var countEl = document.querySelector('#bc_' + setId + ' .bcard-count');
+    if (countEl) countEl.textContent = _cacheSetSNs[setId].length + ' SN';
+  }
+  renderSNTable(_cacheSetSNs[setId]);
+  clearSN();
+
+  api({ action: 'addSNToBoxSet', warehouse: curWarehouse, set_id: setId, sn_data: snDataSnapshot }, 'POST')
+    .then(function(res) {
+      if (res.error) {
+        var idx = _cacheSetSNs[setId].findIndex(function(r){ return r.sn === snEntry.sn && r.added_date === snEntry.added_date; });
+        if (idx !== -1) _cacheSetSNs[setId].splice(idx, 1);
+        if (window._sets && window._sets[setId]) {
+          window._sets[setId].sn_count = _cacheSetSNs[setId].length;
+          var el = document.querySelector('#bc_' + setId + ' .bcard-count');
+          if (el) el.textContent = _cacheSetSNs[setId].length + ' SN';
+        }
+        renderSNTable(_cacheSetSNs[setId]);
+        showSNErr('บันทึกไม่สำเร็จ: ' + res.error);
+      }
+    });
+}
+
+// ======== END BOX SET ========
+
 // ---- Toast ----
 var _tt;
 function showToast(msg, type) {
@@ -1385,6 +1833,9 @@ document.getElementById('createModal').addEventListener('click', function(e) {
 document.getElementById('uploadModal').addEventListener('click', function(e) {
   if (e.target === this) closeUpload();
 });
+document.getElementById('createSetModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCreateSet();
+});
 
 window.addEventListener('beforeunload', function(e) {
   if (window._uploading) {
@@ -1392,27 +1843,6 @@ window.addEventListener('beforeunload', function(e) {
     e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
   }
 });
-
-function showConfirm(msg, onYes) {
-  var ov = document.createElement('div');
-  ov.className = 'err-modal';
-  ov.innerHTML = '<div class="err-modal-box">'
-    + '<div class="err-modal-ico">&#9888;</div>'
-    + '<div class="err-modal-msg">' + msg + '</div>'
-    + '<div style="display:flex;gap:10px;justify-content:center">'
-      + '<button class="err-modal-btn" id="cfmYesBtn" style="background:var(--accent)">Yes</button>'
-      + '<button class="err-modal-btn" id="cfmNoBtn">No</button>'
-    + '</div>'
-    + '</div>';
-  document.body.appendChild(ov);
-  setTimeout(function() {
-    var yesBtn = document.getElementById('cfmYesBtn');
-    var noBtn  = document.getElementById('cfmNoBtn');
-    if (noBtn) noBtn.focus();
-    yesBtn.onclick = function() { ov.remove(); onYes(); };
-    noBtn.onclick  = function() { ov.remove(); };
-  }, 50);
-}
 </script>
 </body>
 </html>
