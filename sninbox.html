@@ -431,7 +431,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
 
 <script>
 // ====== CONFIG ======
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwL7e52tHLN5tGJzJBvvm6UZnht_ywa-uzfi4Ig_GtlAm9UEixsYLPFWTjOZAuh6Ud7/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzQwTW3kw27FbfOnF_RVyGfQKe5jv24wpQh3oiAJ3sqW8VXrGOX6kuxrxLmrrp8GOCm/exec';
 const ZONES   = ['A','B','C','D','E','J'];
 // ====================
 
@@ -444,8 +444,16 @@ var previewName = '';
 var _lt         = null;
 var _ct         = null;
 // Cache
-var _cacheDataSN  = null;  // Data SN ทั้งหมดของโซนที่เลือก
-var _cacheBoxSNs  = {};    // SN ของแต่ละ Box { box_id: [rows] }
+var _cacheDataSN  = null;
+var _cacheBoxSNs  = {};
+// BoxSet
+var curMode           = 'sn';
+var curWarehouse      = null;
+var curSet            = null;
+var nextSetId         = null;
+var _cacheSetDataSN   = null;
+var _cacheSetSNs      = {};
+var _setSelectedCodes = [];
 
 // ---- Init ----
 window.addEventListener('DOMContentLoaded', function() {
@@ -1463,13 +1471,7 @@ async function doPrintSet() {
 }
 
 // ======== BOX SET SYSTEM ========
-var curMode      = 'sn';       // 'sn' หรือ 'set'
-var curWarehouse = null;
-var curSet       = null;
-var nextSetId    = null;
-var _cacheSetDataSN  = null;
-var _cacheSetSNs     = {};
-var _setSelectedCodes = [];
+// BoxSet variables declared at top
 
 function setMode(mode) {
   curMode = mode;
@@ -1491,6 +1493,7 @@ function setMode(mode) {
     document.getElementById('boxCountLbl').textContent = '--';
     resetRight();
     setStatus('dim', '-- เลือกโซน');
+        updateFootBtn();
   } else {
     setBtn.style.background = 'var(--accent)';
     setBtn.style.color      = '#fff';
@@ -1504,12 +1507,12 @@ function setMode(mode) {
     document.getElementById('boxCountLbl').textContent = '--';
     resetRight();
     setStatus('dim', '-- เลือกคลัง');
+        updateFootBtn();
   }
 }
 
 // ---- Warehouse ----
 async function selectWarehouse(w) {
-  console.log('selectWarehouse called:', w);
   curWarehouse = w; curSet = null; curSNData = null;
   _cacheSetDataSN = null; _cacheSetSNs = {};
   document.querySelectorAll('#warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
@@ -1568,7 +1571,7 @@ function renderSetList(sets) {
 }
 
 function updateFootBtn() {
-  var foot = document.querySelector('.left-foot button');
+  var foot = document.getElementById('btnCreateMain');
   if (!foot) return;
   if (curMode === 'set') {
     foot.textContent = '+ สร้าง BoxSet';
@@ -1703,60 +1706,86 @@ function checkSetReady() {
 async function doCreateSet() {
   var name = document.getElementById('ns_name').value.trim();
   if (!name || _setSelectedCodes.length === 0) return;
+  if (!curWarehouse) { showToast('เลือกคลังก่อน', 'err'); return; }
 
-  var newSetId = nextSetId;
+  var btn = document.getElementById('btnCreateSet');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+  var newSetId = nextSetId || ('SET-TMP-' + Date.now());
   var newSet   = {
     set_id: newSetId, set_name: name,
     codes: _setSelectedCodes.join(','),
     created_date: new Date().toLocaleString('th-TH'),
     sn_count: 0
   };
+  var sentCodes = _setSelectedCodes.slice();   // snapshot ก่อน closeCreateSet() ล้างค่า
+
   if (!window._sets) window._sets = {};
-  window._sets[newSetId]    = newSet;
-  _cacheSetSNs[newSetId]    = [];
+  window._sets[newSetId] = newSet;
+  _cacheSetSNs[newSetId] = [];
   closeCreateSet();
   renderSetList(Object.values(window._sets));
   showToast('สร้าง BoxSet ' + newSetId + ' สำเร็จ', 'ok');
 
-  api({ action: 'createBoxSet', warehouse: curWarehouse, set_name: name, codes: _setSelectedCodes }, 'POST')
+  function rollback(msg) {
+    showToast(msg, 'err');
+    delete window._sets[newSetId];
+    delete _cacheSetSNs[newSetId];
+    renderSetList(Object.values(window._sets));
+  }
+
+  api({ action: 'createBoxSet', warehouse: curWarehouse, set_name: name, codes: sentCodes }, 'POST')
     .then(function(res) {
-      if (res.error) {
-        showToast('สร้าง BoxSet ไม่สำเร็จ: ' + res.error, 'err');
-        delete window._sets[newSetId];
-        delete _cacheSetSNs[newSetId];
-        renderSetList(Object.values(window._sets));
-      } else if (res.set_id && res.set_id !== newSetId) {
+      if (!res || res.error) {
+        rollback('สร้าง BoxSet ไม่สำเร็จ: ' + ((res && res.error) || 'ไม่มีการตอบกลับ'));
+        return;
+      }
+      if (res.set_id && res.set_id !== newSetId) {
         window._sets[res.set_id] = Object.assign({}, newSet, { set_id: res.set_id });
         delete window._sets[newSetId];
         _cacheSetSNs[res.set_id] = [];
         delete _cacheSetSNs[newSetId];
         renderSetList(Object.values(window._sets));
       }
+      nextSetId = null;   // บังคับให้ดึง next_set_id ใหม่รอบหน้า
+    })
+    .catch(function(e) {
+      rollback('Network error: ' + e.message);
     });
 }
 
 // ---- Delete BoxSet ----
 async function doDeleteSet(set_id) {
-  showConfirm('ลบ BoxSet "' + set_id + '" และ SN ทั้งหมด?', async function() {
-    var deletedSet = window._sets && window._sets[set_id] ? Object.assign({}, window._sets[set_id]) : null;
-    var deletedSNs = _cacheSetSNs[set_id] ? _cacheSetSNs[set_id].slice() : [];
+  if (!confirm('ลบ BoxSet "' + set_id + '" และ SN ทั้งหมด?')) return;
 
-    delete _cacheSetSNs[set_id];
-    if (window._sets) delete window._sets[set_id];
-    if (curSet && curSet.set_id === set_id) { curSet = null; resetRight(); }
+  var deletedSet = window._sets && window._sets[set_id] ? Object.assign({}, window._sets[set_id]) : null;
+  var deletedSNs = _cacheSetSNs[set_id] ? _cacheSetSNs[set_id].slice() : [];
+
+  delete _cacheSetSNs[set_id];
+  if (window._sets) delete window._sets[set_id];
+  if (curSet && curSet.set_id === set_id) { curSet = null; resetRight(); }
+  renderSetList(Object.values(window._sets || {}));
+  showToast('ลบ BoxSet ' + set_id + ' แล้ว', 'ok');
+
+  function rollback(msg) {
+    showToast(msg, 'err');
+    if (deletedSet) {
+      if (!window._sets) window._sets = {};
+      window._sets[set_id] = deletedSet;
+    }
+    if (deletedSNs.length) _cacheSetSNs[set_id] = deletedSNs;
     renderSetList(Object.values(window._sets || {}));
-    showToast('ลบ BoxSet ' + set_id + ' แล้ว', 'ok');
+  }
 
-    api({ action: 'deleteBoxSet', warehouse: curWarehouse, set_id: set_id }, 'POST')
-      .then(function(res) {
-        if (res.error) {
-          showToast('ลบ BoxSet ไม่สำเร็จ: ' + res.error, 'err');
-          if (deletedSet) window._sets[set_id] = deletedSet;
-          if (deletedSNs.length) _cacheSetSNs[set_id] = deletedSNs;
-          renderSetList(Object.values(window._sets));
-        }
-      });
-  });
+  api({ action: 'deleteBoxSet', warehouse: curWarehouse, set_id: set_id }, 'POST')
+    .then(function(res) {
+      if (!res || res.error) {
+        rollback('ลบ BoxSet ไม่สำเร็จ: ' + ((res && res.error) || 'ไม่มีการตอบกลับ'));
+      }
+    })
+    .catch(function(e) {
+      rollback('Network error: ' + e.message);
+    });
 }
 
 // ---- SN Lookup for BoxSet ----
@@ -1844,6 +1873,7 @@ window.addEventListener('beforeunload', function(e) {
     e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
   }
 });
+
 </script>
 </body>
 </html>
