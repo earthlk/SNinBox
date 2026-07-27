@@ -213,6 +213,26 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .print-hdr{display:none;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111}
 .print-hdr h2{font-size:17px;font-weight:900;color:#000}
 .print-hdr p{font-size:11px;color:#555;margin-top:3px}
+
+.kit-wrap{display:flex;flex-direction:column;gap:10px;padding:2px}
+.kit-card{background:var(--card);border:1.5px solid var(--border);border-radius:10px;overflow:hidden}
+.kit-card.done{border-color:var(--green)}
+.kit-card.active{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(251,191,36,.10)}
+.kit-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+.kit-seq{font-size:14px;font-weight:900;color:var(--text)}
+.kit-prog{font-size:11px;font-weight:700;color:var(--muted)}
+.kit-status{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.kit-status.ok{background:rgba(52,211,153,.15);color:var(--green)}
+.kit-status.wait{background:rgba(251,191,36,.15);color:var(--yellow)}
+.kit-row{display:flex;align-items:center;gap:10px;padding:7px 12px;border-top:1px solid var(--border);font-size:12px}
+.kit-row:first-child{border-top:none}
+.kit-row.pending{opacity:.5}
+.kit-rcode{font-family:'Courier New',monospace;font-size:11px;font-weight:700;color:var(--accent);background:rgba(91,141,238,.12);padding:2px 7px;border-radius:4px;flex-shrink:0}
+.kit-rname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kit-wait{font-size:11px;color:var(--muted);font-style:italic}
+.kit-card.draft{border-color:var(--accent);border-style:dashed;box-shadow:0 0 0 3px rgba(91,141,238,.10)}
+.kit-card.draft .kit-head{background:rgba(91,141,238,.08)}
+@media print{.kit-card{break-inside:avoid}.kit-row .btn{display:none}}
 </style>
 </head>
 <body>
@@ -272,6 +292,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
       <!-- SN Input -->
       <div id="snInputArea" style="display:none">
         <div class="sec-lbl">บันทึก SN</div>
+	  <div id="kitProgress" style="display:none;font-size:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:6px"></div>
         <div class="sn-block">
           <div class="sn-row">
             <input class="sn-field" id="snField" type="text"
@@ -402,6 +423,17 @@ tr:hover td{background:rgba(91,141,238,.04)}
     <h3>&#128218; สร้าง BoxSet ใหม่</h3>
     <div class="modal-sub" id="setModalSub">คลัง -- · Set ID ถัดไป</div>
     <div class="next-id" id="nextSetIdBadge">--</div>
+	<div class="fg">
+      	    <label>ประเภท BoxSet</label>
+      	    <div class="type-row">
+                <div class="ttype sel-s" id="st_f" onclick="setSetType('free')">
+          	Free<br><small style="font-weight:400">SN ไหนก็ได้ใน Code ที่กำหนด</small>
+            </div>
+        <div class="ttype" id="st_k" onclick="setSetType('kit')">
+          Kit<br><small style="font-weight:400">1 SN ต่อ 1 Code ต่อชุด</small>
+        </div>
+      </div>
+    </div>
     <div class="fg">
       <label>ชื่อ Set</label>
       <input type="text" id="ns_name" placeholder="เช่น Set สินค้า Batch 01" oninput="checkSetReady()">
@@ -412,6 +444,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
         <input type="text" id="ns_code_input" list="setCodeOptions" placeholder="xxxxxxxx" maxlength="8"
           style="font-family:monospace;font-size:14px;letter-spacing:2px;flex:1"
           autocomplete="off"
+          oninput="previewSetCode()"
           onkeydown="if(event.key==='Enter'){addSetCode()}">
         <datalist id="setCodeOptions"></datalist>
         <button class="btn btn-ghost btn-sm" onclick="addSetCode()">+ เพิ่ม</button>
@@ -420,8 +453,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
     </div>
     <div class="fg">
       <label>Code ที่เลือก</label>
-      <div id="setCodeList" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:6px;background:var(--card);border:1px solid var(--border);border-radius:8px"></div>
-    </div>
+      <div id="setCodeList" style="display:flex;flex-direction:column;gap:4px;min-height:32px;padding:6px;background:var(--card);border:1px solid var(--border);border-radius:8px"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeCreateSet()">ยกเลิก</button>
       <button class="btn btn-primary" id="btnCreateSet" onclick="doCreateSet()" disabled style="opacity:.5">สร้าง BoxSet</button>
@@ -454,6 +486,9 @@ var nextSetId         = null;
 var _cacheSetDataSN   = null;
 var _cacheSetSNs      = {};
 var _setSelectedCodes = [];
+var setType = 'free';
+var _kitDraft = null;   // { set_id, rows: { code: snEntry } }
+var _autoPrintKit = false;
 
 // ---- Init ----
 window.addEventListener('DOMContentLoaded', function() {
@@ -573,8 +608,15 @@ async function loadBoxSNs(forceRefresh) {
 }
 
 function renderSNTable(rows) {
+  if (curMode === 'set' && curSet && String(curSet.set_type) === 'kit') {
+    renderKitCards(rows || []);
+    renderKitProgress();
+    return;
+  }
+  var showSeq = false;
   if (!rows.length) {
     document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128219;</div><p>ยังไม่มี SN<br><small>สแกน SN ด้านบนเพื่อบันทึก</small></p></div>';
+    renderKitProgress();
     return;
   }
   var tbody = '';
@@ -585,6 +627,7 @@ function renderSNTable(rows) {
     var addDate = fmtDate(r.added_date);
     tbody += '<tr>'
       + '<td class="row-n">' + (i+1) + '</td>'
+      + (showSeq ? '<td style="text-align:center"><span style="font-size:11px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);padding:1px 7px;border-radius:4px">' + (r.seq || '-') + '</span></td>' : '')
       + '<td><span class="mono">' + sn + '</span></td>'
       + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
       + '<td>' + name + '</td>'
@@ -595,14 +638,12 @@ function renderSNTable(rows) {
       + '</tr>';
   });
   document.getElementById('tblWrap').innerHTML =
-    '<table><thead><tr><th>#</th><th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>บันทึกเมื่อ</th><th class="no-print">ลบ</th></tr></thead><tbody>' + tbody + '</tbody></table>';
+    '<table><thead><tr><th>#</th>'
+    + (showSeq ? '<th>ชุดที่</th>' : '')
+    + '<th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>บันทึกเมื่อ</th><th class="no-print">ลบ</th></tr></thead><tbody>'
+    + tbody + '</tbody></table>';
+  renderKitProgress();
 }
-
-// Event delegation - SN table delete
-document.getElementById('tblWrap').addEventListener('click', function(e) {
-  var btn = e.target.closest('[data-rmsn]');
-  if (btn) doRemoveSN(decodeURIComponent(btn.dataset.rmsn));
-});
 
 // ---- SN Lookup ----
 function onSNInput() {
@@ -619,13 +660,22 @@ function lookupSNFromCache(sn) {
 }
 
 async function doLookup(sn) {
-  if (!sn || !curZone) return;
+  if (!sn) return;
   if (!/^[0-9]{10}$/.test(sn)) {
     showSNErr('SN ต้องเป็นตัวเลข 10 หลักเท่านั้น');
     return;
   }
   document.getElementById('snField').className = 'sn-field';
-  // ค้นจาก cache เท่านั้น — ไม่ fallback GAS
+
+  if (curMode === 'set') {
+    if (!curWarehouse || !curSet) return;
+    var foundSet = lookupSNFromSetCache(sn);
+    if (foundSet) { showSNOk(foundSet); return; }
+    showSNErr('ไม่พบ SN "' + sn + '" ใน Data SN คลัง ' + curWarehouse);
+    return;
+  }
+
+  if (!curZone) return;
   var found = lookupSNFromCache(sn);
   if (found) { showSNOk(found); return; }
   showSNErr('ไม่พบ SN "' + sn + '" ใน Data SN');
@@ -1444,30 +1494,74 @@ async function doPrintSet() {
   var btn = document.getElementById('btnPrint');
   btn.textContent = '⏳...'; btn.disabled = true;
   showPrintProgress('กำลังสร้าง PDF...', 10);
+  var ticker = null;
   try {
     var pct = 10;
-    var ticker = setInterval(function(){ pct = Math.min(pct+5, 85); showPrintProgress('กำลังสร้าง PDF...', pct); }, 800);
-    var res = await api({ action: 'printBoxSet', warehouse: curWarehouse, set_id: curSet.set_id }, 'POST');
-    clearInterval(ticker);
-    if (res.error) throw new Error(res.error);
-    if (!res.pdf) throw new Error('ไม่ได้รับ PDF');
+    ticker = setInterval(function(){
+      pct = Math.min(pct + 5, 85);
+      showPrintProgress('กำลังสร้าง PDF...', pct);
+    }, 800);
+
+    var res = await api({ action: 'printBoxSet', warehouse: curWarehouse,
+                          set_id: curSet.set_id }, 'POST');
+    clearInterval(ticker); ticker = null;
+
+    if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
+    if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
+
     showPrintProgress('กำลัง Download...', 95);
-    var b64clean = res.pdf.replace(/[\s]/g, '');
-    var binary = atob(b64clean);
-    var bytes  = new Uint8Array(binary.length);
-    for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
-    var blob = new Blob([bytes], { type: 'application/pdf' });
-    var url  = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+    openPdfB64(res.pdf, false);
     showPrintProgress('เสร็จสิ้น!', 100);
     setTimeout(hidePrintProgress, 1000);
     showToast('Download PDF สำเร็จ', 'ok');
-  } catch(e) {
+  } catch (e) {
     hidePrintProgress();
     showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
+  } finally {
+    if (ticker) clearInterval(ticker);
+    btn.textContent = '🖨 ปริ้น'; btn.disabled = false;
   }
-  btn.textContent = '🖨 ปริ้น'; btn.disabled = false;
+}
+
+function openPdfB64(b64, autoPrint) {
+  var binary = atob(String(b64).replace(/\s/g, ''));
+  var bytes  = new Uint8Array(binary.length);
+  for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
+  var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+
+  if (!autoPrint) {
+    window.open(url, '_blank');
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+    return;
+  }
+  // ยิงเข้า print dialog ตรงๆ ผ่าน iframe ซ่อน
+  var fr = document.createElement('iframe');
+  fr.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden';
+  fr.src = url;
+  fr.onload = function() {
+    try { fr.contentWindow.focus(); fr.contentWindow.print(); }
+    catch (e) { window.open(url, '_blank'); }
+  };
+  document.body.appendChild(fr);
+  setTimeout(function(){ URL.revokeObjectURL(url); fr.remove(); }, 60000);
+}
+
+function toggleAutoPrint(el) {
+  _autoPrintKit = !!el.checked;
+  showToast(_autoPrintKit ? 'เปิด Auto Print แล้ว' : 'ปิด Auto Print แล้ว', 'ok');
+}
+
+async function printKitSeq(setId, seq) {
+  try {
+    showToast('กำลังสร้าง PDF ชุดที่ ' + seq + '...', 'ok');
+    var res = await api({ action: 'printBoxSet', warehouse: curWarehouse,
+                          set_id: setId, seq: seq }, 'POST');
+    if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
+    if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
+    openPdfB64(res.pdf, true);
+  } catch (e) {
+    showToast('Auto Print ชุดที่ ' + seq + ' ไม่สำเร็จ: ' + e.message, 'err');
+  }
 }
 
 // ======== BOX SET SYSTEM ========
@@ -1558,7 +1652,10 @@ function renderSetList(sets) {
       + '<button class="bcard-del no-print" data-delset="' + s.set_id + '">&#10005;</button>'
       + '<div class="bcard-head">'
         + '<span class="bcard-id">' + s.set_id + '</span>'
-        + '<span class="bcard-count">' + s.sn_count + ' SN</span>'
+        + (String(s.set_type) === 'kit'
+            ? '<span style="font-size:9px;font-weight:700;background:rgba(251,191,36,.18);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">ทีละชุด</span>'
+            : '<span style="font-size:9px;font-weight:700;background:rgba(52,211,153,.18);color:var(--green);padding:1px 6px;border-radius:4px;margin-left:4px">Free</span>')
+      + '<span class="bcard-count">' + s.sn_count + ' SN</span>'
       + '</div>'
       + '<div class="bcard-info">'
         + '<div class="binfo-row"><span class="binfo-lbl">Name</span><span class="binfo-val">' + (s.set_name || '-') + '</span></div>'
@@ -1632,9 +1729,10 @@ async function loadSetSNs(forceRefresh) {
 function openCreateSet() {
   if (!curWarehouse) { showToast('เลือกคลังก่อน', 'err'); return; }
   _setSelectedCodes = [];
+  setSetType('free');
+  renderSetCodeList();
   document.getElementById('ns_name').value       = '';
   document.getElementById('ns_code_input').value = '';
-  document.getElementById('setCodeList').innerHTML = '';
   document.getElementById('setCodePreview').textContent = '';
   document.getElementById('setModalSub').textContent    = 'คลัง ' + curWarehouse + ' · Set ID ถัดไป';
   document.getElementById('nextSetIdBadge').textContent = nextSetId || '--';
@@ -1664,35 +1762,200 @@ function closeCreateSet() {
   _setSelectedCodes = [];
 }
 
+function lookupSetCode(code) {
+  var r = _cacheSetDataSN && _cacheSetDataSN.find(function(x){ return String(x.code).trim() === code; });
+  if (!r) return null;
+  return {
+    code: code,
+    name: String(r.shortname || r.item_name || '').trim() || '-',
+    zone: String(r.zone || '').trim() || '-'
+  };
+}
+
+function setSetType(t) {
+  setType = (t === 'kit') ? 'kit' : 'free';
+  document.getElementById('st_f').className = 'ttype' + (setType === 'free' ? ' sel-s' : '');
+  document.getElementById('st_k').className = 'ttype' + (setType === 'kit'  ? ' sel-m' : '');
+}
+
+function kitStatus(set, rows) {
+  var codes  = String(set.codes || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean);
+  var counts = {};
+  codes.forEach(function(c){ counts[c] = 0; });
+  (rows || []).forEach(function(r) {
+    var c = String(r.code || '').trim();
+    if (counts.hasOwnProperty(c)) counts[c]++;
+  });
+  var min = codes.length ? Math.min.apply(null, codes.map(function(c){ return counts[c]; })) : 0;
+  var remaining = codes.filter(function(c){ return counts[c] === min; });
+  return { codes: codes, counts: counts, seq: min + 1,
+           remaining: remaining, done: codes.length - remaining.length };
+}
+
+function renderKitProgress() {
+  var el = document.getElementById('kitProgress');
+  if (!el) return;
+  if (curMode !== 'set' || !curSet || String(curSet.set_type) !== 'kit') {
+    el.style.display = 'none'; return;
+  }
+  var st = kitStatus(curSet, _cacheSetSNs[curSet.set_id] || []);
+  el.style.display = '';
+  el.innerHTML =
+      '<span style="font-weight:700;color:var(--yellow)">ชุดต่อไป ' + '</span>'
+    + ' <span style="color:var(--muted)">— ครบ ' + st.done + '/' + st.codes.length + ' Code</span>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'
+    + st.codes.map(function(c) {
+        var ok = st.remaining.indexOf(c) === -1;
+        return '<span style="font-family:monospace;font-size:10px;padding:2px 6px;border-radius:4px;'
+          + (ok ? 'background:rgba(52,211,153,.15);color:var(--green)'
+                : 'background:rgba(251,191,36,.15);color:var(--yellow)') + '">'
+          + (ok ? '&#10003; ' : '') + c + '</span>';
+      }).join('')
+    + '</div>'
+    + '<label style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;cursor:pointer;user-select:none">'
+      + '<input type="checkbox" onchange="toggleAutoPrint(this)"' + (_autoPrintKit ? ' checked' : '')
+      + ' style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent)">'
+      + '<span style="color:var(--muted)">&#128424; Auto Print — ปริ้นทันทีเมื่อบันทึกครบชุด</span>'
+    + '</label>';
+}
+
+function renderKitCards(rows) {
+  var st    = kitStatus(curSet, rows);
+  var codes = st.codes;
+
+  // จัดกลุ่มตามชุด
+  var groups = {};
+  rows.forEach(function(r) {
+    var s = String(r.seq || '1').trim() || '1';
+    if (!groups[s]) groups[s] = {};
+    groups[s][String(r.code || '').trim()] = r;
+  });
+
+  var nums   = Object.keys(groups).map(Number).filter(function(n){ return n > 0; });
+  var maxSeq = nums.length ? Math.max.apply(null, nums) : 0;
+
+  var html = '';
+  // การ์ดชุดที่กำลังกรอก
+  if (_kitDraft && _kitDraft.set_id === curSet.set_id) {
+    var d      = _kitDraft.rows;
+    var dFill  = codes.filter(function(c){ return d[c]; }).length;
+    var saving = !!_kitDraft.saving;
+    html += '<div class="kit-card draft">'
+      + '<div class="kit-head">'
+        + '<span class="kit-seq">ชุดต่อไป <small style="font-weight:700;color:var(--muted)">(ยังไม่บันทึก)</small></span>'
+        + '<span class="kit-prog">' + dFill + '/' + codes.length + ' Code</span>'
+        + (saving
+            ? '<span class="kit-status wait" style="margin-left:auto">กำลังบันทึก...</span>'
+            : '<button class="btn btn-danger btn-xs no-print" style="margin-left:auto" onclick="cancelKitDraft()">ยกเลิกชุด</button>')
+      + '</div>'
+      + codes.map(function(c) {
+          var r    = d[c];
+          var info = lookupSetCode(c);
+          var nm   = r ? (r.shortname || '-') : (info ? info.name : '-');
+          if (!r) {
+            return '<div class="kit-row pending">'
+              + '<span class="kit-rcode">' + c + '</span>'
+              + '<span class="kit-rname">' + nm + '</span>'
+              + '<span class="kit-wait">รอสแกน</span></div>';
+          }
+          return '<div class="kit-row">'
+            + '<span class="kit-rcode">' + c + '</span>'
+            + '<span class="kit-rname">' + nm + '</span>'
+            + '<span class="mono">' + r.sn + '</span>'
+            + (saving ? '' : '<button class="btn btn-danger btn-xs no-print" onclick="removeDraftSN(\'' + c + '\')">&#10005;</button>')
+            + '</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  for (var n = maxSeq; n >= 1; n--) {
+    var g      = groups[n] || {};
+    var filled = codes.filter(function(c){ return g[c]; }).length;
+    var done   = (filled === codes.length && codes.length > 0);
+    var active = (n === st.seq && !done);
+
+    html += '<div class="kit-card ' + (done ? 'done' : (active ? 'active' : '')) + '">'
+      + '<div class="kit-head">'
+        + '<span class="kit-seq">ชุดที่ ' + n + '</span>'
+        + '<span class="kit-prog">' + filled + '/' + codes.length + ' Code</span>'
+        + '<span class="kit-status ' + (done ? 'ok' : 'wait') + '">'
+        + (done ? '&#10003; ครบแล้ว' : 'ยังไม่ครบ') + '</span>'
+      + '</div>';
+
+    html += codes.map(function(c) {
+      var r    = g[c];
+      var info = lookupSetCode(c);
+      var nm   = r ? String(r.shortname || r.item_name || '-') : (info ? info.name : '-');
+      if (!r) {
+        return '<div class="kit-row pending">'
+          + '<span class="kit-rcode">' + c + '</span>'
+          + '<span class="kit-rname">' + nm + '</span>'
+          + '<span class="kit-wait">รอสแกน</span>'
+          + '</div>';
+      }
+      return '<div class="kit-row">'
+        + '<span class="kit-rcode">' + c + '</span>'
+        + '<span class="kit-rname">' + nm + '</span>'
+        + '<span class="mono">' + String(r.sn || '-') + '</span>'
+        + '<button class="btn btn-danger btn-xs no-print" data-rmsn="' + encodeURIComponent(String(r.sn)) + '">del</button>'
+        + '</div>';
+    }).join('');
+
+    html += '</div>';
+  }
+
+  document.getElementById('tblWrap').innerHTML = '<div class="kit-wrap">' + html + '</div>';
+}
+
+function previewSetCode() {
+  var code = document.getElementById('ns_code_input').value.trim();
+  var el   = document.getElementById('setCodePreview');
+  if (code.length !== 8) { el.textContent = ''; return; }
+  var info = lookupSetCode(code);
+  if (!info) {
+    el.innerHTML = '<span style="color:var(--red)">&#10005; ไม่พบ Code นี้ใน Data SN</span>';
+  } else {
+    el.innerHTML = '<span style="color:var(--green,#3ba55d)">&#10003;</span> ' + info.name
+      + ' <span style="color:var(--accent)">· Zone ' + info.zone + '</span>';
+  }
+}
+
+function renderSetCodeList() {
+  var listEl = document.getElementById('setCodeList');
+  if (!_setSelectedCodes.length) {
+    listEl.innerHTML = '<span style="font-size:11px;color:var(--muted)">ยังไม่ได้เลือก Code</span>';
+    return;
+  }
+  listEl.innerHTML = _setSelectedCodes.map(function(c) {
+    var info = lookupSetCode(c) || { name: '-', zone: '-' };
+    return '<div style="display:flex;align-items:center;gap:8px;background:rgba(91,141,238,.10);border-radius:6px;padding:4px 8px">'
+      +   '<span style="font-family:monospace;font-size:12px;color:var(--accent);font-weight:700">' + c + '</span>'
+      +   '<span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + info.name + '</span>'
+      +   '<span style="font-size:10px;font-weight:700;background:rgba(91,141,238,.20);color:var(--accent);padding:1px 6px;border-radius:4px">Zone ' + info.zone + '</span>'
+      +   '<span style="cursor:pointer;color:var(--red);font-size:12px" onclick="removeSetCode(\'' + c + '\')">&#10005;</span>'
+      + '</div>';
+  }).join('');
+}
+
 function addSetCode() {
   var input = document.getElementById('ns_code_input');
   var code  = input.value.trim();
   if (!code || code.length !== 8) { showToast('Code ต้องมี 8 หลัก', 'err'); return; }
   if (_setSelectedCodes.indexOf(code) !== -1) { showToast('Code นี้เพิ่มแล้ว', 'err'); return; }
 
-  // เช็คว่า code มีใน Data SN ไหม
-  var found = _cacheSetDataSN && _cacheSetDataSN.find(function(r){ return String(r.code).trim() === code; });
-  if (!found) { showToast('ไม่พบ Code "' + code + '" ใน Data SN', 'err'); return; }
+  var info = lookupSetCode(code);
+  if (!info) { showToast('ไม่พบ Code "' + code + '" ใน Data SN', 'err'); return; }
 
   _setSelectedCodes.push(code);
   input.value = '';
-
-  // render code tags
-  var listEl = document.getElementById('setCodeList');
-  listEl.innerHTML = _setSelectedCodes.map(function(c) {
-    return '<span style="background:rgba(91,141,238,.15);color:var(--accent);padding:3px 8px;border-radius:6px;font-size:12px;font-family:monospace;display:flex;align-items:center;gap:4px">'
-      + c + '<span style="cursor:pointer;color:var(--red)" onclick="removeSetCode(\'' + c + '\')">&#10005;</span></span>';
-  }).join('');
+  document.getElementById('setCodePreview').textContent = '';
+  renderSetCodeList();
   checkSetReady();
 }
 
 function removeSetCode(code) {
   _setSelectedCodes = _setSelectedCodes.filter(function(c){ return c !== code; });
-  var listEl = document.getElementById('setCodeList');
-  listEl.innerHTML = _setSelectedCodes.map(function(c) {
-    return '<span style="background:rgba(91,141,238,.15);color:var(--accent);padding:3px 8px;border-radius:6px;font-size:12px;font-family:monospace;display:flex;align-items:center;gap:4px">'
-      + c + '<span style="cursor:pointer;color:var(--red)" onclick="removeSetCode(\'' + c + '\')">&#10005;</span></span>';
-  }).join('');
+  renderSetCodeList();
   checkSetReady();
 }
 
@@ -1714,6 +1977,7 @@ async function doCreateSet() {
   var newSetId = nextSetId || ('SET-TMP-' + Date.now());
   var newSet   = {
     set_id: newSetId, set_name: name,
+    set_type: setType,
     codes: _setSelectedCodes.join(','),
     created_date: new Date().toLocaleString('th-TH'),
     sn_count: 0
@@ -1734,7 +1998,8 @@ async function doCreateSet() {
     renderSetList(Object.values(window._sets));
   }
 
-  api({ action: 'createBoxSet', warehouse: curWarehouse, set_name: name, codes: sentCodes }, 'POST')
+  api({ action: 'createBoxSet', warehouse: curWarehouse, set_name: name,
+        set_type: setType, codes: sentCodes }, 'POST')
     .then(function(res) {
       if (!res || res.error) {
         rollback('สร้าง BoxSet ไม่สำเร็จ: ' + ((res && res.error) || 'ไม่มีการตอบกลับ'));
@@ -1797,23 +2062,27 @@ function lookupSNFromSetCache(sn) {
 // ---- Save SN to BoxSet ----
 async function saveSNToSet() {
   if (!curSet || !curSNData) return;
+
+  // โหมด kit → เก็บลง draft ก่อน แล้วค่อย commit ทั้งชุดตอนครบ
+  if (String(curSet.set_type) === 'kit') { addSNToKitDraft(); return; }
+
+  // ===== โหมด free =====
   var setId = curSet.set_id;
   var sn    = String(curSNData.sn).trim();
+  var code  = String(curSNData.code).trim();
 
-  // ตรวจ SN ซ้ำ
-  if (_cacheSetSNs[setId] && _cacheSetSNs[setId].find(function(r){ return String(r.sn).trim() === sn; })) {
+  // ตรวจ SN ซ้ำใน Set นี้
+  if ((_cacheSetSNs[setId] || []).find(function(r){ return String(r.sn).trim() === sn; })) {
     showSNErr('SN "' + sn + '" มีอยู่ใน Set นี้แล้ว'); return;
   }
 
   // ตรวจ Code ว่าอยู่ใน Set ไหม
-  var allowedCodes = String(curSet.codes || '').split(',').map(function(c){ return c.trim(); });
-  if (allowedCodes.indexOf(String(curSNData.code).trim()) === -1) {
-    showSNErr('Code "' + curSNData.code + '" ไม่ได้อยู่ใน Set นี้'); return;
+  if (setCodesOf(curSet).indexOf(code) === -1) {
+    showSNErr('Code "' + code + '" ไม่ได้อยู่ใน Set นี้'); return;
   }
 
   var snEntry = {
-    set_id: setId, sn: sn,
-    code:      curSNData.code,
+    set_id: setId, seq: '', sn: sn, code: code,
     shortname: curSNData.shortname || curSNData.item_name || '',
     zone:      curSNData.zone || '',
     sn_date:   curSNData.sn_date || '',
@@ -1821,30 +2090,146 @@ async function saveSNToSet() {
   };
   var snDataSnapshot = JSON.parse(JSON.stringify(snEntry));
 
+  function rollback(msg) {
+    var idx = _cacheSetSNs[setId].lastIndexOf(snEntry);
+    if (idx === -1) {
+      idx = _cacheSetSNs[setId].findIndex(function(r) {
+        return r.sn === snEntry.sn && r.added_date === snEntry.added_date;
+      });
+    }
+    if (idx !== -1) _cacheSetSNs[setId].splice(idx, 1);
+    updateSetCountFor(setId);
+    renderSNTable(_cacheSetSNs[setId]);
+    showSNErr(msg);
+  }
+
+  // 1. อัปเดต UI ทันที
   if (!_cacheSetSNs[setId]) _cacheSetSNs[setId] = [];
   _cacheSetSNs[setId].push(snEntry);
-  if (window._sets && window._sets[setId]) {
-    window._sets[setId].sn_count = _cacheSetSNs[setId].length;
-    var countEl = document.querySelector('#bc_' + setId + ' .bcard-count');
-    if (countEl) countEl.textContent = _cacheSetSNs[setId].length + ' SN';
-  }
+  updateSetCountFor(setId);
   renderSNTable(_cacheSetSNs[setId]);
   clearSN();
 
+  // 2. ส่งไป GAS background
   api({ action: 'addSNToBoxSet', warehouse: curWarehouse, set_id: setId, sn_data: snDataSnapshot }, 'POST')
     .then(function(res) {
-      if (res.error) {
-        var idx = _cacheSetSNs[setId].findIndex(function(r){ return r.sn === snEntry.sn && r.added_date === snEntry.added_date; });
-        if (idx !== -1) _cacheSetSNs[setId].splice(idx, 1);
-        if (window._sets && window._sets[setId]) {
-          window._sets[setId].sn_count = _cacheSetSNs[setId].length;
-          var el = document.querySelector('#bc_' + setId + ' .bcard-count');
-          if (el) el.textContent = _cacheSetSNs[setId].length + ' SN';
-        }
-        renderSNTable(_cacheSetSNs[setId]);
-        showSNErr('บันทึกไม่สำเร็จ: ' + res.error);
+      if (!res || res.error) {
+        rollback('บันทึกไม่สำเร็จ: ' + ((res && res.error) || 'ไม่มีการตอบกลับ'));
       }
+    })
+    .catch(function(e) {
+      rollback('Network error: ' + e.message);
     });
+}
+
+function setCodesOf(set) {
+  return String(set.codes || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean);
+}
+
+function updateSetCountFor(setId) {
+  if (window._sets && window._sets[setId]) {
+    window._sets[setId].sn_count = (_cacheSetSNs[setId] || []).length;
+    var el = document.querySelector('#bc_' + setId + ' .bcard-count');
+    if (el) el.textContent = (_cacheSetSNs[setId] || []).length + ' SN';
+  }
+}
+
+function addSNToKitDraft() {
+  var setId   = curSet.set_id;
+  var sn      = String(curSNData.sn).trim();
+  var code    = String(curSNData.code).trim();
+  var allowed = setCodesOf(curSet);
+
+  if (allowed.indexOf(code) === -1) { showSNErr('Code "' + code + '" ไม่ได้อยู่ใน Set นี้'); return; }
+  if (!_kitDraft || _kitDraft.set_id !== setId) _kitDraft = { set_id: setId, rows: {} };
+  if (_kitDraft.saving) { showSNErr('กำลังบันทึกชุดก่อนหน้า รอสักครู่'); return; }
+
+  if (_kitDraft.rows[code]) {
+    showSNErr('Code ' + code + ' กรอกแล้วในชุดนี้ (SN ' + _kitDraft.rows[code].sn + ')'); return;
+  }
+  var dupDraft = Object.keys(_kitDraft.rows).find(function(c){ return _kitDraft.rows[c].sn === sn; });
+  if (dupDraft) { showSNErr('SN "' + sn + '" มีในชุดที่กำลังกรอกแล้ว'); return; }
+  var dupSaved = (_cacheSetSNs[setId] || []).find(function(r){ return String(r.sn).trim() === sn; });
+  if (dupSaved) {
+    showSNErr('SN "' + sn + '" บันทึกไปแล้วในชุดที่ ' + (dupSaved.seq || '-') + ' ของ Set นี้');
+    return;
+  }
+
+  _kitDraft.rows[code] = {
+    sn: sn, code: code,
+    shortname: curSNData.shortname || curSNData.item_name || '',
+    zone: curSNData.zone || '', sn_date: curSNData.sn_date || ''
+  };
+  clearSN();
+  renderSNTable(_cacheSetSNs[setId] || []);
+
+  if (Object.keys(_kitDraft.rows).length === allowed.length) commitKitDraft();
+}
+
+async function commitKitDraft() {
+  if (!_kitDraft || _kitDraft.saving) return;
+  var setId   = _kitDraft.set_id;
+  var allowed = setCodesOf(curSet);
+  var list    = allowed.map(function(c){ return _kitDraft.rows[c]; }).filter(Boolean);
+  if (list.length !== allowed.length) { showToast('ยังกรอกไม่ครบทุก Code', 'err'); return; }
+
+  var backup = _kitDraft;
+  _kitDraft = { set_id: setId, rows: backup.rows, saving: true };
+  renderSNTable(_cacheSetSNs[setId] || []);
+
+  try {
+    var res = await api({ action: 'addKitToBoxSet', warehouse: curWarehouse,
+                          set_id: setId, sn_list: list }, 'POST');
+    if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
+
+    _kitDraft = null;
+    showToast('บันทึกชุดที่ ' + res.seq + ' สำเร็จ (' + res.count + ' SN)', 'ok');
+
+    // ดึงข้อมูลจริงจาก server มาแทน cache — เห็นชุดของคนอื่นที่แทรกเข้ามาด้วย
+    var ok = await refreshSetSNs(setId);
+    if (!ok) {
+      // server ล่มระหว่าง refresh — ใส่ลง cache เองไปก่อน
+      if (!_cacheSetSNs[setId]) _cacheSetSNs[setId] = [];
+      list.forEach(function(r) {
+        _cacheSetSNs[setId].push(Object.assign({}, r, {
+          set_id: setId, seq: res.seq, added_date: res.added_date
+        }));
+      });
+      updateSetCountFor(setId);
+      renderSNTable(_cacheSetSNs[setId]);
+    }
+    if (_autoPrintKit) printKitSeq(setId, res.seq);   // ไม่ await — สแกนชุดถัดไปได้เลย
+  } catch (e) {
+    _kitDraft = backup;                      // คืน draft ให้แก้ต่อได้
+    _kitDraft.saving = false;
+    renderSNTable(_cacheSetSNs[setId] || []);
+    showSNErr('บันทึกชุดไม่สำเร็จ: ' + e.message);
+  }
+}
+
+async function refreshSetSNs(setId) {
+  try {
+    var res = await api({ action: 'getBoxSetSNs', warehouse: curWarehouse, set_id: setId });
+    if (!res || res.error) return false;
+    _cacheSetSNs[setId] = res.rows || [];
+    updateSetCountFor(setId);
+    if (curSet && curSet.set_id === setId) renderSNTable(_cacheSetSNs[setId]);
+    return true;
+  } catch (e) { return false; }
+}
+
+function removeDraftSN(code) {
+  if (!_kitDraft || _kitDraft.saving) return;
+  delete _kitDraft.rows[code];
+  renderSNTable(_cacheSetSNs[_kitDraft.set_id] || []);
+}
+
+function cancelKitDraft() {
+  if (!_kitDraft || _kitDraft.saving) return;
+  if (!confirm('ยกเลิกชุดที่กำลังกรอก? SN ที่สแกนไว้จะหายทั้งหมด')) return;
+  var setId = _kitDraft.set_id;
+  _kitDraft = null;
+  renderSNTable(_cacheSetSNs[setId] || []);
 }
 
 // ======== END BOX SET ========
@@ -1871,6 +2256,9 @@ window.addEventListener('beforeunload', function(e) {
   if (window._uploading) {
     e.preventDefault();
     e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
+  }
+  if (_kitDraft && Object.keys(_kitDraft.rows).length) {
+    e.preventDefault(); e.returnValue = '';
   }
 });
 
