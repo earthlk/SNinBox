@@ -1763,15 +1763,25 @@ function closeCreateSet() {
   _setSelectedCodes = [];
 }
 
-function lookupSetCode(code) {
-  var r = _cacheSetDataSN && _cacheSetDataSN.find(function(x){ return String(x.code).trim() === code; });
+function codeInfo(code, mode) {
+  var c   = String(code || '').trim();
+  var src = ((mode || curMode) === 'set') ? _cacheSetDataSN : _cacheDataSN;
+  var r   = src && src.find(function(x){ return String(x.code).trim() === c; });
   if (!r) return null;
-  return {
-    code: code,
-    name: String(r.shortname || r.item_name || '').trim() || '-',
-    zone: String(r.zone || '').trim() || '-'
-  };
+  return { code: c,
+           name: String(r.shortname || r.item_name || '').trim(),
+           zone: String(r.zone || '').trim() };
 }
+
+// ชื่อที่จะแสดง: cache มาก่อน → ค่าที่เก็บไว้ → รอข้อมูล
+function displayName(code, stored, mode) {
+  var i = codeInfo(code, mode);
+  if (i && i.name) return i.name;
+  if (stored && String(stored).trim() && String(stored).trim() !== '-') return String(stored).trim();
+  return '<span style="color:var(--muted);font-style:italic">รอข้อมูล Data SN</span>';
+}
+
+function lookupSetCode(code) { return codeInfo(code, 'set'); }
 
 function setSetType(t) {
   setType = (t === 'kit') ? 'kit' : 'free';
