@@ -1522,7 +1522,7 @@ async function doPrintSet() {
     btn.textContent = '🖨 ปริ้น'; btn.disabled = false;
   }
 }
-
+	
 function openPdfB64(b64, autoPrint) {
   var binary = atob(String(b64).replace(/\s/g, ''));
   var bytes  = new Uint8Array(binary.length);
