@@ -2051,14 +2051,20 @@ function renderKitProgress() {
   if (curMode !== 'set' || !curSet || String(curSet.set_type) !== 'kit') {
     el.style.display = 'none'; return;
   }
-  var st = kitStatus(curSet, _cacheSetSNs[curSet.set_id] || []);
+
+  var codes = setCodesOf(curSet);
+  var draft = (_kitDraft && _kitDraft.set_id === curSet.set_id) ? _kitDraft.rows : {};
+  var done  = codes.filter(function(c){ return draft[c]; }).length;
+  var saving = !!(_kitDraft && _kitDraft.saving);
+
   el.style.display = '';
   el.innerHTML =
-      '<span style="font-weight:700;color:var(--yellow)">ชุดต่อไป ' + '</span>'
-    + ' <span style="color:var(--muted)">— ครบ ' + st.done + '/' + st.codes.length + ' Code</span>'
+      '<span style="font-weight:700;color:var(--yellow)">ชุดต่อไป</span>'
+    + ' <span style="color:var(--muted)">— ครบ ' + done + '/' + codes.length + ' Code</span>'
+    + (saving ? ' <span style="color:var(--accent);font-weight:700">กำลังบันทึก...</span>' : '')
     + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'
-    + st.codes.map(function(c) {
-        var ok = st.remaining.indexOf(c) === -1;
+    + codes.map(function(c) {
+        var ok = !!draft[c];
         return '<span style="font-family:monospace;font-size:10px;padding:2px 6px;border-radius:4px;'
           + (ok ? 'background:rgba(52,211,153,.15);color:var(--green)'
                 : 'background:rgba(251,191,36,.15);color:var(--yellow)') + '">'
