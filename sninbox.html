@@ -63,6 +63,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',san
 .binfo-val{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bcard-del{position:absolute;top:7px;right:7px;opacity:0;transition:.15s;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red);border-radius:5px;padding:1px 7px;font-size:11px;cursor:pointer}
 .bcard:hover .bcard-del{opacity:1}
+.bcard-name{font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.bcard-idsm{font-size:11px;font-weight:700;font-family:'Courier New',monospace;color:var(--accent);background:rgba(91,141,238,.12);padding:1px 6px;border-radius:4px;flex-shrink:0}
 .left-foot{padding:8px 10px;border-top:1px solid var(--border);flex-shrink:0}
 
 /* RIGHT */
@@ -387,6 +389,17 @@ tr:hover td{background:rgba(91,141,238,.04)}
   <div class="modal upload-modal">
     <h3>&#8679; Upload Data SN</h3>
     <div class="modal-sub">CSV 1 ไฟล์ ครอบคลุมทุก Zone — ระบบแยก Zone อัตโนมัติ</div>
+	<div class="fg">
+          <label>ปลายทาง</label>
+          <div class="type-row">
+             <div class="ttype sel-s" id="ut_zone" onclick="setUploadTarget('zone')">
+                Data SN แยกโซน<br><small style="font-weight:400">A–J · Box SN + BoxSet 001</small>
+             </div>
+          <div class="ttype" id="ut_002" onclick="setUploadTarget('002')">
+              Data SN คลัง 002<br><small style="font-weight:400">BoxSet 002 เท่านั้น</small>
+          </div>
+        </div>
+      </div>
     <div class="upload-drop" id="uploadDrop" onclick="document.getElementById('csvFile').click()">
       <div class="upload-drop-ico">&#128196;</div>
       <p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>
@@ -491,6 +504,10 @@ var _setSelectedCodes = [];
 var setType = 'free';
 var _kitDraft = null;   // { set_id, rows: { code: snEntry } }
 var _autoPrintKit = false;
+var _navToken = 0;
+const WH_OWN_DATA = ['002'];          // คลังที่มี Data SN ของตัวเอง
+var _codeIndexKey = null;             // scope ของ index ที่ cache ไว้
+var _uploadTarget = 'zone';           // 'zone' | '002'
 
 // ---- Init ----
 window.addEventListener('DOMContentLoaded', function() {
@@ -501,6 +518,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // ---- Zone ----
 async function selectZone(z) {
+  var tok = ++_navToken;
   curZone = z; curBox = null; curSNData = null;
   _cacheDataSN = null; _cacheBoxSNs = {};
   document.querySelectorAll('.ztab').forEach(function(t) { t.classList.remove('active'); });
@@ -510,19 +528,20 @@ async function selectZone(z) {
   document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   document.getElementById('boxCountLbl').textContent = '--';
   try {
-    // โหลดพร้อมกัน: Boxes + Data SN
     var [resBoxes, resData] = await Promise.all([
       api({ action: 'getBoxes', zone: z }),
       api({ action: 'getDataSN', zone: z })
     ]);
+    if (tok !== _navToken) return;                    // ← ตกรุ่นแล้ว ทิ้ง
     if (resBoxes.error) throw new Error(resBoxes.error);
     nextBoxId    = resBoxes.next_box_id;
     _cacheDataSN = resData.rows || [];
     _cacheBoxSNs = {};
     setStatus('ok', 'Zone ' + z + ' | Data SN: ' + _cacheDataSN.length + ' รายการ');
     renderBoxList(resBoxes.boxes || []);
-    document.getElementById('btnRefresh').style.display = '';  // ← เพิ่ม
+    document.getElementById('btnRefresh').style.display = '';
   } catch(e) {
+    if (tok !== _navToken) return;                    // ← error ของรุ่นเก่าก็ไม่ต้องโชว์
     setStatus('err', e.message);
     document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:12px">' + e.message + '</p></div>';
   }
@@ -548,14 +567,16 @@ function renderBoxList(boxes) {
     return '<div class="bcard ' + sel + '" id="bc_' + b.box_id + '" data-id="' + b.box_id + '">'
       + '<button class="bcard-del no-print" data-del="' + b.box_id + '">&#10005;</button>'
       + '<div class="bcard-head">'
-        + '<span class="bcard-id">' + b.box_id + '</span>'
-        + '<span class="bcard-badge ' + badge + '">' + label + '</span>'
+        + '<span class="bcard-name">'
+        + (b.type === 'single' ? displayName(b.code, b.box_name, 'sn') : (b.box_name || '-'))
+        + '</span>'
         + '<span class="bcard-count">' + b.sn_count + ' SN</span>'
       + '</div>'
       + '<div class="bcard-info">'
-        + '<div class="binfo-row"><span class="binfo-lbl">Name</span><span class="binfo-val">'
-        + (b.type === 'single' ? displayName(b.code, b.box_name, 'sn') : (b.box_name || '-'))
-        + '</span></div>'
+        + '<div class="binfo-row"><span class="binfo-lbl">Box</span>'
+        + '<span class="bcard-idsm">' + b.box_id + '</span>'
+        + '<span class="bcard-badge ' + badge + '" style="margin-left:4px">' + label + '</span>'
+        + '</div>'
         + codeRow
         + '<div class="binfo-row"><span class="binfo-lbl">Zone</span><span class="binfo-val">' + (b.data_zone || curZone) + '</span></div>'
         + '<div class="binfo-row"><span class="binfo-lbl">Date</span><span class="binfo-val">' + date + '</span></div>'
@@ -602,6 +623,7 @@ async function loadBoxSNs(forceRefresh) {
   document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   try {
     var res = await api({ action: 'getBoxSNs', zone: curZone, box_id: boxId });
+        if (!curBox || curBox.box_id !== boxId) return;
     if (res.error) throw new Error(res.error);
     _cacheBoxSNs[boxId] = res.rows || [];
     renderSNTable(_cacheBoxSNs[boxId]);
@@ -998,57 +1020,38 @@ function hidePrintProgress() {
 
 async function doPrint() {
   if (curMode === 'set') { await doPrintSet(); return; }
-  if (!curBox || curBox.type !== 'single') {
-    showToast('รองรับเฉพาะ Box แบบ 1 Code', 'err');
-    return;
-  }
-  var btn = document.getElementById('btnPrint');
-  btn.textContent = '⏳...';
-  btn.disabled = true;
+  if (!curBox) { showToast('ยังไม่ได้เลือก Box', 'err'); return; }
 
-  showPrintProgress('กำลังเตรียมข้อมูล...', 10);
+  var btn = document.getElementById('btnPrint');
+  btn.textContent = '⏳...'; btn.disabled = true;
+  showPrintProgress('กำลังสร้าง PDF...', 10);
+  var ticker = null;
 
   try {
-    // simulate progress ระหว่างรอ GAS
     var pct = 10;
-    var ticker = setInterval(function() {
+    ticker = setInterval(function() {
       pct = Math.min(pct + 5, 85);
       showPrintProgress('กำลังสร้าง PDF...', pct);
     }, 800);
 
     var res = await api({ action: 'printBox', zone: curZone, box_id: curBox.box_id }, 'POST');
-    clearInterval(ticker);
+    clearInterval(ticker); ticker = null;
 
-    if (res.error) throw new Error(res.error);
-    if (!res.pdf) throw new Error('ไม่ได้รับ PDF');
+    if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
+    if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
 
-    showPrintProgress('กำลัง Download...', 95);
-
-    var b64clean = res.pdf.replace(/[\s]/g, '');
-    var binary   = atob(b64clean);
-    var bytes    = new Uint8Array(binary.length);
-    for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
-    var blob = new Blob([bytes], { type: 'application/pdf' });
-    var url  = URL.createObjectURL(blob);
-    var a    = document.createElement('a');
-    a.href   = url;
-    a.download = curBox.box_id + '.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
-
+    showPrintProgress('กำลังเปิด PDF...', 95);
+    openPdfB64(res.pdf, false);
     showPrintProgress('เสร็จสิ้น!', 100);
     setTimeout(hidePrintProgress, 1000);
-    showToast('Download PDF สำเร็จ', 'ok');
-  } catch(e) {
-    clearInterval(ticker);
+    showToast('เปิด PDF สำเร็จ', 'ok');
+  } catch (e) {
     hidePrintProgress();
     showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
+  } finally {
+    if (ticker) clearInterval(ticker);
+    btn.textContent = '🖨 ปริ้น'; btn.disabled = false;
   }
-
-  btn.textContent = '🖨 ปริ้น';
-  btn.disabled = false;
 }
 
 // ---- Create Box Modal ----
@@ -1308,6 +1311,7 @@ function openUpload() {
     '<div class="upload-drop-ico">&#128196;</div>' +
     '<p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>' +
     '<p style="font-size:11px;margin-top:4px">รองรับ .csv เท่านั้น</p>';
+  setUploadTarget('zone');
   enableUpload(false);
   document.getElementById('btnUploadCancel').textContent = 'ยกเลิก';
   document.getElementById('btnUploadCancel').onclick = closeUpload;
@@ -1416,18 +1420,31 @@ function parseCSV(text) {
 function validateAndPreviewCSV(text) {
   var parsed = parseCSV(text);
   if (!parsed) { showErr('ไม่สามารถอ่านไฟล์ได้'); return; }
+    
+     if (parsed.badRows.length) {
+    var preview = parsed.badRows.slice(0, 5).join(', ');
+    showToast('⚠ จำนวนคอลัมน์ไม่ตรงหัวตาราง ' + parsed.badRows.length + ' แถว (บรรทัด ' + preview
+              + (parsed.badRows.length > 5 ? ' ...' : '') + ')', 'err');
+  }
+
+  if (_uploadTarget === '002') {
+    var miss2 = W002_COLS.filter(function(c){ return parsed.headers.indexOf(c) === -1; });
+    if (miss2.length) { showErr('คอลัมน์ไม่ครบ: ขาด ' + miss2.join(', ')); return; }
+    _csvData = { '002': parsed.rows };
+    document.getElementById('previewBody').innerHTML =
+      '<tr><td><b>คลัง 002</b></td><td>' + parsed.rows.length + ' rows</td>'
+      + '<td class="preview-ok">&#10003; พร้อม Upload</td></tr>';
+    document.getElementById('uploadPreview').style.display = '';
+    document.getElementById('previewErr').style.display = 'none';
+    enableUpload(parsed.rows.length > 0);
+    return;
+  }
 
   // เช็ค columns
   var missing = REQUIRED_COLS.filter(function(c){ return parsed.headers.indexOf(c) === -1; });
   if (missing.length > 0) {
     showErr('คอลัมน์ไม่ครบ: ขาด ' + missing.join(', '));
     return;
-  }
-    
-     if (parsed.badRows.length) {
-    var preview = parsed.badRows.slice(0, 5).join(', ');
-    showToast('⚠ จำนวนคอลัมน์ไม่ตรงหัวตาราง ' + parsed.badRows.length + ' แถว (บรรทัด ' + preview
-              + (parsed.badRows.length > 5 ? ' ...' : '') + ')', 'err');
   }
 
   // แยกตาม zone
@@ -1484,6 +1501,7 @@ function enableUpload(ok) {
 }
 
 async function doUpload() {
+  if (_uploadTarget === '002') { await doUpload002(); return; }
   if (!_csvData) return;
   window._uploading = true;
 
@@ -1497,17 +1515,17 @@ async function doUpload() {
   document.getElementById('btnUploadCancel').onclick        = closeUpload;
 
   var stepsEl = document.getElementById('progressSteps');
-  stepEl.innerHTML = '&#9654; Zone ' + z + ' — กำลังอัปเดต CodeIndex...';
-      var resIdx = await api({ action: 'rebuildIndex', zone: z }, 'POST');
-      if (!resIdx || resIdx.error) throw new Error('CodeIndex: ' + ((resIdx && resIdx.error) || 'ไม่มีการตอบกลับ'));
+  stepsEl.innerHTML = zones.map(function(z) {
+    return '<div class="progress-step step-pending" id="step_' + z + '">&#9679; Zone ' + z + ' (' + _csvData[z].length + ' rows)</div>';
+  }).join('');
 
   function setProgress(pct, text) {
-    document.getElementById('progressFill').style.width    = Math.min(pct,100) + '%';
-    document.getElementById('progressPct').textContent     = Math.min(pct,100) + '%';
-    document.getElementById('progressText').textContent    = text;
+    document.getElementById('progressFill').style.width = Math.min(pct,100) + '%';
+    document.getElementById('progressPct').textContent  = Math.min(pct,100) + '%';
+    document.getElementById('progressText').textContent = text;
   }
 
-  var done = 0;
+  var done = 0, failZones = [];
   for (var i = 0; i < zones.length; i++) {
     var z      = zones[i];
     var stepEl = document.getElementById('step_' + z);
@@ -1518,7 +1536,7 @@ async function doUpload() {
 
     try {
       var resClear = await api({ action: 'clearDataSN', zone: z }, 'POST');
-      if (resClear.error) throw new Error(resClear.error);
+      if (!resClear || resClear.error) throw new Error((resClear && resClear.error) || 'ไม่มีการตอบกลับ');
 
       var allRows   = _csvData[z];
       var batchSize = 10000;
@@ -1529,17 +1547,26 @@ async function doUpload() {
         var cur_b = Math.floor(b / batchSize) + 1;
         stepEl.innerHTML = '&#9654; Zone ' + z + ' — ' + Math.min(b+batchSize, allRows.length) + '/' + allRows.length + ' rows';
         var resUp = await api({ action: 'uploadDataSN', zone: z, rows: batch }, 'POST');
-        if (resUp.error) throw new Error(resUp.error);
-        var subPct = Math.round(((i + cur_b / total_b) / total) * 100);
-        setProgress(subPct, 'Zone ' + z + ' batch ' + cur_b + '/' + total_b);
+        if (!resUp || resUp.error) throw new Error((resUp && resUp.error) || 'ไม่มีการตอบกลับ');
+        setProgress(Math.round(((i + cur_b / total_b) / total) * 100), 'Zone ' + z + ' batch ' + cur_b + '/' + total_b);
         await new Promise(function(r){ setTimeout(r, 50); });
       }
 
+      stepEl.innerHTML = '&#9654; Zone ' + z + ' — กำลังอัปเดต CodeIndex...';
+      var resIdx = await api({ action: 'rebuildIndex', zone: z }, 'POST');
+      if (!resIdx || resIdx.error) throw new Error('CodeIndex: ' + ((resIdx && resIdx.error) || 'ไม่มีการตอบกลับ'));
+
       stepEl.className = 'progress-step step-done';
-      stepEl.innerHTML = '&#10003; Zone ' + z + ' — ' + allRows.length + ' rows สำเร็จ';
+      stepEl.innerHTML = '&#10003; Zone ' + z + ' — ' + allRows.length + ' rows | ' + resIdx.codes + ' Code';
+
+      if (resIdx.conflicts && resIdx.conflicts.length) {
+        showToast('⚠ Zone ' + z + ': Code อยู่หลายโซนย่อย ' + resIdx.conflicts.length + ' ตัว', 'err');
+        console.warn('Zone ' + z + ' conflicts:', resIdx.conflicts);
+      }
     } catch(e) {
       stepEl.className = 'progress-step step-err';
       stepEl.innerHTML = '&#10007; Zone ' + z + ' — ' + e.message;
+      failZones.push(z);
     }
 
     done++;
@@ -1547,14 +1574,14 @@ async function doUpload() {
   }
 
   setProgress(100, 'Upload เสร็จสิ้น!');
-  showToast('Upload เสร็จสิ้น', 'ok');
+  if (failZones.length) showToast('Upload เสร็จ — มีปัญหา ' + failZones.length + ' โซน: ' + failZones.join(', '), 'err');
+  else showToast('Upload เสร็จสิ้น ' + zones.length + ' โซน', 'ok');
 
-     _cacheCodeIndex = null;
-  _cacheSetDataSN = {};
+  _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
 
   if (curZone && _csvData[curZone]) {
     var res = await api({ action: 'getDataSN', zone: curZone });
-    if (res.rows) {
+    if (res && res.rows) {
       _cacheDataSN = res.rows;
       setStatus('ok', 'Zone ' + curZone + ' | Data SN: ' + _cacheDataSN.length + ' รายการ (updated)');
     }
@@ -1640,21 +1667,30 @@ function openPdfB64(b64, autoPrint) {
   for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
   var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 
-  if (!autoPrint) {
-    window.open(url, '_blank');
+  var w = window.open(url, '_blank');
+  if (!w) {
+    showToast('เบราว์เซอร์บล็อกป๊อปอัพ — กดไอคอนขวาบน address bar แล้วอนุญาตป๊อปอัพของเว็บนี้', 'err');
     setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
     return;
   }
-  // ยิงเข้า print dialog ตรงๆ ผ่าน iframe ซ่อน
-  var fr = document.createElement('iframe');
-  fr.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden';
-  fr.src = url;
-  fr.onload = function() {
-    try { fr.contentWindow.focus(); fr.contentWindow.print(); }
-    catch (e) { window.open(url, '_blank'); }
-  };
-  document.body.appendChild(fr);
-  setTimeout(function(){ URL.revokeObjectURL(url); fr.remove(); }, 60000);
+
+  if (autoPrint) {
+    var fired = false;
+    var firePrint = function() {
+      if (fired) return;
+      fired = true;
+      try {
+        w.onafterprint = function(){ try { w.close(); } catch (e) {} };
+        w.focus();
+        w.print();
+      } catch (e) { /* ผู้ใช้ปิดแท็บไปก่อน */ }
+    };
+    // PDF viewer ไม่ยิง load event ที่เชื่อถือได้ → ใช้ทั้งสองทางกันพลาด
+    try { w.addEventListener('load', firePrint); } catch (e) {}
+    setTimeout(firePrint, 1500);
+  }
+
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
 }
 
 function toggleAutoPrint(el) {
@@ -1687,6 +1723,7 @@ async function printKitCard(seq, btn) {
 // BoxSet variables declared at top
 
 function setMode(mode) {
+    _navToken++;
   curMode = mode;
   var snBtn  = document.getElementById('modeSN');
   var setBtn = document.getElementById('modeSet');
@@ -1726,8 +1763,10 @@ function setMode(mode) {
 
 // ---- Warehouse ----
 async function selectWarehouse(w) {
+  var tok = ++_navToken;
   curWarehouse = w; curSet = null; curSNData = null;
   _cacheSetDataSN = {}; _cacheSetSNs = {}; _kitDraft = null;
+  _cacheCodeIndex = null; _codeIndexKey = null;
   document.querySelectorAll('#warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
   document.getElementById('wtab_' + w).classList.add('active');
   setStatus('dim', 'คลัง ' + w + '...');
@@ -1740,12 +1779,14 @@ async function selectWarehouse(w) {
       api({ action: 'getBoxSets', warehouse: w }),
       loadCodeIndex()
     ]);
+    if (tok !== _navToken) return;
     if (!resSets || resSets.error) throw new Error((resSets && resSets.error) || 'ไม่มีการตอบกลับ');
     nextSetId = resSets.next_set_id;
     setStatus('ok', 'คลัง ' + w + ' | CodeIndex: ' + (_cacheCodeIndex || []).length + ' Code');
     renderSetList(resSets.sets || []);
     document.getElementById('btnRefresh').style.display = '';
   } catch(e) {
+    if (tok !== _navToken) return;
     setStatus('err', e.message);
     document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:12px">' + e.message + '</p></div>';
   }
@@ -1769,14 +1810,16 @@ function renderSetList(sets) {
     return '<div class="bcard ' + sel + '" id="bc_' + s.set_id + '" data-sid="' + s.set_id + '">'
       + '<button class="bcard-del no-print" data-delset="' + s.set_id + '">&#10005;</button>'
       + '<div class="bcard-head">'
-        + '<span class="bcard-id">' + s.set_id + '</span>'
+        + '<span class="bcard-name">' + (s.set_name || '-') + '</span>'
+        + '<span class="bcard-count">' + s.sn_count + ' SN</span>'
+      + '</div>'
+      + '<div class="bcard-info">'
+        + '<div class="binfo-row"><span class="binfo-lbl">Set</span>'
+        + '<span class="bcard-idsm">' + s.set_id + '</span>'
         + (String(s.set_type) === 'kit'
             ? '<span style="font-size:9px;font-weight:700;background:rgba(251,191,36,.18);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">Kit</span>'
             : '<span style="font-size:9px;font-weight:700;background:rgba(52,211,153,.18);color:var(--green);padding:1px 6px;border-radius:4px;margin-left:4px">Free</span>')
-      + '<span class="bcard-count">' + s.sn_count + ' SN</span>'
-      + '</div>'
-      + '<div class="bcard-info">'
-        + '<div class="binfo-row"><span class="binfo-lbl">Name</span><span class="binfo-val">' + (s.set_name || '-') + '</span></div>'
+        + '</div>'
         + '<div class="binfo-row"><span class="binfo-lbl">Code</span><span class="binfo-val" style="flex-wrap:wrap;display:flex;gap:3px">' + codesHtml + '</span></div>'
         + '<div class="binfo-row"><span class="binfo-lbl">Date</span><span class="binfo-val">' + fmtDate(s.created_date) + '</span></div>'
       + '</div>'
@@ -1807,6 +1850,7 @@ document.getElementById('boxList').addEventListener('click', function(e) {
 });
 
 async function selectSet(setId) {
+  var tok = ++_navToken;
   var s = window._sets && window._sets[setId];
   if (!s) return;
   curSet = s; curSNData = null;
@@ -1827,10 +1871,12 @@ async function selectSet(setId) {
   try {
     await ensureSetData(s);
   } catch (e) {
+    if (tok !== _navToken) return;
     showToast('โหลด Data SN ไม่สำเร็จ: ' + e.message, 'err');
     setStatus('err', e.message);
   }
-  if (!curSet || curSet.set_id !== setId) return;   // ผู้ใช้เปลี่ยน Set ระหว่างรอ
+  if (tok !== _navToken) return;
+  if (!curSet || curSet.set_id !== setId) return;
   loadSetSNs();
 }
 
@@ -1845,6 +1891,7 @@ async function loadSetSNs(forceRefresh) {
   document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   try {
     var res = await api({ action: 'getBoxSetSNs', warehouse: curWarehouse, set_id: setId });
+        if (!curSet || curSet.set_id !== setId) return;
     if (res.error) throw new Error(res.error);
     _cacheSetSNs[setId] = res.rows || [];
     renderSNTable(_cacheSetSNs[setId]);
@@ -1910,11 +1957,22 @@ function displayName(code, stored, mode) {
 
 function lookupSetCode(code) { return codeInfo(code, 'set'); }
 
+function codeIndexScope() {
+  return (curMode === 'set' && WH_OWN_DATA.indexOf(curWarehouse) !== -1)
+    ? ('W' + curWarehouse) : 'zone';
+}
+
 async function loadCodeIndex(force) {
-  if (_cacheCodeIndex && !force) return _cacheCodeIndex;
-  var res = await api({ action: 'getCodeIndex' });
+  var scope = codeIndexScope();
+  if (_cacheCodeIndex && !force && _codeIndexKey === scope) return _cacheCodeIndex;
+
+  var res = (scope === 'zone')
+    ? await api({ action: 'getCodeIndex' })
+    : await api({ action: 'getCodeIndexW', warehouse: curWarehouse });
+
   if (!res || res.error) throw new Error((res && res.error) || 'โหลด CodeIndex ไม่สำเร็จ');
   _cacheCodeIndex = res.rows || [];
+  _codeIndexKey   = scope;
   return _cacheCodeIndex;
 }
 
@@ -1932,16 +1990,20 @@ async function ensureSetData(set, force) {
 
   await loadCodeIndex();
 
-  var zones = [];
-  need.forEach(function(c) {
-    var i = codeInfo(c, 'set');
-    var z = i && i.zone_key ? String(i.zone_key).toUpperCase() : null;
-    if (z && zones.indexOf(z) === -1) zones.push(z);
-  });
-
-  setStatus('dim', 'โหลด Data SN (' + need.length + ' Code)...');
-  var d = await api({ action: 'getDataSNByCodes',
-                      codes: need.join(','), zones: zones.join(',') });
+  var d;
+  if (WH_OWN_DATA.indexOf(curWarehouse) !== -1) {
+    setStatus('dim', 'โหลด Data SN คลัง ' + curWarehouse + ' (' + need.length + ' Code)...');
+    d = await api({ action: 'getDataSNByCodesW', warehouse: curWarehouse, codes: need.join(',') });
+  } else {
+    var zones = [];
+    need.forEach(function(c) {
+      var i = codeInfo(c, 'set');
+      var z = i && i.zone_key ? String(i.zone_key).toUpperCase() : null;
+      if (z && zones.indexOf(z) === -1) zones.push(z);
+    });
+    setStatus('dim', 'โหลด Data SN (' + need.length + ' Code)...');
+    d = await api({ action: 'getDataSNByCodes', codes: need.join(','), zones: zones.join(',') });
+  }
   if (!d || d.error) throw new Error((d && d.error) || 'โหลด Data SN ไม่สำเร็จ');
 
   entry.rows  = entry.rows.concat(d.rows || []);
@@ -2466,6 +2528,72 @@ document.getElementById('createSetModal').addEventListener('click', function(e) 
   if (e.target === this) closeCreateSet();
 });
 
+async function doUpload002() {
+  if (!_csvData || !_csvData['002']) return;
+  window._uploading = true;
+  var rows = _csvData['002'];
+
+  document.getElementById('uploadPreview').style.display    = 'none';
+  document.getElementById('progressWrap').style.setProperty('display', 'block', 'important');
+  document.getElementById('btnUploadConfirm').style.display = 'none';
+  document.getElementById('btnUploadCancel').textContent    = 'ปิด';
+  document.getElementById('btnUploadCancel').onclick        = closeUpload;
+
+  document.getElementById('progressSteps').innerHTML =
+    '<div class="progress-step step-running" id="step_002">&#9654; คลัง 002 (' + rows.length + ' rows)</div>';
+  var stepEl = document.getElementById('step_002');
+
+  function setProgress(pct, text) {
+    document.getElementById('progressFill').style.width = Math.min(pct,100) + '%';
+    document.getElementById('progressPct').textContent  = Math.min(pct,100) + '%';
+    document.getElementById('progressText').textContent = text;
+  }
+
+  try {
+    setProgress(3, 'กำลัง Clear...');
+    var rc = await api({ action: 'clearWarehouseDataSN', warehouse: '002' }, 'POST');
+    if (!rc || rc.error) throw new Error((rc && rc.error) || 'ไม่มีการตอบกลับ');
+
+    var batchSize = 5000;
+    var totalB    = Math.ceil(rows.length / batchSize);
+    for (var b = 0; b < rows.length; b += batchSize) {
+      var cur = Math.floor(b / batchSize) + 1;
+      stepEl.innerHTML = '&#9654; คลัง 002 — ' + Math.min(b + batchSize, rows.length) + '/' + rows.length + ' rows';
+      var ru = await api({ action: 'uploadWarehouseDataSN', warehouse: '002',
+                          rows: rows.slice(b, b + batchSize) }, 'POST');
+      if (!ru || ru.error) throw new Error((ru && ru.error) || 'ไม่มีการตอบกลับ');
+      setProgress(Math.round((cur / totalB) * 90), 'batch ' + cur + '/' + totalB);
+      await new Promise(function(r){ setTimeout(r, 50); });
+    }
+
+    stepEl.innerHTML = '&#9654; คลัง 002 — กำลังอัปเดต CodeIndex...';
+    setProgress(95, 'อัปเดต CodeIndex...');
+    var ri = await api({ action: 'rebuildIndexW', warehouse: '002' }, 'POST');
+    if (!ri || ri.error) throw new Error('CodeIndex: ' + ((ri && ri.error) || 'ไม่มีการตอบกลับ'));
+
+    stepEl.className = 'progress-step step-done';
+    stepEl.innerHTML = '&#10003; คลัง 002 — ' + rows.length + ' rows | ' + ri.codes + ' Code';
+    setProgress(100, 'เสร็จสิ้น!');
+    showToast('Upload คลัง 002 สำเร็จ', 'ok');
+
+    if (ri.conflicts && ri.conflicts.length) {
+      showToast('⚠ Code อยู่หลายโซนย่อย ' + ri.conflicts.length + ' ตัว', 'err');
+      console.warn('conflicts:', ri.conflicts);
+    }
+  } catch (e) {
+    stepEl.className = 'progress-step step-err';
+    stepEl.innerHTML = '&#10007; คลัง 002 — ' + e.message;
+    showToast('Upload ไม่สำเร็จ: ' + e.message, 'err');
+  }
+
+  _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
+
+  window._uploading = false;
+  document.getElementById('btnUploadConfirm').style.display = 'none';
+  document.getElementById('btnUploadCancel').textContent    = 'ยกเลิก';
+  document.getElementById('btnUploadCancel').onclick        = closeUpload;
+}
+
 window.addEventListener('beforeunload', function(e) {
   if (window._uploading) {
     e.preventDefault();
@@ -2475,6 +2603,25 @@ window.addEventListener('beforeunload', function(e) {
     e.preventDefault(); e.returnValue = '';
   }
 });
+
+const W002_COLS = ['ordernum','pnt_date','pnt_time','stockdate','stk_time','cuscode','cusname',
+  'code','zone','shortname','itemtypecode','itemtypename','quantity','unitprice','sn',
+  'sup_date','rec_time','dpe_code','dpe_name'];
+
+function setUploadTarget(t) {
+  _uploadTarget = (t === '002') ? '002' : 'zone';
+  document.getElementById('ut_zone').className = 'ttype' + (_uploadTarget === 'zone' ? ' sel-s' : '');
+  document.getElementById('ut_002').className  = 'ttype' + (_uploadTarget === '002'  ? ' sel-m' : '');
+  _csvData = null;
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('previewErr').style.display    = 'none';
+  document.getElementById('csvFile').value = '';
+  document.getElementById('uploadDrop').innerHTML =
+    '<div class="upload-drop-ico">&#128196;</div>' +
+    '<p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>' +
+    '<p style="font-size:11px;margin-top:4px">รองรับ .csv เท่านั้น</p>';
+  enableUpload(false);
+}
 
 </script>
 </body>
