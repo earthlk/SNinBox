@@ -1647,11 +1647,11 @@ async function doPrintSet() {
     if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
     if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
 
-    showPrintProgress('กำลัง Download...', 95);
+    showPrintProgress('กำลังเปิด PDF...', 95);
     openPdfB64(res.pdf, false);
     showPrintProgress('เสร็จสิ้น!', 100);
     setTimeout(hidePrintProgress, 1000);
-    showToast('Download PDF สำเร็จ', 'ok');
+    showToast('เปิด PDF สำเร็จ', 'ok');
   } catch (e) {
     hidePrintProgress();
     showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
@@ -1843,7 +1843,7 @@ function renderSetList(sets) {
     if (isKit && codes.length) {
       var full = Math.floor((s.sn_count || 0) / codes.length);
       var rem  = (s.sn_count || 0) % codes.length;
-      kitBadge = '<span style="font-size:10px;font-weight:700;background:rgba(124,92,252,.18);color:var(--accent2);padding:2px 7px;border-radius:20px;margin-left:4px">'
+      kitBadge = '<span class="kit-set-badge" style="font-size:10px;font-weight:700;background:rgba(124,92,252,.18);color:var(--accent2);padding:2px 7px;border-radius:20px;margin-left:4px">'
                + full + ' ชุด' + (rem ? ' +' + rem : '') + '</span>';
     }
 
@@ -2460,9 +2460,24 @@ function setCodesOf(set) {
 }
 
 function updateSetCountFor(setId) {
-  if (window._sets && window._sets[setId]) {
-    window._sets[setId].sn_count = (_cacheSetSNs[setId] || []).length;
-    renderSetList(Object.values(window._sets));
+  var s = window._sets && window._sets[setId];
+  if (!s) return;
+  s.sn_count = (_cacheSetSNs[setId] || []).length;
+
+  var card = document.getElementById('bc_' + setId);
+  if (!card) return;
+
+  var cnt = card.querySelector('.bcard-count');
+  if (cnt) cnt.textContent = s.sn_count + ' SN';
+
+  if (String(s.set_type) === 'kit') {
+    var codes = setCodesOf(s);
+    var badge = card.querySelector('.kit-set-badge');
+    if (codes.length && badge) {
+      var full = Math.floor(s.sn_count / codes.length);
+      var rem  = s.sn_count % codes.length;
+      badge.textContent = full + ' ชุด' + (rem ? ' +' + rem : '');
+    }
   }
 }
 
@@ -2473,7 +2488,15 @@ function addSNToKitDraft() {
   var allowed = setCodesOf(curSet);
 
   if (allowed.indexOf(code) === -1) { showSNErr('Code "' + code + '" ไม่ได้อยู่ใน Set นี้'); return; }
-  if (!_kitDraft || _kitDraft.set_id !== setId) _kitDraft = { set_id: setId, rows: {} };
+  if (!_kitDraft) {
+    _kitDraft = { set_id: setId, rows: {} };
+  } else if (_kitDraft.set_id !== setId) {
+    var n = Object.keys(_kitDraft.rows).length;
+    if (n && !confirm('มีชุดค้างอยู่ใน ' + _kitDraft.set_id + ' (' + n + ' Code)\nเริ่มชุดใหม่ใน ' + setId + ' จะทิ้งของเดิม — ยืนยัน?')) {
+      clearSN(); return;
+    }
+    _kitDraft = { set_id: setId, rows: {} };
+  }
   if (_kitDraft.saving) { showSNErr('กำลังบันทึกชุดก่อนหน้า รอสักครู่'); return; }
 
   if (_kitDraft.rows[code]) {
@@ -2651,6 +2674,7 @@ async function doUpload002() {
 }
 
 window.addEventListener('beforeunload', function(e) {
+  closePrintTab();
   if (window._uploading) {
     e.preventDefault();
     e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
