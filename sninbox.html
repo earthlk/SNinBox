@@ -508,6 +508,7 @@ var _navToken = 0;
 const WH_OWN_DATA = ['002'];          // คลังที่มี Data SN ของตัวเอง
 var _codeIndexKey = null;             // scope ของ index ที่ cache ไว้
 var _uploadTarget = 'zone';           // 'zone' | '002'
+var _printMode = 'auto';   // 'auto' = ยิงตรงเข้า default | 'dialog' = เปิดให้เลือกเครื่อง
 
 // ---- Init ----
 window.addEventListener('DOMContentLoaded', function() {
@@ -1663,31 +1664,37 @@ async function doPrintSet() {
 	
 var _printWin = null;
 
+var _printWin = null;
+
 function openPdfB64(b64, autoPrint) {
   var binary = atob(String(b64).replace(/\s/g, ''));
   var bytes  = new Uint8Array(binary.length);
   for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
   var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 
-  // กดปุ่มปริ้นเอง → เปิดแท็บให้ดูก่อน (ใช้แท็บเดิมซ้ำ)
-  if (!autoPrint) {
+  // กดปุ่มปริ้นเอง หรือเลือกโหมด "เลือกเครื่องทุกครั้ง" → เปิดแท็บ
+  if (!autoPrint || _printMode === 'dialog') {
     var w = window.open(url, 'snPrintTab');
     if (!w) {
       showToast('เบราว์เซอร์บล็อกป๊อปอัพ — อนุญาตป๊อปอัพของเว็บนี้', 'err');
-    } else {
-      _printWin = w;
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+      return;
+    }
+    _printWin = w;
+    if (autoPrint) {
+      // โหมด dialog: เปิดไดอะล็อกให้ แต่ผู้ใช้เลือกเครื่องเอง
+      setTimeout(function(){ try { w.focus(); w.print(); } catch (e) {} }, 1500);
     }
     setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
     return;
   }
 
-  // Auto Print → iframe ซ่อน ไม่เปิดแท็บ
+  // โหมด auto → iframe ซ่อน ไม่เปิดแท็บ
   var old = document.getElementById('snPrintFrame');
   if (old) old.remove();
 
   var fr = document.createElement('iframe');
   fr.id = 'snPrintFrame';
-  // ห้ามใช้ display:none / visibility:hidden — Chrome จะไม่โหลด PDF viewer
   fr.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
   fr.src = url;
 
@@ -1702,7 +1709,6 @@ function openPdfB64(b64, autoPrint) {
       showToast('ปริ้นอัตโนมัติไม่สำเร็จ — เปิดแท็บแทน', 'err');
       window.open(url, 'snPrintTab');
     }
-    // เก็บ iframe ทิ้งหลังงานพิมพ์ถูกส่งแล้ว
     setTimeout(function() {
       try { fr.remove(); } catch (e) {}
       URL.revokeObjectURL(url);
@@ -1711,7 +1717,7 @@ function openPdfB64(b64, autoPrint) {
 
   fr.onload = firePrint;
   document.body.appendChild(fr);
-  setTimeout(firePrint, 2000);   // กันกรณี onload ไม่ยิง
+  setTimeout(firePrint, 2000);
 }
 
 function closePrintTab() {
@@ -1724,6 +1730,14 @@ function closePrintTab() {
 function toggleAutoPrint(el) {
   _autoPrintKit = !!el.checked;
   showToast(_autoPrintKit ? 'เปิด Auto Print แล้ว' : 'ปิด Auto Print แล้ว', 'ok');
+}
+
+function setPrintMode(m) {
+  _printMode = (m === 'dialog') ? 'dialog' : 'auto';
+  renderKitProgress();
+  showToast(_printMode === 'dialog'
+    ? 'จะเปิดไดอะล็อกให้เลือกเครื่องพิมพ์ทุกครั้ง'
+    : 'จะยิงตรงเข้าเครื่องพิมพ์ default', 'ok');
 }
 
 async function printKitSeq(setId, seq, autoPrint) {
@@ -2115,11 +2129,25 @@ function renderKitProgress() {
           + '</span>';
       }).join('')
     + '</div>'
-    + '<label style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;cursor:pointer;user-select:none">'
-      + '<input type="checkbox" onchange="toggleAutoPrint(this)"' + (_autoPrintKit ? ' checked' : '')
-      + ' style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent)">'
-      + '<span style="color:var(--muted)">&#128424; Auto Print — ปริ้นทันทีเมื่อบันทึกครบชุด</span>'
-    + '</label>';
+    + '<div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--border)">'
+      + '<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;user-select:none">'
+        + '<input type="checkbox" onchange="toggleAutoPrint(this)"' + (_autoPrintKit ? ' checked' : '')
+        + ' style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent)">'
+        + '<span style="color:var(--muted)">&#128424; Auto Print เมื่อบันทึกครบชุด</span>'
+      + '</label>'
+      + (_autoPrintKit
+          ? '<div style="display:flex;gap:5px;margin-top:6px;margin-left:20px">'
+            + '<span onclick="setPrintMode(\'auto\')" style="cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;'
+            + (_printMode === 'auto'
+                ? 'background:rgba(52,211,153,.18);color:var(--green);border:1px solid rgba(52,211,153,.4)'
+                : 'background:var(--card2);color:var(--muted);border:1px solid var(--border)') + '">ยิงตรง (เครื่อง default)</span>'
+            + '<span onclick="setPrintMode(\'dialog\')" style="cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;'
+            + (_printMode === 'dialog'
+                ? 'background:rgba(91,141,238,.18);color:var(--accent);border:1px solid rgba(91,141,238,.4)'
+                : 'background:var(--card2);color:var(--muted);border:1px solid var(--border)') + '">เลือกเครื่องทุกครั้ง</span>'
+            + '</div>'
+          : '')
+    + '</div>';
 }
 
 function renderKitCards(rows) {
