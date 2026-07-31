@@ -1661,43 +1661,36 @@ async function doPrintSet() {
   }
 }
 	
-var _printWin = null;
-
 function openPdfB64(b64, autoPrint) {
   var binary = atob(String(b64).replace(/\s/g, ''));
   var bytes  = new Uint8Array(binary.length);
   for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
   var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 
-  // ใช้แท็บชื่อเดิมซ้ำ — ปริ้นกี่ครั้งก็มีแท็บเดียว
-  var w = window.open(url, 'snPrintTab');
+  var w = window.open(url, '_blank');
   if (!w) {
     showToast('เบราว์เซอร์บล็อกป๊อปอัพ — กดไอคอนขวาบน address bar แล้วอนุญาตป๊อปอัพของเว็บนี้', 'err');
     setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
     return;
   }
-  _printWin = w;
 
   if (autoPrint) {
     var fired = false;
     var firePrint = function() {
       if (fired) return;
       fired = true;
-      try { w.focus(); w.print(); } catch (e) {}
+      try {
+        w.onafterprint = function(){ try { w.close(); } catch (e) {} };
+        w.focus();
+        w.print();
+      } catch (e) { /* ผู้ใช้ปิดแท็บไปก่อน */ }
     };
+    // PDF viewer ไม่ยิง load event ที่เชื่อถือได้ → ใช้ทั้งสองทางกันพลาด
     try { w.addEventListener('load', firePrint); } catch (e) {}
     setTimeout(firePrint, 1500);
-	// ปิดแท็บอัตโนมัติหลังเปิดไดอะล็อก (ปรับตัวเลขตามจังหวะที่ใช้จริง)
-    setTimeout(function(){ try { if (!w.closed) w.close(); } catch (e) {} }, 3000);
   }
 
   setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
-}
-
-// ปิดแท็บปริ้นด้วยตัวเอง
-function closePrintTab() {
-  try { if (_printWin && !_printWin.closed) _printWin.close(); } catch (e) {}
-  _printWin = null;
 }
 
 function toggleAutoPrint(el) {
@@ -1814,16 +1807,27 @@ function renderSetList(sets) {
     var sel    = curSet && curSet.set_id === s.set_id ? 'sel' : '';
     var codes  = String(s.codes || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean);
     var codesHtml = codes.map(function(c){ return '<span style="font-family:monospace;font-size:10px;background:rgba(91,141,238,.15);color:var(--accent);padding:1px 5px;border-radius:4px">' + c + '</span>'; }).join(' ');
+
+    var isKit = String(s.set_type) === 'kit';
+    var kitBadge = '';
+    if (isKit && codes.length) {
+      var full = Math.floor((s.sn_count || 0) / codes.length);
+      var rem  = (s.sn_count || 0) % codes.length;
+      kitBadge = '<span style="font-size:10px;font-weight:700;background:rgba(124,92,252,.18);color:var(--accent2);padding:2px 7px;border-radius:20px;margin-left:4px">'
+               + full + ' ชุด' + (rem ? ' +' + rem : '') + '</span>';
+    }
+
     return '<div class="bcard ' + sel + '" id="bc_' + s.set_id + '" data-sid="' + s.set_id + '">'
       + '<button class="bcard-del no-print" data-delset="' + s.set_id + '">&#10005;</button>'
       + '<div class="bcard-head">'
         + '<span class="bcard-name">' + (s.set_name || '-') + '</span>'
+        + kitBadge
         + '<span class="bcard-count">' + s.sn_count + ' SN</span>'
       + '</div>'
       + '<div class="bcard-info">'
         + '<div class="binfo-row"><span class="binfo-lbl">Set</span>'
         + '<span class="bcard-idsm">' + s.set_id + '</span>'
-        + (String(s.set_type) === 'kit'
+        + (isKit
             ? '<span style="font-size:9px;font-weight:700;background:rgba(251,191,36,.18);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">Kit</span>'
             : '<span style="font-size:9px;font-weight:700;background:rgba(52,211,153,.18);color:var(--green);padding:1px 6px;border-radius:4px;margin-left:4px">Free</span>')
         + '</div>'
@@ -2059,9 +2063,9 @@ function renderKitProgress() {
     el.style.display = 'none'; return;
   }
 
-  var codes = setCodesOf(curSet);
-  var draft = (_kitDraft && _kitDraft.set_id === curSet.set_id) ? _kitDraft.rows : {};
-  var done  = codes.filter(function(c){ return draft[c]; }).length;
+  var codes  = setCodesOf(curSet);
+  var draft  = (_kitDraft && _kitDraft.set_id === curSet.set_id) ? _kitDraft.rows : {};
+  var done   = codes.filter(function(c){ return draft[c]; }).length;
   var saving = !!(_kitDraft && _kitDraft.saving);
 
   el.style.display = '';
@@ -2069,13 +2073,18 @@ function renderKitProgress() {
       '<span style="font-weight:700;color:var(--yellow)">ชุดต่อไป</span>'
     + ' <span style="color:var(--muted)">— ครบ ' + done + '/' + codes.length + ' Code</span>'
     + (saving ? ' <span style="color:var(--accent);font-weight:700">กำลังบันทึก...</span>' : '')
-    + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'
+    + '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">'
     + codes.map(function(c) {
         var ok = !!draft[c];
-        return '<span style="font-family:monospace;font-size:10px;padding:2px 6px;border-radius:4px;'
+        var i  = lookupSetCode(c);
+        var z  = (draft[c] && draft[c].zone) || (i && i.zone) || '?';
+        return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px;border-radius:4px;'
           + (ok ? 'background:rgba(52,211,153,.15);color:var(--green)'
                 : 'background:rgba(251,191,36,.15);color:var(--yellow)') + '">'
-          + (ok ? '&#10003; ' : '') + c + '</span>';
+          + (ok ? '&#10003; ' : '')
+          + '<span style="font-family:monospace">' + c + '</span>'
+          + '<span style="opacity:.75">· ' + z + '</span>'
+          + '</span>';
       }).join('')
     + '</div>'
     + '<label style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;cursor:pointer;user-select:none">'
@@ -2117,18 +2126,20 @@ function renderKitCards(rows) {
       + codes.map(function(c) {
           var r    = d[c];
           var info = lookupSetCode(c);
-          var nm = displayName(c, r ? (r.shortname || r.item_name) : '', 'set');
+          var nm   = displayName(c, r ? (r.shortname || r.item_name) : '', 'set');
+          var z    = (r && r.zone) || (info && info.zone) || '-';
           if (!r) {
             return '<div class="kit-row pending">'
               + '<span class="kit-rcode">' + c + '</span>'
+              + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
               + '<span class="kit-rname">' + nm + '</span>'
               + '<span class="kit-wait">รอสแกน</span></div>';
           }
           return '<div class="kit-row">'
             + '<span class="kit-rcode">' + c + '</span>'
+            + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
             + '<span class="kit-rname">' + nm + '</span>'
             + '<span class="mono">' + r.sn + '</span>'
-            + (saving ? '' : '<button class="btn btn-danger btn-xs no-print" onclick="removeDraftSN(\'' + c + '\')">&#10005;</button>')
             + '</div>';
         }).join('')
       + '</div>';
@@ -2154,18 +2165,21 @@ function renderKitCards(rows) {
       var r    = g[c];
       var info = lookupSetCode(c);
       var nm   = displayName(c, r ? (r.shortname || r.item_name) : '', 'set');
+      var z    = (r && r.zone) || (info && info.zone) || '-';
       if (!r) {
         return '<div class="kit-row pending">'
           + '<span class="kit-rcode">' + c + '</span>'
+          + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
           + '<span class="kit-rname">' + nm + '</span>'
           + '<span class="kit-wait">รอสแกน</span>'
           + '</div>';
       }
       return '<div class="kit-row">'
-            + '<span class="kit-rcode">' + c + '</span>'
-            + '<span class="kit-rname">' + nm + '</span>'
-            + '<span class="mono">' + r.sn + '</span>'
-            + '</div>';
+        + '<span class="kit-rcode">' + c + '</span>'
+        + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
+        + '<span class="kit-rname">' + nm + '</span>'
+        + '<span class="mono">' + r.sn + '</span>'
+        + '</div>';
     }).join('');
 
     html += '</div>';
@@ -2418,8 +2432,7 @@ function setCodesOf(set) {
 function updateSetCountFor(setId) {
   if (window._sets && window._sets[setId]) {
     window._sets[setId].sn_count = (_cacheSetSNs[setId] || []).length;
-    var el = document.querySelector('#bc_' + setId + ' .bcard-count');
-    if (el) el.textContent = (_cacheSetSNs[setId] || []).length + ' SN';
+    renderSetList(Object.values(window._sets));
   }
 }
 
@@ -2608,7 +2621,6 @@ async function doUpload002() {
 }
 
 window.addEventListener('beforeunload', function(e) {
-  closePrintTab();
   if (window._uploading) {
     e.preventDefault();
     e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
