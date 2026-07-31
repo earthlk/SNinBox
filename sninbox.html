@@ -1736,10 +1736,9 @@ function setPrintMode(m) {
   _printMode = (m === 'dialog') ? 'dialog' : 'auto';
   renderKitProgress();
   showToast(_printMode === 'dialog'
-    ? 'จะเปิดไดอะล็อกให้เลือกเครื่องพิมพ์ทุกครั้ง'
+    ? 'จะเปิดหน้าปริ้นให้เลือกเครื่องทุกครั้ง'
     : 'จะยิงตรงเข้าเครื่องพิมพ์ default', 'ok');
 }
-
 async function printKitSeq(setId, seq, autoPrint) {
   try {
     showToast('กำลังสร้าง PDF ชุดที่ ' + seq + '...', 'ok');
@@ -2110,8 +2109,20 @@ function renderKitProgress() {
   var done   = codes.filter(function(c){ return draft[c]; }).length;
   var saving = !!(_kitDraft && _kitDraft.saving);
 
+  function tab(mode, label) {
+    var on = (_printMode === mode);
+    var c  = (mode === 'auto') ? '52,211,153' : '91,141,238';
+    var t  = (mode === 'auto') ? 'var(--green)' : 'var(--accent)';
+    return '<span onclick="setPrintMode(\'' + mode + '\')" '
+      + 'style="cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;'
+      + (on ? 'background:rgba(' + c + ',.18);color:' + t + ';border:1px solid rgba(' + c + ',.4)'
+            : 'background:var(--card2);color:var(--muted);border:1px solid var(--border)')
+      + '">' + label + '</span>';
+  }
+
   el.style.display = '';
   el.innerHTML =
+    // ── ความคืบหน้าของชุดที่กำลังกรอก ──
       '<span style="font-weight:700;color:var(--yellow)">ชุดต่อไป</span>'
     + ' <span style="color:var(--muted)">— ครบ ' + done + '/' + codes.length + ' Code</span>'
     + (saving ? ' <span style="color:var(--accent);font-weight:700">กำลังบันทึก...</span>' : '')
@@ -2129,24 +2140,19 @@ function renderKitProgress() {
           + '</span>';
       }).join('')
     + '</div>'
-    + '<div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--border)">'
+
+    // ── ตั้งค่าการพิมพ์ ──
+    + '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
       + '<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;user-select:none">'
         + '<input type="checkbox" onchange="toggleAutoPrint(this)"' + (_autoPrintKit ? ' checked' : '')
         + ' style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent)">'
-        + '<span style="color:var(--muted)">&#128424; Auto Print เมื่อบันทึกครบชุด</span>'
+        + '<span style="color:var(--muted)">&#128424; Auto Print เมื่อครบชุด</span>'
       + '</label>'
-      + (_autoPrintKit
-          ? '<div style="display:flex;gap:5px;margin-top:6px;margin-left:20px">'
-            + '<span onclick="setPrintMode(\'auto\')" style="cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;'
-            + (_printMode === 'auto'
-                ? 'background:rgba(52,211,153,.18);color:var(--green);border:1px solid rgba(52,211,153,.4)'
-                : 'background:var(--card2);color:var(--muted);border:1px solid var(--border)') + '">ยิงตรง (เครื่อง default)</span>'
-            + '<span onclick="setPrintMode(\'dialog\')" style="cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;'
-            + (_printMode === 'dialog'
-                ? 'background:rgba(91,141,238,.18);color:var(--accent);border:1px solid rgba(91,141,238,.4)'
-                : 'background:var(--card2);color:var(--muted);border:1px solid var(--border)') + '">เลือกเครื่องทุกครั้ง</span>'
-            + '</div>'
-          : '')
+      + '<div style="display:flex;gap:5px;align-items:center">'
+        + '<span style="font-size:10px;color:var(--muted)">โหมด:</span>'
+        + tab('auto',   'ยิงตรง')
+        + tab('dialog', 'เลือกเครื่อง')
+      + '</div>'
     + '</div>';
 }
 
