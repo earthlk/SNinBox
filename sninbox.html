@@ -1658,25 +1658,14 @@ async function doPrintSet() {
     btn.textContent = '🖨 ปริ้น'; btn.disabled = false;
   }
 }
-	
-var _printWin = null;
 
-function openPdfB64(b64, autoPrint) {
+function openPdfB64(b64) {
   var binary = atob(String(b64).replace(/\s/g, ''));
   var bytes  = new Uint8Array(binary.length);
   for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
   var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 
-  // กดปุ่มปริ้นเอง → เปิดแท็บให้ดู (ใช้แท็บชื่อเดิมซ้ำ ไม่สะสม)
-  if (!autoPrint) {
-    var w = window.open(url, 'snPrintTab');
-    if (!w) showToast('เบราว์เซอร์บล็อกป๊อปอัพ — อนุญาตป๊อปอัพของเว็บนี้', 'err');
-    else _printWin = w;
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
-    return;
-  }
-
-  // Auto Print → iframe ซ่อน ไม่มี fallback ไม่มีการปิดของรอบก่อน
+  // ลบ iframe เก่า แล้วสร้างใหม่ — ไม่เปิดแท็บเลย
   var old = document.getElementById('snPrintFrame');
   if (old) { try { old.remove(); } catch (e) {} }
 
@@ -1702,8 +1691,6 @@ function openPdfB64(b64, autoPrint) {
 }
 
 function closePrintTab() {
-  try { if (_printWin && !_printWin.closed) _printWin.close(); } catch (e) {}
-  _printWin = null;
   var fr = document.getElementById('snPrintFrame');
   if (fr) { try { fr.remove(); } catch (e) {} }
 }
