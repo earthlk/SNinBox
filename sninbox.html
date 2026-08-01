@@ -1662,7 +1662,9 @@ async function doPrintSet() {
 var _printWin = null;
 
 function openPdfB64(b64, autoPrint) {
-  closePrintTab();   // เก็บกวาดของรอบก่อนเสมอ
+  // ลบ iframe เก่า (ถ้ามี) — ไม่แตะแท็บที่อาจกำลังปริ้นอยู่
+  var old = document.getElementById('snPrintFrame');
+  if (old) { try { old.remove(); } catch (e) {} }
 
   var binary = atob(String(b64).replace(/\s/g, ''));
   var bytes  = new Uint8Array(binary.length);
@@ -1677,7 +1679,7 @@ function openPdfB64(b64, autoPrint) {
       _printWin = w;
       if (msg) showToast(msg, 'err');
     }
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
   }
 
   // กดปุ่มปริ้นเอง → เปิดแท็บให้ดู
@@ -1690,30 +1692,30 @@ function openPdfB64(b64, autoPrint) {
   fr.src = url;
 
   var fired = false;
-  var cleanup = function() {
-    try { fr.remove(); } catch (e) {}
-    URL.revokeObjectURL(url);
-  };
-
   var firePrint = function() {
     if (fired) return;
     fired = true;
     try {
       fr.contentWindow.focus();
       fr.contentWindow.print();
-      setTimeout(cleanup, 60000);
     } catch (e) {
-      cleanup();                                        // ลบ iframe ก่อน
-      openTab('ปริ้นอัตโนมัติไม่สำเร็จ — เปิดแท็บให้แทน');   // แล้วค่อยเปิดแท็บ
+      try { fr.remove(); } catch (e2) {}
+      openTab('ปริ้นอัตโนมัติไม่สำเร็จ — เปิดแท็บให้แทน');
+      return;
     }
+    // ปล่อยให้ iframe อยู่ต่อจนแน่ใจว่างานหลุดไปแล้ว
+    setTimeout(function() {
+      try { fr.remove(); } catch (e) {}
+      URL.revokeObjectURL(url);
+    }, 120000);
   };
 
   fr.onload = firePrint;
   document.body.appendChild(fr);
   setTimeout(firePrint, 2000);
-  setTimeout(cleanup, 90000);   // กันเหนียว ถ้า firePrint ไม่เคยทำงาน
 }
 
+// เรียกตอนปิดหน้าเว็บเท่านั้น — ห้ามเรียกก่อนเริ่มปริ้นรอบใหม่
 function closePrintTab() {
   try { if (_printWin && !_printWin.closed) _printWin.close(); } catch (e) {}
   _printWin = null;
