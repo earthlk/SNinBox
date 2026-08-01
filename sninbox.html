@@ -1661,7 +1661,145 @@ async function doPrintSet() {
   }
 }
 	
-var _printWin = null;
+// ===== ตัวแปร global สำหรับเก็บหน้าต่าง print ที่เปิดค้างไว้ =====
+let _printWin = null;
+
+/**
+ * เรียก "ทันที" ใน click handler ก่อน await GAS
+ * เพื่อจองหน้าต่างไว้ตอนที่ยังมี user gesture อยู่
+ */
+function preparePrintWindow() {
+  try {
+    _printWin = window.open('', '_blank');
+    if (_printWin) {
+      _printWin.document.write(
+        '<html><head><title>กำลังเตรียมเอกสาร...</title></head>' +
+        '<body style="font-family:sans-serif;display:flex;align-items:center;' +
+        'justify-content:center;height:100vh;margin:0;background:#f5f5f5">' +
+        '<div style="text-align:center"><div style="font-size:20px;color:#333">' +
+        'กำลังสร้างเอกสาร กรุณารอสักครู่...</div></div></body></html>'
+      );
+      _printWin.document.close();
+    }
+  } catch (e) {
+    console.warn('preparePrintWindow failed:', e);
+    _printWin = null;
+  }
+}
+
+async function onKitCommitClick() {
+  // 1) จองหน้าต่างทันที ตอนที่ยังมี user gesture
+  preparePrintWindow();
+
+  showPrintProgress(true);
+  try {
+    // 2) commit แบบ atomic ตามเดิม
+    const res = await callGAS('addKitToBoxSet', { /* ... */ });
+    if (!res || !res.ok) throw new Error(res && res.error ? res.error : 'commit ล้มเหลว');
+
+    // 3) ขอ PDF
+    const pdf = await callGAS('printBoxSet', { set_id: res.set_id });
+    if (!pdf || !pdf.base64) throw new Error('GAS ไม่ได้ส่ง PDF กลับมา');
+
+    printPdfFromBase64(pdf.base64, true);
+  } catch (err) {
+    if (_printWin) { try { _printWin.close(); } catch (_) {} _printWin = null; }
+    showErrorModal(err.message);
+  } finally {
+    showPrintProgress(false);
+  }
+}
+	
+/**
+ * แปลง base64 -> Blob
+ */
+function _b64ToBlob(b64, mime) {
+  const clean = String(b64).replace(/^data:[^;]+;base64,/, '');
+  const byteChars = atob(clean);
+  const byteArrays = [];
+  for (let offset = 0; offset < byteChars.length; offset += 512) {
+    const slice = byteChars.slice(offset, offset + 512);
+    const nums = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) nums[i] = slice.charCodeAt(i);
+    byteArrays.push(new Uint8Array(nums));
+  }
+  return new Blob(byteArrays, { type: mime || 'application/pdf' });
+}
+
+/**
+ * สั่งพิมพ์ PDF จาก base64 ที่ GAS ส่งกลับมา
+ * @param {string} b64      base64 ของไฟล์ PDF
+ * @param {boolean} autoFire true = สั่ง print ให้เลย, false = แค่เปิดให้ดู
+ */
+function printPdfFromBase64(b64, autoFire) {
+  if (autoFire === undefined) autoFire = true;
+
+  let url;
+  try {
+    url = URL.createObjectURL(_b64ToBlob(b64, 'application/pdf'));
+  } catch (e) {
+    console.error('สร้าง Blob ไม่สำเร็จ:', e);
+    showErrorModal('ไม่สามารถเตรียมไฟล์ PDF ได้');
+    if (_printWin) { try { _printWin.close(); } catch (_) {} _printWin = null; }
+    return;
+  }
+
+  // --- กรณีมีหน้าต่างที่จองไว้แล้ว (เส้นทางหลัก) ---
+  if (_printWin && !_printWin.closed) {
+    const w = _printWin;
+    _printWin = null;
+
+    w.location.href = url;
+
+    // รอให้ PDF viewer โหลดจริง ๆ ก่อนสั่ง print
+    // onload ของ PDF ใน Chrome เชื่อถือไม่ได้ จึงใช้ delay ควบคู่
+    if (autoFire) {
+      const fire = () => {
+        try {
+          w.focus();
+          w.print();
+        } catch (e) {
+          console.warn('สั่ง print ไม่สำเร็จ (ผู้ใช้สั่งเองจากหน้าต่างได้):', e);
+        }
+      };
+      // ยิงหลังจาก viewer render เสร็จ
+      setTimeout(fire, 1200);
+    }
+
+    // *** สำคัญ: อย่า revoke เร็ว มิฉะนั้น preview จะโดนปิด ***
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 120000);
+    return;
+  }
+
+  // --- Fallback: ไม่มีหน้าต่างจองไว้ / โดน popup blocker ---
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText =
+    'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;';
+  iframe.src = url;
+
+  let fired = false;
+  iframe.onload = () => {
+    if (fired) return;
+    fired = true;
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (e) {
+        console.warn('iframe print ล้มเหลว เปิดแท็บใหม่แทน:', e);
+        window.open(url, '_blank');
+      }
+    }, 1000);
+  };
+
+  document.body.appendChild(iframe);
+
+  // เก็บกวาดทีหลังมาก ๆ — ห้ามลบทันทีหลัง print()
+  setTimeout(() => {
+    try { URL.revokeObjectURL(url); } catch (_) {}
+    try { iframe.remove(); } catch (_) {}
+  }, 120000);
+}
 
 function openPdfB64(b64, autoPrint) {
   closePrintTab();   // เก็บกวาดของรอบก่อนเสมอ
