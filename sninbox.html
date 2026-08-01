@@ -1685,6 +1685,14 @@ function openPdfB64(b64, autoPrint) {
   // กดปุ่มปริ้นเอง → เปิดแท็บให้ดู
   if (!autoPrint) { openTab(null); return; }
 
+  // Auto Print ใน kiosk mode → ใช้แท็บ (เสถียรกว่า iframe)
+  var w = window.open(url, 'snPrintTab');
+  if (!w) { showToast('เบราว์เซอร์บล็อกป๊อปอัพ', 'err'); return; }
+  _printWin = w;
+  setTimeout(function(){ try { w.focus(); w.print(); } catch (e) {} }, 1500);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
+  return;
+
   // Auto Print → iframe ซ่อน
   var fr = document.createElement('iframe');
   fr.id = 'snPrintFrame';
