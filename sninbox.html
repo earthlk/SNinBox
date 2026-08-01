@@ -1647,11 +1647,11 @@ async function doPrintSet() {
     if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
     if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
 
-    showPrintProgress('กำลังเปิด PDF...', 95);
+    showPrintProgress('กำลัง Download...', 95);
     openPdfB64(res.pdf, false);
     showPrintProgress('เสร็จสิ้น!', 100);
     setTimeout(hidePrintProgress, 1000);
-    showToast('เปิด PDF สำเร็จ', 'ok');
+    showToast('Download PDF สำเร็จ', 'ok');
   } catch (e) {
     hidePrintProgress();
     showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
@@ -1661,206 +1661,38 @@ async function doPrintSet() {
   }
 }
 	
-// ===== ตัวแปร global สำหรับเก็บหน้าต่าง print ที่เปิดค้างไว้ =====
-let _printWin = null;
-
-/**
- * เรียก "ทันที" ใน click handler ก่อน await GAS
- * เพื่อจองหน้าต่างไว้ตอนที่ยังมี user gesture อยู่
- */
-function preparePrintWindow() {
-  try {
-    _printWin = window.open('', '_blank');
-    if (_printWin) {
-      _printWin.document.write(
-        '<html><head><title>กำลังเตรียมเอกสาร...</title></head>' +
-        '<body style="font-family:sans-serif;display:flex;align-items:center;' +
-        'justify-content:center;height:100vh;margin:0;background:#f5f5f5">' +
-        '<div style="text-align:center"><div style="font-size:20px;color:#333">' +
-        'กำลังสร้างเอกสาร กรุณารอสักครู่...</div></div></body></html>'
-      );
-      _printWin.document.close();
-    }
-  } catch (e) {
-    console.warn('preparePrintWindow failed:', e);
-    _printWin = null;
-  }
-}
-
-async function onKitCommitClick() {
-  // 1) จองหน้าต่างทันที ตอนที่ยังมี user gesture
-  preparePrintWindow();
-
-  showPrintProgress(true);
-  try {
-    // 2) commit แบบ atomic ตามเดิม
-    const res = await callGAS('addKitToBoxSet', { /* ... */ });
-    if (!res || !res.ok) throw new Error(res && res.error ? res.error : 'commit ล้มเหลว');
-
-    // 3) ขอ PDF
-    const pdf = await callGAS('printBoxSet', { set_id: res.set_id });
-    if (!pdf || !pdf.base64) throw new Error('GAS ไม่ได้ส่ง PDF กลับมา');
-
-    printPdfFromBase64(pdf.base64, true);
-  } catch (err) {
-    if (_printWin) { try { _printWin.close(); } catch (_) {} _printWin = null; }
-    showErrorModal(err.message);
-  } finally {
-    showPrintProgress(false);
-  }
-}
-	
-/**
- * แปลง base64 -> Blob
- */
-function _b64ToBlob(b64, mime) {
-  const clean = String(b64).replace(/^data:[^;]+;base64,/, '');
-  const byteChars = atob(clean);
-  const byteArrays = [];
-  for (let offset = 0; offset < byteChars.length; offset += 512) {
-    const slice = byteChars.slice(offset, offset + 512);
-    const nums = new Array(slice.length);
-    for (let i = 0; i < slice.length; i++) nums[i] = slice.charCodeAt(i);
-    byteArrays.push(new Uint8Array(nums));
-  }
-  return new Blob(byteArrays, { type: mime || 'application/pdf' });
-}
-
-/**
- * สั่งพิมพ์ PDF จาก base64 ที่ GAS ส่งกลับมา
- * @param {string} b64      base64 ของไฟล์ PDF
- * @param {boolean} autoFire true = สั่ง print ให้เลย, false = แค่เปิดให้ดู
- */
-function printPdfFromBase64(b64, autoFire) {
-  if (autoFire === undefined) autoFire = true;
-
-  let url;
-  try {
-    url = URL.createObjectURL(_b64ToBlob(b64, 'application/pdf'));
-  } catch (e) {
-    console.error('สร้าง Blob ไม่สำเร็จ:', e);
-    showErrorModal('ไม่สามารถเตรียมไฟล์ PDF ได้');
-    if (_printWin) { try { _printWin.close(); } catch (_) {} _printWin = null; }
-    return;
-  }
-
-  // --- กรณีมีหน้าต่างที่จองไว้แล้ว (เส้นทางหลัก) ---
-  if (_printWin && !_printWin.closed) {
-    const w = _printWin;
-    _printWin = null;
-
-    w.location.href = url;
-
-    // รอให้ PDF viewer โหลดจริง ๆ ก่อนสั่ง print
-    // onload ของ PDF ใน Chrome เชื่อถือไม่ได้ จึงใช้ delay ควบคู่
-    if (autoFire) {
-      const fire = () => {
-        try {
-          w.focus();
-          w.print();
-        } catch (e) {
-          console.warn('สั่ง print ไม่สำเร็จ (ผู้ใช้สั่งเองจากหน้าต่างได้):', e);
-        }
-      };
-      // ยิงหลังจาก viewer render เสร็จ
-      setTimeout(fire, 1200);
-    }
-
-    // *** สำคัญ: อย่า revoke เร็ว มิฉะนั้น preview จะโดนปิด ***
-    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 120000);
-    return;
-  }
-
-  // --- Fallback: ไม่มีหน้าต่างจองไว้ / โดน popup blocker ---
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText =
-    'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;';
-  iframe.src = url;
-
-  let fired = false;
-  iframe.onload = () => {
-    if (fired) return;
-    fired = true;
-    setTimeout(() => {
-      try {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-      } catch (e) {
-        console.warn('iframe print ล้มเหลว เปิดแท็บใหม่แทน:', e);
-        window.open(url, '_blank');
-      }
-    }, 1000);
-  };
-
-  document.body.appendChild(iframe);
-
-  // เก็บกวาดทีหลังมาก ๆ — ห้ามลบทันทีหลัง print()
-  setTimeout(() => {
-    try { URL.revokeObjectURL(url); } catch (_) {}
-    try { iframe.remove(); } catch (_) {}
-  }, 120000);
-}
-
 function openPdfB64(b64, autoPrint) {
-  closePrintTab();   // เก็บกวาดของรอบก่อนเสมอ
-
   var binary = atob(String(b64).replace(/\s/g, ''));
   var bytes  = new Uint8Array(binary.length);
   for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
   var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 
-  function openTab(msg) {
-    var w = window.open(url, 'snPrintTab');   // ชื่อเดิม = ใช้แท็บซ้ำ ไม่สะสม
-    if (!w) {
-      showToast('เบราว์เซอร์บล็อกป๊อปอัพ — อนุญาตป๊อปอัพของเว็บนี้', 'err');
-    } else {
-      _printWin = w;
-      if (msg) showToast(msg, 'err');
-    }
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+  var w = window.open(url, '_blank');
+  if (!w) {
+    showToast('เบราว์เซอร์บล็อกป๊อปอัพ — กดไอคอนขวาบน address bar แล้วอนุญาตป๊อปอัพของเว็บนี้', 'err');
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+    return;
   }
 
-  // กดปุ่มปริ้นเอง → เปิดแท็บให้ดู
-  if (!autoPrint) { openTab(null); return; }
+  if (autoPrint) {
+    var fired = false;
+    var firePrint = function() {
+      if (fired) return;
+      fired = true;
+      try {
+        w.onafterprint = function(){ try { w.close(); } catch (e) {} };
+        w.focus();
+        w.print();
+      } catch (e) { /* ผู้ใช้ปิดแท็บไปก่อน */ }
+    };
+    // PDF viewer ไม่ยิง load event ที่เชื่อถือได้ → ใช้ทั้งสองทางกันพลาด
+    try { w.addEventListener('load', firePrint); } catch (e) {}
+    setTimeout(firePrint, 1500);
+  }
 
-  // Auto Print → iframe ซ่อน
-  var fr = document.createElement('iframe');
-  fr.id = 'snPrintFrame';
-  fr.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
-  fr.src = url;
-
-  var fired = false;
-  var cleanup = function() {
-    try { fr.remove(); } catch (e) {}
-    URL.revokeObjectURL(url);
-  };
-
-  var firePrint = function() {
-    if (fired) return;
-    fired = true;
-    try {
-      fr.contentWindow.focus();
-      fr.contentWindow.print();
-      setTimeout(cleanup, 15000);
-    } catch (e) {
-      cleanup();                                        // ลบ iframe ก่อน
-      openTab('ปริ้นอัตโนมัติไม่สำเร็จ — เปิดแท็บให้แทน');   // แล้วค่อยเปิดแท็บ
-    }
-  };
-
-  fr.onload = firePrint;
-  document.body.appendChild(fr);
-  setTimeout(firePrint, 2000);
-  setTimeout(cleanup, 30000);   // กันเหนียว ถ้า firePrint ไม่เคยทำงาน
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
 }
 
-function closePrintTab() {
-  try { if (_printWin && !_printWin.closed) _printWin.close(); } catch (e) {}
-  _printWin = null;
-  var fr = document.getElementById('snPrintFrame');
-  if (fr) { try { fr.remove(); } catch (e) {} }
-}
-	
 function toggleAutoPrint(el) {
   _autoPrintKit = !!el.checked;
   showToast(_autoPrintKit ? 'เปิด Auto Print แล้ว' : 'ปิด Auto Print แล้ว', 'ok');
@@ -1975,27 +1807,16 @@ function renderSetList(sets) {
     var sel    = curSet && curSet.set_id === s.set_id ? 'sel' : '';
     var codes  = String(s.codes || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean);
     var codesHtml = codes.map(function(c){ return '<span style="font-family:monospace;font-size:10px;background:rgba(91,141,238,.15);color:var(--accent);padding:1px 5px;border-radius:4px">' + c + '</span>'; }).join(' ');
-
-    var isKit = String(s.set_type) === 'kit';
-    var kitBadge = '';
-    if (isKit && codes.length) {
-      var full = Math.floor((s.sn_count || 0) / codes.length);
-      var rem  = (s.sn_count || 0) % codes.length;
-      kitBadge = '<span class="kit-set-badge" style="font-size:10px;font-weight:700;background:rgba(124,92,252,.18);color:var(--accent2);padding:2px 7px;border-radius:20px;margin-left:4px">'
-               + full + ' ชุด' + (rem ? ' +' + rem : '') + '</span>';
-    }
-
     return '<div class="bcard ' + sel + '" id="bc_' + s.set_id + '" data-sid="' + s.set_id + '">'
       + '<button class="bcard-del no-print" data-delset="' + s.set_id + '">&#10005;</button>'
       + '<div class="bcard-head">'
         + '<span class="bcard-name">' + (s.set_name || '-') + '</span>'
-        + kitBadge
         + '<span class="bcard-count">' + s.sn_count + ' SN</span>'
       + '</div>'
       + '<div class="bcard-info">'
         + '<div class="binfo-row"><span class="binfo-lbl">Set</span>'
         + '<span class="bcard-idsm">' + s.set_id + '</span>'
-        + (isKit
+        + (String(s.set_type) === 'kit'
             ? '<span style="font-size:9px;font-weight:700;background:rgba(251,191,36,.18);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">Kit</span>'
             : '<span style="font-size:9px;font-weight:700;background:rgba(52,211,153,.18);color:var(--green);padding:1px 6px;border-radius:4px;margin-left:4px">Free</span>')
         + '</div>'
@@ -2231,9 +2052,9 @@ function renderKitProgress() {
     el.style.display = 'none'; return;
   }
 
-  var codes  = setCodesOf(curSet);
-  var draft  = (_kitDraft && _kitDraft.set_id === curSet.set_id) ? _kitDraft.rows : {};
-  var done   = codes.filter(function(c){ return draft[c]; }).length;
+  var codes = setCodesOf(curSet);
+  var draft = (_kitDraft && _kitDraft.set_id === curSet.set_id) ? _kitDraft.rows : {};
+  var done  = codes.filter(function(c){ return draft[c]; }).length;
   var saving = !!(_kitDraft && _kitDraft.saving);
 
   el.style.display = '';
@@ -2241,18 +2062,13 @@ function renderKitProgress() {
       '<span style="font-weight:700;color:var(--yellow)">ชุดต่อไป</span>'
     + ' <span style="color:var(--muted)">— ครบ ' + done + '/' + codes.length + ' Code</span>'
     + (saving ? ' <span style="color:var(--accent);font-weight:700">กำลังบันทึก...</span>' : '')
-    + '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">'
+    + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'
     + codes.map(function(c) {
         var ok = !!draft[c];
-        var i  = lookupSetCode(c);
-        var z  = (draft[c] && draft[c].zone) || (i && i.zone) || '?';
-        return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px;border-radius:4px;'
+        return '<span style="font-family:monospace;font-size:10px;padding:2px 6px;border-radius:4px;'
           + (ok ? 'background:rgba(52,211,153,.15);color:var(--green)'
                 : 'background:rgba(251,191,36,.15);color:var(--yellow)') + '">'
-          + (ok ? '&#10003; ' : '')
-          + '<span style="font-family:monospace">' + c + '</span>'
-          + '<span style="opacity:.75">· ' + z + '</span>'
-          + '</span>';
+          + (ok ? '&#10003; ' : '') + c + '</span>';
       }).join('')
     + '</div>'
     + '<label style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;cursor:pointer;user-select:none">'
@@ -2294,20 +2110,18 @@ function renderKitCards(rows) {
       + codes.map(function(c) {
           var r    = d[c];
           var info = lookupSetCode(c);
-          var nm   = displayName(c, r ? (r.shortname || r.item_name) : '', 'set');
-          var z    = (r && r.zone) || (info && info.zone) || '-';
+          var nm = displayName(c, r ? (r.shortname || r.item_name) : '', 'set');
           if (!r) {
             return '<div class="kit-row pending">'
               + '<span class="kit-rcode">' + c + '</span>'
-              + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
               + '<span class="kit-rname">' + nm + '</span>'
               + '<span class="kit-wait">รอสแกน</span></div>';
           }
           return '<div class="kit-row">'
             + '<span class="kit-rcode">' + c + '</span>'
-            + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
             + '<span class="kit-rname">' + nm + '</span>'
             + '<span class="mono">' + r.sn + '</span>'
+            + (saving ? '' : '<button class="btn btn-danger btn-xs no-print" onclick="removeDraftSN(\'' + c + '\')">&#10005;</button>')
             + '</div>';
         }).join('')
       + '</div>';
@@ -2333,21 +2147,18 @@ function renderKitCards(rows) {
       var r    = g[c];
       var info = lookupSetCode(c);
       var nm   = displayName(c, r ? (r.shortname || r.item_name) : '', 'set');
-      var z    = (r && r.zone) || (info && info.zone) || '-';
       if (!r) {
         return '<div class="kit-row pending">'
           + '<span class="kit-rcode">' + c + '</span>'
-          + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
           + '<span class="kit-rname">' + nm + '</span>'
           + '<span class="kit-wait">รอสแกน</span>'
           + '</div>';
       }
       return '<div class="kit-row">'
-        + '<span class="kit-rcode">' + c + '</span>'
-        + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
-        + '<span class="kit-rname">' + nm + '</span>'
-        + '<span class="mono">' + r.sn + '</span>'
-        + '</div>';
+            + '<span class="kit-rcode">' + c + '</span>'
+            + '<span class="kit-rname">' + nm + '</span>'
+            + '<span class="mono">' + r.sn + '</span>'
+            + '</div>';
     }).join('');
 
     html += '</div>';
@@ -2598,24 +2409,10 @@ function setCodesOf(set) {
 }
 
 function updateSetCountFor(setId) {
-  var s = window._sets && window._sets[setId];
-  if (!s) return;
-  s.sn_count = (_cacheSetSNs[setId] || []).length;
-
-  var card = document.getElementById('bc_' + setId);
-  if (!card) return;
-
-  var cnt = card.querySelector('.bcard-count');
-  if (cnt) cnt.textContent = s.sn_count + ' SN';
-
-  if (String(s.set_type) === 'kit') {
-    var codes = setCodesOf(s);
-    var badge = card.querySelector('.kit-set-badge');
-    if (codes.length && badge) {
-      var full = Math.floor(s.sn_count / codes.length);
-      var rem  = s.sn_count % codes.length;
-      badge.textContent = full + ' ชุด' + (rem ? ' +' + rem : '');
-    }
+  if (window._sets && window._sets[setId]) {
+    window._sets[setId].sn_count = (_cacheSetSNs[setId] || []).length;
+    var el = document.querySelector('#bc_' + setId + ' .bcard-count');
+    if (el) el.textContent = (_cacheSetSNs[setId] || []).length + ' SN';
   }
 }
 
@@ -2626,15 +2423,7 @@ function addSNToKitDraft() {
   var allowed = setCodesOf(curSet);
 
   if (allowed.indexOf(code) === -1) { showSNErr('Code "' + code + '" ไม่ได้อยู่ใน Set นี้'); return; }
-  if (!_kitDraft) {
-    _kitDraft = { set_id: setId, rows: {} };
-  } else if (_kitDraft.set_id !== setId) {
-    var n = Object.keys(_kitDraft.rows).length;
-    if (n && !confirm('มีชุดค้างอยู่ใน ' + _kitDraft.set_id + ' (' + n + ' Code)\nเริ่มชุดใหม่ใน ' + setId + ' จะทิ้งของเดิม — ยืนยัน?')) {
-      clearSN(); return;
-    }
-    _kitDraft = { set_id: setId, rows: {} };
-  }
+  if (!_kitDraft || _kitDraft.set_id !== setId) _kitDraft = { set_id: setId, rows: {} };
   if (_kitDraft.saving) { showSNErr('กำลังบันทึกชุดก่อนหน้า รอสักครู่'); return; }
 
   if (_kitDraft.rows[code]) {
@@ -2812,7 +2601,6 @@ async function doUpload002() {
 }
 
 window.addEventListener('beforeunload', function(e) {
-  closePrintTab();
   if (window._uploading) {
     e.preventDefault();
     e.returnValue = 'กำลัง Upload อยู่ ห้ามปิด';
