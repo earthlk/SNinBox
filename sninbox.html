@@ -468,10 +468,10 @@ tr:hover td{background:rgba(91,141,238,.04)}
     <div class="fg">
       <label>Code ที่เลือก</label>
       <div id="setCodeList" style="display:flex;flex-direction:column;gap:4px;min-height:32px;padding:6px;background:var(--card);border:1px solid var(--border);border-radius:8px"></div>
-        <div class="modal-foot">
-          <button class="btn btn-ghost" onclick="closeCreateSet()">ยกเลิก</button>
-          <button class="btn btn-primary" id="btnCreateSet" onclick="doCreateSet()" disabled style="opacity:.5">สร้าง BoxSet</button>
-        </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeCreateSet()">ยกเลิก</button>
+        <button class="btn btn-primary" id="btnCreateSet" onclick="doCreateSet()" disabled style="opacity:.5">สร้าง BoxSet</button>
+       </div>
     </div>
   </div>
 </div>
@@ -1701,7 +1701,7 @@ function openPdfB64(b64, autoPrint) {
     try {
       fr.contentWindow.focus();
       fr.contentWindow.print();
-      setTimeout(cleanup, 60000);
+      setTimeout(cleanup, 15000);
     } catch (e) {
       cleanup();                                        // ลบ iframe ก่อน
       openTab('ปริ้นอัตโนมัติไม่สำเร็จ — เปิดแท็บให้แทน');   // แล้วค่อยเปิดแท็บ
@@ -1711,7 +1711,7 @@ function openPdfB64(b64, autoPrint) {
   fr.onload = firePrint;
   document.body.appendChild(fr);
   setTimeout(firePrint, 2000);
-  setTimeout(cleanup, 90000);   // กันเหนียว ถ้า firePrint ไม่เคยทำงาน
+  setTimeout(cleanup, 30000);   // กันเหนียว ถ้า firePrint ไม่เคยทำงาน
 }
 
 function closePrintTab() {
