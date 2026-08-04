@@ -505,6 +505,7 @@ var _setSelectedCodes = [];
 var setType = 'free';
 var _kitDraft = null;   // { set_id, rows: { code: snEntry } }
 var _autoPrintKit = false;
+	var _printWin = null;
 var _navToken = 0;
 const WH_OWN_DATA = ['002'];          // คลังที่มี Data SN ของตัวเอง
 var _codeIndexKey = null;             // scope ของ index ที่ cache ไว้
@@ -515,6 +516,11 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('zoneTabs').innerHTML = ZONES.map(function(z) {
     return '<button class="ztab" id="ztab_' + z + '" onclick="selectZone(\'' + z + '\')">' + z + '</button>';
   }).join('');
+	if (isEdge()) {
+    setTimeout(function() {
+      showToast('Edge อาจทำให้ฉลากปริ้นเพี้ยน — แนะนำให้ใช้ Chrome', 'err');
+    }, 1200);
+  }
 });
 
 // ---- Zone ----
@@ -1691,6 +1697,8 @@ function openPdfB64(b64) {
 }
 
 function closePrintTab() {
+  try { if (_printWin && !_printWin.closed) _printWin.close(); } catch (e) {}
+  _printWin = null;
   var fr = document.getElementById('snPrintFrame');
   if (fr) { try { fr.remove(); } catch (e) {} }
 }
@@ -2667,6 +2675,10 @@ function setUploadTarget(t) {
     '<p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>' +
     '<p style="font-size:11px;margin-top:4px">รองรับ .csv เท่านั้น</p>';
   enableUpload(false);
+}
+
+function isEdge() {
+  return /Edg\//.test(navigator.userAgent);
 }
 
 </script>
