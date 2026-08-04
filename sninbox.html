@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SN Manager 1.0</title>
+<title>SN Manager 1.1</title>
 <style>
 :root {
   --bg:      #0d0f18;
@@ -1047,7 +1047,7 @@ async function doPrint() {
     if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
 
     showPrintProgress('กำลังเปิด PDF...', 95);
-    openPdfB64(res.pdf, true);
+    openPdfB64(res.pdf, true, 'ปริ้น');
     showPrintProgress('เสร็จสิ้น!', 100);
     setTimeout(hidePrintProgress, 1000);
     showToast('เปิด PDF สำเร็จ', 'ok');
@@ -1654,7 +1654,7 @@ async function doPrintSet() {
     if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
 
     showPrintProgress('กำลังเปิด PDF...', 95);
-    openPdfB64(res.pdf, true);
+    openPdfB64(res.pdf, true, 'ปริ้น');
     showPrintProgress('เสร็จสิ้น!', 100);
     setTimeout(hidePrintProgress, 1000);
     showToast('เปิด PDF สำเร็จ', 'ok');
@@ -1683,17 +1683,18 @@ function _b64ToPdfUrl(b64) {
  * @param {string}  b64        base64 ของ PDF
  * @param {boolean} autoPrint  true = สั่งปริ้นเลย, false = เปิดแท็บให้ดูเฉยๆ
  */
-function openPdfB64(b64, autoPrint) {
+function openPdfB64(b64, autoPrint, label) {
   if (autoPrint === undefined) autoPrint = true;
   var url;
   try {
-    url = _b64ToPdfUrl(b64);
+    url = _b64ToPdfUrl(String(b64).replace(/\s/g, ''));
   } catch (e) {
+    hidePrintProgress();
     showToast('เตรียมไฟล์ PDF ไม่สำเร็จ: ' + e.message, 'err');
     return;
   }
   if (!autoPrint) { openPdfTab(url); return; }
-  _printQueue.push(url);
+  _printQueue.push({ url: url, label: label || 'ปริ้น' });
   _drainPrintQueue();
 }
 
@@ -1708,30 +1709,31 @@ function openPdfTab(url) {
 function _drainPrintQueue() {
   if (_printBusy || !_printQueue.length) return;
   _printBusy = true;
-  var url = _printQueue.shift();
-  _printOne(url, function() {
+  var job = _printQueue.shift();
+  _printOne(job.url, job.label, function() {
     _printBusy = false;
-    setTimeout(_drainPrintQueue, 500);
+    setTimeout(_drainPrintQueue, 400);
   });
 }
 
-function _printOne(url, onDone) {
+function _printOne(url, label, onDone) {
   var fr = document.createElement('iframe');
   fr.className = 'snPrintFrame';
   fr.setAttribute('aria-hidden', 'true');
-  // *** สำคัญ: ต้องมีขนาดจริง ไม่งั้น Chrome ไม่โหลด PDF viewer ***
   fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;height:1123px;'
                    + 'border:0;opacity:1;pointer-events:none;z-index:-1';
   document.body.appendChild(fr);
   _printFrames.push(fr);
 
-  var printed  = false;
-  var finished = false;
+  showPrintProgress(label + ' — กำลังโหลด PDF...', 60);
+
+  var printed = false, finished = false, poller = null;
+  var started = Date.now();
 
   function finish() {
     if (finished) return;
     finished = true;
-    // อย่าลบเฟรม/revoke เร็ว — preview จะโดนปิดกลางคัน
+    if (poller) { clearInterval(poller); poller = null; }
     setTimeout(function() {
       try { fr.remove(); } catch (e) {}
       var i = _printFrames.indexOf(fr);
@@ -1744,31 +1746,40 @@ function _printOne(url, onDone) {
   function fire() {
     if (printed) return;
     printed = true;
+    if (poller) { clearInterval(poller); poller = null; }
+    showPrintProgress(label + ' — เปิดหน้าต่างปริ้น', 100);
+
     var w = null;
     try { w = fr.contentWindow; } catch (e) {}
-    if (!w) {
-      showToast('เข้าถึงหน้า PDF ไม่ได้ — เปิดแท็บให้แทน', 'err');
-      openPdfTab(url);
-      finish();
-      return;
-    }
+    if (!w) { openPdfTab(url); hidePrintProgress(); finish(); return; }
+
     try {
       w.focus();
-      w.print();
+      w.print();          // ค้างจนผู้ใช้กดปริ้นหรือยกเลิก
     } catch (e) {
       showToast('สั่งปริ้นอัตโนมัติไม่ได้ — เปิดแท็บ PDF ให้แทน', 'err');
       try { window.open(url, '_blank'); } catch (e2) {}
     }
+    hidePrintProgress();
     finish();
   }
 
-  // รอ 900ms หลัง onload ให้ PDF viewer render จริงก่อน
-  fr.onload = function() { setTimeout(fire, 900); };
-  fr.onerror = function() { openPdfTab(url); finish(); };
-  fr.src = url;
+  poller = setInterval(function() {
+    if (printed) { clearInterval(poller); poller = null; return; }
+    var el = Date.now() - started;
+    var ready = false;
+    try {
+      var d = fr.contentDocument;
+      ready = !!(d && d.readyState === 'complete');
+    } catch (e) { ready = true; }
 
-  // กันเหนียว: บาง browser ไม่ยิง onload กับ blob PDF
-  setTimeout(function() { if (!printed) fire(); }, 4500);
+    showPrintProgress(label + ' — กำลังโหลด PDF...', Math.min(60 + Math.floor(el / 150), 95));
+    if (ready && el >= 700) fire();
+    else if (el >= 15000)   fire();
+  }, 200);
+
+  fr.onerror = function() { openPdfTab(url); hidePrintProgress(); finish(); };
+  fr.src = url;
 }
 
 function closePrintTab() {
@@ -1786,15 +1797,30 @@ function toggleAutoPrint(el) {
 }
 
 async function printKitSeq(setId, seq, autoPrint) {
+  var label = 'ชุดที่ ' + seq;
+  var ticker = null;
   try {
-    showToast('กำลังเปิด PDF ชุดที่ ' + seq + '...', 'ok');
+    showPrintProgress(label + ' — กำลังสร้าง PDF...', 10);
+    var pct = 10;
+    ticker = setInterval(function() {
+      pct = Math.min(pct + 5, 55);
+      showPrintProgress(label + ' — กำลังสร้าง PDF...', pct);
+    }, 800);
+
     var res = await api({ action: 'printBoxSet', warehouse: curWarehouse,
                           set_id: setId, seq: seq }, 'POST');
+    clearInterval(ticker); ticker = null;
+
     if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
     if (!res.pdf)          throw new Error('ไม่ได้รับ PDF');
-    openPdfB64(res.pdf, !!autoPrint);
+
+    openPdfB64(res.pdf, !!autoPrint, label);
+    if (!autoPrint) { hidePrintProgress(); }
   } catch (e) {
-    showToast('ปริ้นชุดที่ ' + seq + ' ไม่สำเร็จ: ' + e.message, 'err');
+    hidePrintProgress();
+    showToast('ปริ้น' + label + ' ไม่สำเร็จ: ' + e.message, 'err');
+  } finally {
+    if (ticker) clearInterval(ticker);
   }
 }
 
