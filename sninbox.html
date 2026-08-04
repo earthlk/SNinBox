@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SN Manager</title>
+<title>SN Manager 1.0</title>
 <style>
 :root {
   --bg:      #0d0f18;
@@ -1030,14 +1030,14 @@ async function doPrint() {
 
   var btn = document.getElementById('btnPrint');
   btn.textContent = '⏳...'; btn.disabled = true;
-  showPrintProgress('กำลังสร้าง PDF...', 10);
+  showPrintProgress('กำลังเปิด PDF...', 10);
   var ticker = null;
 
   try {
     var pct = 10;
     ticker = setInterval(function() {
       pct = Math.min(pct + 5, 85);
-      showPrintProgress('กำลังสร้าง PDF...', pct);
+      showPrintProgress('กำลังเปิด PDF...', pct);
     }, 800);
 
     var res = await api({ action: 'printBox', zone: curZone, box_id: curBox.box_id }, 'POST');
@@ -1053,7 +1053,7 @@ async function doPrint() {
     showToast('เปิด PDF สำเร็จ', 'ok');
   } catch (e) {
     hidePrintProgress();
-    showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
+    showToast('เปิด PDF ไม่สำเร็จ: ' + e.message, 'err');
   } finally {
     if (ticker) clearInterval(ticker);
     btn.textContent = '🖨 ปริ้น'; btn.disabled = false;
@@ -1637,13 +1637,13 @@ async function doPrintSet() {
   if (!curSet) return;
   var btn = document.getElementById('btnPrint');
   btn.textContent = '⏳...'; btn.disabled = true;
-  showPrintProgress('กำลังสร้าง PDF...', 10);
+  showPrintProgress('กำลังเปิด PDF...', 10);
   var ticker = null;
   try {
     var pct = 10;
     ticker = setInterval(function(){
       pct = Math.min(pct + 5, 85);
-      showPrintProgress('กำลังสร้าง PDF...', pct);
+      showPrintProgress('กำลังเปิด PDF...', pct);
     }, 800);
 
     var res = await api({ action: 'printBoxSet', warehouse: curWarehouse,
@@ -1787,7 +1787,7 @@ function toggleAutoPrint(el) {
 
 async function printKitSeq(setId, seq, autoPrint) {
   try {
-    showToast('กำลังสร้าง PDF ชุดที่ ' + seq + '...', 'ok');
+    showToast('กำลังเปิด PDF ชุดที่ ' + seq + '...', 'ok');
     var res = await api({ action: 'printBoxSet', warehouse: curWarehouse,
                           set_id: setId, seq: seq }, 'POST');
     if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
