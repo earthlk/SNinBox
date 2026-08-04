@@ -1800,11 +1800,11 @@ async function printKitSeq(setId, seq, autoPrint) {
   var label = 'ชุดที่ ' + seq;
   var ticker = null;
   try {
-    showPrintProgress(label + ' — กำลังสร้าง PDF...', 10);
+    showPrintProgress(label + ' — กำลังปริ้น...', 10);
     var pct = 10;
     ticker = setInterval(function() {
       pct = Math.min(pct + 5, 55);
-      showPrintProgress(label + ' — กำลังสร้าง PDF...', pct);
+      showPrintProgress(label + ' — กำลังปริ้น...', pct);
     }, 800);
 
     var res = await api({ action: 'printBoxSet', warehouse: curWarehouse,
