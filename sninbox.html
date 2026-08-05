@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SN Manager 1.1</title>
+<title>SN Manager 1.2</title>
 <style>
 :root {
   --bg:      #0d0f18;
@@ -238,6 +238,66 @@ tr:hover td{background:rgba(91,141,238,.04)}
 @media print{.kit-card{break-inside:avoid}.kit-row .btn{display:none}}
 .snPrintFrame{position:fixed!important;left:-10000px!important;top:0!important}
 @media print{.snPrintFrame{display:none!important}}
+
+/* ===== SEARCH ===== */
+.search-wrap{position:relative;display:flex;align-items:center;gap:6px;background:var(--card);
+  border:1px solid var(--border);border-radius:8px;padding:0 8px;height:28px;width:280px;transition:.15s}
+.search-wrap:focus-within{border-color:var(--accent);width:340px}
+.search-ico{font-size:12px;opacity:.6;flex-shrink:0}
+.search-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);
+  font-size:12px;font-family:inherit;min-width:0}
+.search-input::placeholder{color:var(--muted)}
+.search-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 4px;flex-shrink:0}
+.search-clear:hover{color:var(--red)}
+
+.search-panel{display:none;position:absolute;top:34px;left:0;width:520px;max-height:70vh;overflow-y:auto;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;z-index:150;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);padding:6px}
+.search-panel.open{display:block}
+.sr-group{padding:6px 4px 2px}
+.sr-glbl{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;
+  padding:2px 8px;display:flex;align-items:center;gap:6px}
+.sr-glbl b{color:var(--accent);font-size:10px}
+.sr-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;cursor:pointer;transition:.1s}
+.sr-item:hover,.sr-item.cur{background:rgba(91,141,238,.12)}
+.sr-mono{font-family:'Courier New',monospace;font-weight:700;font-size:12px;color:var(--accent);flex-shrink:0}
+.sr-name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0}
+.sr-in{background:rgba(52,211,153,.15);color:var(--green)}
+.sr-free{background:rgba(107,114,128,.18);color:var(--muted)}
+.sr-dup{background:rgba(248,113,113,.18);color:var(--red)}
+.sr-cnt{font-size:10px;font-weight:700;color:var(--accent);background:rgba(91,141,238,.15);
+  padding:1px 7px;border-radius:20px;flex-shrink:0}
+.sr-sub{font-size:10px;color:var(--muted);padding:1px 9px 5px 9px;line-height:1.5}
+.sr-sub span{background:var(--card2);border-radius:4px;padding:1px 5px;margin-right:4px;display:inline-block}
+.sr-empty{padding:18px;text-align:center;font-size:12px;color:var(--muted)}
+.sr-load{padding:14px;text-align:center;font-size:12px;color:var(--muted)}
+.sr-hint{font-size:10px;color:var(--muted);padding:6px 10px;border-top:1px solid var(--border);margin-top:4px}
+.sr-hint kbd{background:var(--card2);border:1px solid var(--border);border-radius:3px;padding:0 4px;font-size:9px}
+
+.filter-chip{display:flex;align-items:center;gap:6px;background:rgba(91,141,238,.12);
+  border:1px solid rgba(91,141,238,.35);border-radius:8px;padding:6px 10px;margin-bottom:5px;font-size:11px}
+.filter-chip b{color:var(--accent)}
+.filter-chip button{margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:12px}
+.idx-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;
+  background:rgba(107,114,128,.15);color:var(--muted);flex-shrink:0}
+.idx-badge.ready{background:rgba(52,211,153,.15);color:var(--green)}
+.idx-badge.load{background:rgba(91,141,238,.15);color:var(--accent)}
+.idx-badge.err{background:rgba(248,113,113,.15);color:var(--red);cursor:pointer}
+
+/* ===== AUTO REFRESH ===== */
+.ar-wrap{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:2px 6px 2px 2px;height:28px}
+.ar-wrap .btn{height:22px;padding:0 9px}
+.ar-sep{width:1px;height:16px;background:var(--border);flex-shrink:0}
+.ar-sel{background:transparent;border:none;color:var(--muted);font-size:11px;font-family:inherit;
+  font-weight:700;outline:none;cursor:pointer;padding:2px 0}
+.ar-sel option{background:var(--card);color:var(--text)}
+.ar-count{font-size:11px;font-weight:700;font-family:'Courier New',monospace;color:var(--muted);
+  min-width:40px;text-align:center;letter-spacing:.5px}
+.ar-count.soon{color:var(--yellow)}
+.ar-count.run{color:var(--accent)}
+.ar-count.hold{color:var(--muted);opacity:.55}
 </style>
 </head>
 <body>
@@ -249,22 +309,39 @@ tr:hover td{background:rgba(91,141,238,.04)}
     <button id="modeSN"  onclick="setMode('sn')"  class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:6px">Box SN</button>
     <button id="modeSet" onclick="setMode('set')" class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:transparent;color:var(--muted);border-radius:6px">Box Set</button>
   </div>
-  <button class="btn btn-ghost btn-sm no-print" onclick="refreshDataSN()" id="btnRefresh" style="display:none;font-size:11px">&#8635; Refresh</button>
+  <div class="ar-wrap no-print" id="arWrap" style="display:none">
+    <button class="btn btn-ghost btn-sm" onclick="refreshDataSN()" id="btnRefresh" style="font-size:11px">&#8635; Refresh</button>
+    <span class="ar-sep"></span>
+    <select id="arInterval" class="ar-sel" onchange="onArIntervalChange()" title="รอบ Auto Refresh">
+      <option value="0">ปิด</option>
+      <option value="300">5 น.</option>
+      <option value="600">10 น.</option>
+      <option value="900" selected>15 น.</option>
+      <option value="1800">30 น.</option>
+      <option value="3600">60 น.</option>
+    </select>
+    <span class="ar-count" id="arCount" title="เวลาที่เหลือก่อน Refresh อัตโนมัติ">--:--</span>
+  </div>
+
+  <div class="search-wrap no-print" id="searchWrap" style="display:none">
+    <span class="search-ico">&#128269;</span>
+    <input id="searchField" class="search-input" type="text" autocomplete="off"
+      placeholder="ค้นหา SN / Code / ชื่อสินค้า..."
+      oninput="onSearchInput()"
+      onfocus="onSearchInput()"
+      onkeydown="onSearchKey(event)">
+    <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none">&#10005;</button>
+    <div class="search-panel" id="searchPanel"></div>
+  </div>
   <span id="statusPill" class="pill p-dim">-- เลือกโซน</span>
   <button class="btn btn-ghost btn-sm no-print" onclick="openUpload()" style="font-size:11px;margin-left:8px">&#8679; Upload CSV</button>
 </div>
 
 <!-- Zone Tabs (Box SN mode) -->
+<!-- Zone Tabs (Box SN mode) -->
 <div class="zone-bar" id="snZoneBar">
   <div class="ztabs" id="zoneTabs"></div>
-  <div class="right">
-    <div class="right-top no-print">
-      <div class="right-title" id="rightTitle">-- เลือก Zone และ Box</div>
-      <div class="right-sub" id="rightSub">หากไม่มี Box ที่ต้องการ กด สร้าง Box ใหม่</div>
-    </div>
-  </div>
 </div>
-
 <!-- Warehouse Tabs (Box Set mode) -->
 <div class="zone-bar" id="setZoneBar" style="display:none">
   <div class="ztabs" id="warehouseTabs">
@@ -278,7 +355,8 @@ tr:hover td{background:rgba(91,141,238,.04)}
   <!-- LEFT: Box List -->
   <div class="left">
     <div class="left-hdr">
-      <span class="left-title">กล่อง (Box)</span>
+      <span class="left-title" id="leftTitle">กล่อง (Box)</span>
+            <span class="idx-badge" id="idxBadge" style="display:none" onclick="rebuildSearchIndex()"></span>
       <span id="boxCountLbl" style="font-size:11px;color:var(--muted)">--</span>
     </div>
     <div class="box-list" id="boxList">
@@ -291,13 +369,23 @@ tr:hover td{background:rgba(91,141,238,.04)}
 
   <!-- RIGHT -->
   <div class="right">
+    <div class="right-top no-print">
+      <div>
+        <div class="right-title" id="rightTitle">-- เลือก Zone และ Box</div>
+        <div class="right-sub" id="rightSub">หากไม่มี Box ที่ต้องการ กด สร้าง Box ใหม่</div>
+      </div>
+      <div class="right-actions">
+        <button class="btn btn-print" id="btnPrint" onclick="doPrint()" style="display:none">&#128424; ปริ้น</button>
+      </div>
+    </div>
+
     <div class="right-body">
       <div class="print-hdr" id="printHdr"><h2 id="pTitle"></h2><p id="pSub"></p></div>
 
       <!-- SN Input -->
       <div id="snInputArea" style="display:none">
         <div class="sec-lbl">บันทึก SN</div>
-	  <div id="kitProgress" style="display:none;font-size:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:6px"></div>
+        <div id="kitProgress" style="display:none;font-size:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:6px"></div>
         <div class="sn-block">
           <div class="sn-row">
             <input class="sn-field" id="snField" type="text"
@@ -313,11 +401,6 @@ tr:hover td{background:rgba(91,141,238,.04)}
           </div>
         </div>
       </div>
-
-      <!-- Print Button -->
-           <div class="right-actions">
-        <button class="btn btn-print no-print" id="btnPrint" onclick="doPrint()" style="display:none">&#128424; ปริ้น</button>
-        </div>
 
       <!-- SN Table -->
       <div id="snTableArea" style="display:none">
@@ -507,7 +590,7 @@ var _setSelectedCodes = [];
 var setType = 'free';
 var _kitDraft = null;   // { set_id, rows: { code: snEntry } }
 var _autoPrintKit = false;
-	var _printWin = null;
+var _printWin = null;
 var _navToken = 0;
 const WH_OWN_DATA = ['002'];          // คลังที่มี Data SN ของตัวเอง
 var _codeIndexKey = null;             // scope ของ index ที่ cache ไว้
@@ -523,6 +606,7 @@ window.addEventListener('DOMContentLoaded', function() {
       showToast('Edge อาจทำให้ฉลากปริ้นเพี้ยน — แนะนำให้ใช้ Chrome', 'err');
     }, 1200);
   }
+  arInit();
 });
 
 // ---- Zone ----
@@ -530,12 +614,16 @@ async function selectZone(z) {
   var tok = ++_navToken;
   curZone = z; curBox = null; curSNData = null;
   _cacheDataSN = null; _cacheBoxSNs = {};
+  _searchIndexed = null; _indexPromise = null; _indexPromiseKey = null; _indexToken++;
+  _boxFilter = null; clearSearch();
+  document.getElementById('searchWrap').style.display = '';
   document.querySelectorAll('.ztab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('ztab_' + z).classList.add('active');
   setStatus('dim', 'Zone ' + z + '...');
   resetRight();
   document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   document.getElementById('boxCountLbl').textContent = '--';
+    _indexToken++;
   try {
     var [resBoxes, resData] = await Promise.all([
       api({ action: 'getBoxes', zone: z }),
@@ -548,7 +636,9 @@ async function selectZone(z) {
     _cacheBoxSNs = {};
     setStatus('ok', 'Zone ' + z + ' | Data SN: ' + _cacheDataSN.length + ' รายการ');
     renderBoxList(resBoxes.boxes || []);
-    document.getElementById('btnRefresh').style.display = '';
+    document.getElementById('arWrap').style.display = '';
+    arReset();
+        prefetchSearchIndex();
   } catch(e) {
     if (tok !== _navToken) return;                    // ← error ของรุ่นเก่าก็ไม่ต้องโชว์
     setStatus('err', e.message);
@@ -560,12 +650,27 @@ async function selectZone(z) {
 function renderBoxList(boxes) {
   window._boxes = {};
   boxes.forEach(function(b) { window._boxes[b.box_id] = b; });
-  document.getElementById('boxCountLbl').textContent = boxes.length + ' กล่อง';
-  if (!boxes.length) {
-    document.getElementById('boxList').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128219;</div><p style="font-size:12px">ยังไม่มี Box<br>กด + สร้าง Box</p></div>';
+
+  var show = boxes;
+  var chip = '';
+  if (_boxFilter && curMode === 'sn') {
+    show = boxes.filter(function(b) { return _boxFilter.ids.indexOf(b.box_id) !== -1; });
+    chip = '<div class="filter-chip">&#128269; <b>' + _boxFilter.label + '</b>'
+         + '<span style="color:var(--muted)">' + show.length + ' กล่อง</span>'
+         + '<button onclick="clearBoxFilter()">&#10005; ล้าง</button></div>';
+  }
+
+  document.getElementById('boxCountLbl').textContent =
+    (_boxFilter && curMode === 'sn') ? show.length + '/' + boxes.length : boxes.length + ' กล่อง';
+
+  if (!show.length) {
+    document.getElementById('boxList').innerHTML = chip
+      + '<div class="empty-state"><div class="empty-ico">&#128219;</div><p style="font-size:12px">'
+      + (_boxFilter ? 'ไม่มีกล่องตรงเงื่อนไข' : 'ยังไม่มี Box<br>กด + สร้าง Box') + '</p></div>';
     return;
   }
-  document.getElementById('boxList').innerHTML = boxes.map(function(b) {
+
+  document.getElementById('boxList').innerHTML = chip + show.map(function(b) {
     var sel   = curBox && curBox.box_id === b.box_id ? 'sel' : '';
     var badge = b.type === 'single' ? 'badge-single' : 'badge-multi';
     var label = b.type === 'single' ? '1 Code' : 'หลาย Code';
@@ -624,15 +729,22 @@ function selectBox(boxId) {
 async function loadBoxSNs(forceRefresh) {
   if (!curBox) return;
   var boxId = curBox.box_id;
-  // ใช้ cache ถ้ามี
+
+  // เคลียร์ตารางเก่าทันที — กันผู้ใช้เห็นข้อมูลกล่องก่อนหน้าค้างอยู่
+  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+
   if (!forceRefresh && _cacheBoxSNs[boxId]) {
-    renderSNTable(_cacheBoxSNs[boxId]);
+    // ปล่อยให้เบราว์เซอร์วาด spinner ก่อน แล้วค่อย render ตาราง
+    requestAnimationFrame(function() {
+      if (!curBox || curBox.box_id !== boxId) return;
+      renderSNTable(_cacheBoxSNs[boxId]);
+    });
     return;
   }
-  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+
   try {
     var res = await api({ action: 'getBoxSNs', zone: curZone, box_id: boxId });
-        if (!curBox || curBox.box_id !== boxId) return;
+    if (!curBox || curBox.box_id !== boxId) return;
     if (res.error) throw new Error(res.error);
     _cacheBoxSNs[boxId] = res.rows || [];
     renderSNTable(_cacheBoxSNs[boxId]);
@@ -1048,9 +1160,6 @@ async function doPrint() {
 
     showPrintProgress('กำลังเปิด PDF...', 95);
     openPdfB64(res.pdf, true, 'ปริ้น');
-    showPrintProgress('เสร็จสิ้น!', 100);
-    setTimeout(hidePrintProgress, 1000);
-    showToast('เปิด PDF สำเร็จ', 'ok');
   } catch (e) {
     hidePrintProgress();
     showToast('เปิด PDF ไม่สำเร็จ: ' + e.message, 'err');
@@ -1255,8 +1364,11 @@ async function doCreateBox() {
 
 // ---- Helpers ----
 function resetRight() {
-  document.getElementById('rightTitle').textContent   = '-- เลือก Box';
-  document.getElementById('rightSub').textContent     = 'กดเลือก Box ทางซ้ายเพื่อบันทึก SN';
+  var isSet = (curMode === 'set');
+  document.getElementById('rightTitle').textContent = isSet ? '-- เลือก BoxSet' : '-- เลือก Box';
+  document.getElementById('rightSub').textContent   = isSet
+    ? 'กดเลือก Set ทางซ้ายเพื่อบันทึก SN'
+    : 'กดเลือก Box ทางซ้ายเพื่อบันทึก SN';
   document.getElementById('defaultEmpty').style.display = '';
   document.getElementById('snInputArea').style.display  = 'none';
   document.getElementById('snTableArea').style.display  = 'none';
@@ -1282,24 +1394,34 @@ function fmtDate(raw) {
 }
 
 // ---- API ----
-async function api(params, method) {
-  if (method === 'POST') {
-    var res  = await fetch(GAS_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(params)
-    });
-    var text = await res.text();
+async function api(params, method, _try) {
+  _try = _try || 0;
+  try {
+    var res, text;
+    if (method === 'POST') {
+      res = await fetch(GAS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(params)
+      });
+    } else {
+      var u = new URL(GAS_URL);
+      Object.entries(params).forEach(function(kv) { u.searchParams.set(kv[0], kv[1]); });
+      res = await fetch(u.toString(), { redirect: 'follow' });
+    }
+    text = await res.text();
     try { return JSON.parse(text); }
-    catch(e) { return { error: 'Response error: ' + text.substring(0,80) }; }
+    catch (e) { return { error: 'Response error: ' + text.substring(0, 80) }; }
+
+  } catch (e) {
+    // ERR_FAILED / network สะดุด — ลองใหม่
+    if (_try < 2) {
+      await new Promise(function(r) { setTimeout(r, 600 * (_try + 1)); });
+      return api(params, method, _try + 1);
+    }
+    throw new Error('เชื่อมต่อ GAS ไม่สำเร็จ (' + (params.action || '?') + ') — ลองกด Refresh อีกครั้ง');
   }
-  var u = new URL(GAS_URL);
-  Object.entries(params).forEach(function(kv) { u.searchParams.set(kv[0], kv[1]); });
-  var res  = await fetch(u.toString(), { redirect: 'follow' });
-  var text = await res.text();
-  try { return JSON.parse(text); }
-  catch(e) { return { error: 'Response error: ' + text.substring(0,80) }; }
 }
 
 // ======== UPLOAD CSV ========
@@ -1600,34 +1722,8 @@ async function doUpload() {
 }
 
 async function refreshDataSN() {
-  var btn = document.getElementById('btnRefresh');
-  if (btn) btn.textContent = '⏳';
-  try {
-    if (curMode === 'set') {
-      if (!curWarehouse) return;
-      _cacheCodeIndex = null;
-      _cacheSetDataSN = {};
-      await loadCodeIndex(true);
-      setStatus('ok', 'คลัง ' + curWarehouse + ' | CodeIndex: ' + _cacheCodeIndex.length + ' Code (updated)');
-      if (curSet) { await ensureSetData(curSet, true); loadSetSNs(true); }
-      api({ action: 'syncNames', warehouse: curWarehouse }, 'POST')
-        .then(function(r){ if (r && r.updated) showToast('เติมชื่อให้ ' + r.updated + ' รายการ', 'ok'); })
-        .catch(function(){});
-    } else {
-      if (!curZone) return;
-      var res = await api({ action: 'getDataSN', zone: curZone });
-      if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
-      _cacheDataSN = res.rows || [];
-      setStatus('ok', 'Zone ' + curZone + ' | Data SN: ' + _cacheDataSN.length + ' รายการ (updated)');
-      api({ action: 'syncNames', zone: curZone }, 'POST')
-        .then(function(r){ if (r && r.updated) showToast('เติมชื่อให้ ' + r.updated + ' รายการ', 'ok'); })
-        .catch(function(){});
-    }
-  } catch(e) {
-    setStatus('err', 'Refresh ไม่สำเร็จ: ' + e.message);
-  } finally {
-    if (btn) btn.textContent = '↻ Refresh';
-  }
+  arReset();
+  try { await refreshAll(false); } catch (e) {}
 }
 
 // ======== END UPLOAD ========
@@ -1655,9 +1751,6 @@ async function doPrintSet() {
 
     showPrintProgress('กำลังเปิด PDF...', 95);
     openPdfB64(res.pdf, true, 'ปริ้น');
-    showPrintProgress('เสร็จสิ้น!', 100);
-    setTimeout(hidePrintProgress, 1000);
-    showToast('เปิด PDF สำเร็จ', 'ok');
   } catch (e) {
     hidePrintProgress();
     showToast('สร้าง PDF ไม่สำเร็จ: ' + e.message, 'err');
@@ -1836,8 +1929,15 @@ async function printKitCard(seq, btn) {
 // BoxSet variables declared at top
 
 function setMode(mode) {
-    _navToken++;
+  _navToken++;
   curMode = mode;
+  _searchIndexed = null; _indexPromise = null; _indexPromiseKey = null; _indexToken++;
+  _boxFilter = null;
+  clearSearch();
+  document.getElementById('searchWrap').style.display = 'none';
+  setIdxBadge(null);
+  document.getElementById('arWrap').style.display = 'none';
+  arReset();
   var snBtn  = document.getElementById('modeSN');
   var setBtn = document.getElementById('modeSet');
   var snBar  = document.getElementById('snZoneBar');
@@ -1856,7 +1956,10 @@ function setMode(mode) {
     document.getElementById('boxCountLbl').textContent = '--';
     resetRight();
     setStatus('dim', '-- เลือกโซน');
-        updateFootBtn();
+        document.getElementById('defaultEmpty').innerHTML =
+      '<div class="empty-ico">&#128230;</div><p>เลือกโซน แล้วเลือก Box ทางซ้าย</p>'
+      + '<p style="font-size:12px;margin-top:4px;color:var(--muted)">หรือกด <b style="color:var(--accent)">+ สร้าง Box</b></p>';
+    updateFootBtn();
   } else {
     setBtn.style.background = 'var(--accent)';
     setBtn.style.color      = '#fff';
@@ -1870,7 +1973,10 @@ function setMode(mode) {
     document.getElementById('boxCountLbl').textContent = '--';
     resetRight();
     setStatus('dim', '-- เลือกคลัง');
-        updateFootBtn();
+        document.getElementById('defaultEmpty').innerHTML =
+      '<div class="empty-ico">&#128218;</div><p>เลือกคลัง แล้วเลือก BoxSet ทางซ้าย</p>'
+      + '<p style="font-size:12px;margin-top:4px;color:var(--muted)">หรือกด <b style="color:var(--accent)">+ สร้าง BoxSet</b></p>';
+    updateFootBtn();
   }
 }
 
@@ -1880,13 +1986,16 @@ async function selectWarehouse(w) {
   curWarehouse = w; curSet = null; curSNData = null;
   _cacheSetDataSN = {}; _cacheSetSNs = {}; _kitDraft = null;
   _cacheCodeIndex = null; _codeIndexKey = null;
+  _searchIndexed = null; _indexPromise = null; _indexPromiseKey = null; _indexToken++;
+  _boxFilter = null; clearSearch();
+  document.getElementById('searchWrap').style.display = '';
   document.querySelectorAll('#warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
   document.getElementById('wtab_' + w).classList.add('active');
   setStatus('dim', 'คลัง ' + w + '...');
   resetRight();
   document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   document.getElementById('boxCountLbl').textContent = '--';
-
+    _indexToken++;
   try {
     var [resSets] = await Promise.all([
       api({ action: 'getBoxSets', warehouse: w }),
@@ -1897,7 +2006,9 @@ async function selectWarehouse(w) {
     nextSetId = resSets.next_set_id;
     setStatus('ok', 'คลัง ' + w + ' | CodeIndex: ' + (_cacheCodeIndex || []).length + ' Code');
     renderSetList(resSets.sets || []);
-    document.getElementById('btnRefresh').style.display = '';
+    document.getElementById('arWrap').style.display = '';
+    arReset();
+        prefetchSearchIndex();
   } catch(e) {
     if (tok !== _navToken) return;
     setStatus('err', e.message);
@@ -1909,14 +2020,28 @@ async function selectWarehouse(w) {
 function renderSetList(sets) {
   window._sets = {};
   sets.forEach(function(s){ window._sets[s.set_id] = s; });
-  document.getElementById('boxCountLbl').textContent = sets.length + ' Set';
-  if (!sets.length) {
-    document.getElementById('boxList').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128218;</div><p style="font-size:12px">ยังไม่มี BoxSet<br>กด + สร้าง BoxSet</p></div>';
-    // แก้ปุ่มล่าง
+
+  var show = sets;
+  var chip = '';
+  if (_boxFilter && curMode === 'set') {
+    show = sets.filter(function(s) { return _boxFilter.ids.indexOf(s.set_id) !== -1; });
+    chip = '<div class="filter-chip">&#128269; <b>' + _boxFilter.label + '</b>'
+         + '<span style="color:var(--muted)">' + show.length + ' Set</span>'
+         + '<button onclick="clearBoxFilter()">&#10005; ล้าง</button></div>';
+  }
+
+  document.getElementById('boxCountLbl').textContent =
+    (_boxFilter && curMode === 'set') ? show.length + '/' + sets.length : sets.length + ' Set';
+
+  if (!show.length) {
+    document.getElementById('boxList').innerHTML = chip
+      + '<div class="empty-state"><div class="empty-ico">&#128218;</div><p style="font-size:12px">'
+      + (_boxFilter ? 'ไม่มี Set ตรงเงื่อนไข' : 'ยังไม่มี BoxSet<br>กด + สร้าง BoxSet') + '</p></div>';
     updateFootBtn();
     return;
   }
-  document.getElementById('boxList').innerHTML = sets.map(function(s) {
+
+  document.getElementById('boxList').innerHTML = chip + show.map(function(s) {
     var sel    = curSet && curSet.set_id === s.set_id ? 'sel' : '';
     var codes  = String(s.codes || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean);
     var codesHtml = codes.map(function(c){ return '<span style="font-family:monospace;font-size:10px;background:rgba(91,141,238,.15);color:var(--accent);padding:1px 5px;border-radius:4px">' + c + '</span>'; }).join(' ');
@@ -1954,6 +2079,8 @@ function renderSetList(sets) {
 
 function updateFootBtn() {
   var foot = document.getElementById('btnCreateMain');
+  var lt   = document.getElementById('leftTitle');
+  if (lt) lt.textContent = curMode === 'set' ? 'ชุดกล่อง (BoxSet)' : 'กล่อง (Box)';
   if (!foot) return;
   if (curMode === 'set') {
     foot.textContent = '+ สร้าง BoxSet';
@@ -2008,14 +2135,20 @@ async function selectSet(setId) {
 async function loadSetSNs(forceRefresh) {
   if (!curSet) return;
   var setId = curSet.set_id;
+
+  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+
   if (!forceRefresh && _cacheSetSNs[setId]) {
-    renderSNTable(_cacheSetSNs[setId]);
+    requestAnimationFrame(function() {
+      if (!curSet || curSet.set_id !== setId) return;
+      renderSNTable(_cacheSetSNs[setId]);
+    });
     return;
   }
-  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+
   try {
     var res = await api({ action: 'getBoxSetSNs', warehouse: curWarehouse, set_id: setId });
-        if (!curSet || curSet.set_id !== setId) return;
+    if (!curSet || curSet.set_id !== setId) return;
     if (res.error) throw new Error(res.error);
     _cacheSetSNs[setId] = res.rows || [];
     renderSNTable(_cacheSetSNs[setId]);
@@ -2665,6 +2798,668 @@ function cancelKitDraft() {
 }
 
 // ======== END BOX SET ========
+
+// ======== SEARCH ========
+var _searchTimer   = null;
+var _searchIndexed = null;   // key ของ scope ที่ index แล้ว
+var _searchHits    = [];     // ผลลัพธ์ปัจจุบัน (สำหรับ Enter)
+var _srCursor      = -1;
+var _boxFilter     = null;   // { ids:[...], label:'...' } | null
+
+function _scopeKey() {
+  return curMode === 'set' ? ('W' + curWarehouse) : ('Z' + curZone);
+}
+
+// โหลดพร้อมกันทีละ n งาน
+async function _mapLimit(items, limit, fn) {
+  var i = 0;
+  var workers = [];
+  for (var k = 0; k < Math.min(limit, items.length); k++) {
+    workers.push((async function() {
+      while (i < items.length) { var idx = i++; await fn(items[idx], idx); }
+    })());
+  }
+  await Promise.all(workers);
+}
+
+var _indexPromise = null;   // งาน index ที่กำลังทำอยู่
+var _indexPromiseKey = null;
+var _indexToken   = 0;      // กันงานเก่าเขียนทับตอนสลับโซนเร็วๆ
+
+function setIdxBadge(state, txt) {
+  var el = document.getElementById('idxBadge');
+  if (!el) return;
+  if (!state) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.className = 'idx-badge ' + state;
+  el.innerHTML = txt;        // ← เดิมเป็น textContent
+}
+
+// สร้างดัชนี — เรียกซ้ำได้ ถ้ากำลังทำอยู่จะรอตัวเดิม
+var _indexPromiseKey = null;
+
+function ensureSearchIndex(force) {
+  var key = _scopeKey();
+  if (!force && _searchIndexed === key) return Promise.resolve(true);
+  // งานที่ค้างอยู่ต้องเป็น scope เดียวกันเท่านั้น ถึงจะรอตัวเดิมได้
+  if (_indexPromise && !force && _indexPromiseKey === key) return _indexPromise;
+
+  _indexPromiseKey = key;
+  _indexPromise = _buildSearchIndex(key, force).then(function(r) {
+    _indexPromise = null; _indexPromiseKey = null; return r;
+  }, function(e) {
+    _indexPromise = null; _indexPromiseKey = null; throw e;
+  });
+  return _indexPromise;
+}
+
+async function _buildSearchIndex(key, force) {
+  var tok   = ++_indexToken;
+  var isSet = (curMode === 'set');
+  var list  = isSet ? Object.values(window._sets || {}) : Object.values(window._boxes || {});
+  var cache = isSet ? _cacheSetSNs : _cacheBoxSNs;
+  var idKey = isSet ? 'set_id' : 'box_id';
+
+  // scope เปลี่ยนไปแล้วระหว่างรอ — ทิ้งงานนี้
+  if (_scopeKey() !== key) return false;
+
+  var need = list.filter(function(c) { return force || !cache[c[idKey]]; });
+  if (!need.length) {
+    // ไม่มีกล่องเลย = ยังโหลดรายการไม่เสร็จ อย่าเพิ่งบอกว่าพร้อม
+    if (!list.length) { setIdxBadge(null); return false; }
+    _searchIndexed = key;
+    setIdxBadge('ready', '&#9679; ค้นหาพร้อม');
+    return true;
+  }
+
+  var done = 0, failed = 0;
+  setIdxBadge('load', 'ดัชนี 0/' + need.length);
+
+  await _mapLimit(need, 3, async function(c) {
+    if (tok !== _indexToken) return;
+    var id = c[idKey];
+    try {
+      var res = isSet
+        ? await api({ action: 'getBoxSetSNs', warehouse: curWarehouse, set_id: id })
+        : await api({ action: 'getBoxSNs', zone: curZone, box_id: id });
+      if (tok !== _indexToken) return;
+      cache[id] = (res && res.rows) ? res.rows : [];
+    } catch (e) { failed++; }
+    done++;
+    if (tok === _indexToken) {
+      setIdxBadge('load', 'ดัชนี ' + done + '/' + need.length);
+      var p = document.getElementById('searchPanel');
+      if (p && p.classList.contains('open') && p.querySelector('.sr-load')) {
+        p.innerHTML = '<div class="sr-load"><span class="spin"></span>'
+          + '<div style="margin-top:8px">กำลังสร้างดัชนีค้นหา ' + done + '/' + need.length + '</div></div>';
+      }
+    }
+  });
+
+  if (tok !== _indexToken || _scopeKey() !== key) return false;
+
+  if (failed) {
+    setIdxBadge('err', '&#9888; ไม่ครบ ' + failed + ' — กดสร้างใหม่');
+  } else {
+    _searchIndexed = key;
+    setIdxBadge('ready', '&#9679; ค้นหาพร้อม');
+  }
+  return true;
+}
+
+// เริ่มสร้างดัชนีเบื้องหลัง — ไม่บล็อก UI
+function prefetchSearchIndex() {
+  setTimeout(function() {
+    ensureSearchIndex().catch(function(e) {
+      console.warn('prefetch index failed:', e);
+    });
+  }, 300);
+}
+
+function rebuildSearchIndex() {
+  _searchIndexed = null;
+  ensureSearchIndex(true).catch(function(e) { showToast('สร้างดัชนีไม่สำเร็จ: ' + e.message, 'err'); });
+}
+
+// ---- ค้นหา ----
+function searchAll(q) {
+  q = String(q || '').trim().toLowerCase();
+  if (q.length < 2) return null;
+
+  var isSet = (curMode === 'set');
+  var cache = isSet ? _cacheSetSNs : _cacheBoxSNs;
+  var idKey = isSet ? 'set_id' : 'box_id';
+  var nmKey = isSet ? 'set_name' : 'box_name';
+  var list  = isSet ? Object.values(window._sets || {}) : Object.values(window._boxes || {});
+
+  function cname(c) {
+    if (isSet) return c.set_name || c.set_id;
+    return c.type === 'single'
+      ? (codeInfo(c.code, 'sn') && codeInfo(c.code, 'sn').name) || c.box_name || c.box_id
+      : (c.box_name || c.box_id);
+  }
+
+  // แผนที่ SN -> [กล่องที่พบ]
+  var snMap = {}, codeMap = {};
+  list.forEach(function(c) {
+    var id = c[idKey];
+    (cache[id] || []).forEach(function(r) {
+      var sn = String(r.sn || '').trim();
+      var cd = String(r.code || '').trim();
+      if (sn) { (snMap[sn] = snMap[sn] || []).push({ id: id, name: cname(c), row: r }); }
+      if (cd) {
+        if (!codeMap[cd]) codeMap[cd] = { total: 0, boxes: {} };
+        codeMap[cd].total++;
+        codeMap[cd].boxes[id] = (codeMap[cd].boxes[id] || 0) + 1;
+      }
+    });
+  });
+
+  // แหล่ง Data SN สำหรับหา code/ชื่อ
+  var dataRows;
+  if (isSet) {
+    dataRows = (_cacheCodeIndex || []).map(function(r) {
+      return { code: r.code, shortname: r.shortname, zone: r.zone };
+    });
+  } else {
+    dataRows = _cacheDataSN || [];
+  }
+
+  var res = { sn: [], free: [], code: [], zone: [], box: [], dup: [] };
+
+  // --- 1. SN ---
+  Object.keys(snMap).forEach(function(sn) {
+    if (sn.toLowerCase().indexOf(q) === -1) return;
+    var hits = snMap[sn];
+    var r = hits[0].row;
+    res.sn.push({
+      sn: sn, code: r.code || '-',
+      name: displayName(r.code, r.shortname || r.item_name, isSet ? 'set' : 'sn'),
+      seq: r.seq || '', hits: hits
+    });
+    if (hits.length > 1) res.dup.push({ sn: sn, hits: hits });
+  });
+
+  // --- 2. SN ที่ยังไม่เข้ากล่อง ---
+  if (/^[0-9]{4,10}$/.test(q)) {
+    var pool = isSet ? [] : (_cacheDataSN || []);
+    if (isSet) {
+      Object.keys(_cacheSetDataSN).forEach(function(k) {
+        pool = pool.concat((_cacheSetDataSN[k] || {}).rows || []);
+      });
+    }
+    var seen = {};
+    pool.forEach(function(r) {
+      var sn = String(r.sn || '').trim();
+      if (!sn || seen[sn] || snMap[sn]) return;
+      if (sn.toLowerCase().indexOf(q) === -1) return;
+      seen[sn] = 1;
+      if (res.free.length < 30) {
+        res.free.push({ sn: sn, code: r.code || '-',
+          name: displayName(r.code, r.shortname || r.item_name, isSet ? 'set' : 'sn'),
+          zone: r.zone || '-' });
+      }
+    });
+  }
+
+  // --- 3. Code + ชื่อสินค้า ---
+  var codeSeen = {};
+  dataRows.forEach(function(r) {
+    var cd = String(r.code || '').trim();
+    if (!cd || codeSeen[cd]) return;
+    var nm = String(r.shortname || r.item_name || '').trim();
+    if (cd.toLowerCase().indexOf(q) === -1 && nm.toLowerCase().indexOf(q) === -1) return;
+    codeSeen[cd] = 1;
+    var agg = codeMap[cd] || { total: 0, boxes: {} };
+    res.code.push({
+      code: cd, name: nm || '(ไม่มีชื่อ)', zone: r.zone || '-',
+      total: agg.total,
+      boxes: Object.keys(agg.boxes).map(function(id) {
+        var c = list.find(function(x) { return x[idKey] === id; });
+        return { id: id, name: c ? cname(c) : id, count: agg.boxes[id] };
+      })
+    });
+  });
+
+    // --- 3.5 Zone (โซนย่อย เช่น DnA1) ---
+  var zoneAgg = {};
+  list.forEach(function(c) {
+    var id = c[idKey];
+    (cache[id] || []).forEach(function(r) {
+      var z = String(r.zone || '').trim();
+      if (!z) return;
+      if (!zoneAgg[z]) zoneAgg[z] = { total: 0, boxes: {}, codes: {} };
+      zoneAgg[z].total++;
+      zoneAgg[z].boxes[id] = (zoneAgg[z].boxes[id] || 0) + 1;
+      var cd = String(r.code || '').trim();
+      if (cd) zoneAgg[z].codes[cd] = 1;
+    });
+  });
+  // รวมโซนที่มีใน Data SN แต่ยังไม่มีของในกล่อง
+  dataRows.forEach(function(r) {
+    var z = String(r.zone || '').trim();
+    if (z && !zoneAgg[z]) zoneAgg[z] = { total: 0, boxes: {}, codes: {} };
+  });
+
+  res.zone = [];
+  Object.keys(zoneAgg).forEach(function(z) {
+    if (z.toLowerCase().indexOf(q) === -1) return;
+    var a = zoneAgg[z];
+    res.zone.push({
+      zone: z, total: a.total, codeCount: Object.keys(a.codes).length,
+      boxes: Object.keys(a.boxes).map(function(id) {
+        var c = list.find(function(x) { return x[idKey] === id; });
+        return { id: id, name: c ? cname(c) : id, count: a.boxes[id] };
+      })
+    });
+  });
+  res.zone.sort(function(a, b) { return b.total - a.total; });
+  res.zone = res.zone.slice(0, 20);
+
+  // --- 4. ชื่อกล่อง / Set ---
+  list.forEach(function(c) {
+    var id = c[idKey];
+    var nm = String(c[nmKey] || '');
+    if (id.toLowerCase().indexOf(q) === -1 && nm.toLowerCase().indexOf(q) === -1) return;
+    res.box.push({ id: id, name: cname(c), count: (cache[id] || []).length });
+  });
+
+  res.sn.sort(function(a, b) { return a.sn.localeCompare(b.sn); });
+  res.code.sort(function(a, b) { return b.total - a.total; });
+  res.sn   = res.sn.slice(0, 40);
+  res.code = res.code.slice(0, 25);
+  res.box  = res.box.slice(0, 15);
+  return res;
+}
+
+// ---- UI ----
+function onSearchInput() {
+  clearTimeout(_searchTimer);
+  var q = document.getElementById('searchField').value.trim();
+  document.getElementById('searchClear').style.display = q ? '' : 'none';
+  if (q.length < 2) { closeSearchPanel(); return; }
+  _searchTimer = setTimeout(function() { runSearch(q); }, 250);
+}
+
+async function runSearch(q) {
+  if (curMode === 'set' ? !curWarehouse : !curZone) {
+    document.getElementById('searchPanel').innerHTML =
+      '<div class="sr-empty">' + (curMode === 'set' ? 'เลือกคลังก่อน' : 'เลือกโซนก่อน') + '</div>';
+    document.getElementById('searchPanel').classList.add('open');
+    return;
+  }
+  try { await ensureSearchIndex(); }
+  catch (e) { showToast('สร้างดัชนีไม่สำเร็จ: ' + e.message, 'err'); return; }
+  if (document.getElementById('searchField').value.trim() !== q) return;
+  renderSearchResults(searchAll(q), q);
+}
+
+function renderSearchResults(r, q) {
+  var panel = document.getElementById('searchPanel');
+  _searchHits = []; _srCursor = -1;
+  if (!r) { closeSearchPanel(); return; }
+
+  var isSet = (curMode === 'set');
+  var lblC  = isSet ? 'Set' : 'Box';
+  var html  = '';
+
+  if (r.dup.length) {
+    html += '<div class="sr-group"><div class="sr-glbl" style="color:var(--red)">&#9888; SN ซ้ำข้าม ' + lblC + '</div>';
+    r.dup.slice(0, 5).forEach(function(d) {
+      html += '<div class="sr-item"><span class="sr-mono">' + d.sn + '</span>'
+        + '<span class="sr-name" style="color:var(--red)">พบใน ' + d.hits.length + ' ' + lblC + '</span>'
+        + '<span class="sr-tag sr-dup">ตรวจสอบ</span></div>'
+        + '<div class="sr-sub">' + d.hits.map(function(h) { return '<span>' + h.id + '</span>'; }).join('') + '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (r.sn.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">SN <b>' + r.sn.length + '</b></div>';
+    r.sn.forEach(function(s) {
+      var h = s.hits[0];
+      _searchHits.push({ kind: 'box', id: h.id, sn: s.sn });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono">' + s.sn + '</span>'
+        + '<span class="sr-name">' + s.name + '</span>'
+        + '<span class="sr-tag sr-in">' + h.id + (s.seq ? ' · ชุด ' + s.seq : '') + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  if (r.free.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">SN ที่ยังไม่เข้า ' + lblC + ' <b>' + r.free.length + '</b></div>';
+    r.free.forEach(function(s) {
+      html += '<div class="sr-item" style="cursor:default"><span class="sr-mono">' + s.sn + '</span>'
+        + '<span class="sr-name">' + s.name + '</span>'
+        + '<span class="sr-tag sr-free">ว่าง · ' + s.zone + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  if (r.code.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Code / ชื่อสินค้า <b>' + r.code.length + '</b></div>';
+    r.code.forEach(function(c) {
+      _searchHits.push({ kind: 'code', code: c.code, boxes: c.boxes.map(function(b){ return b.id; }) });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono">' + c.code + '</span>'
+        + '<span class="sr-name">' + c.name + '</span>'
+        + (c.total
+            ? '<span class="sr-cnt">' + c.total + ' SN · ' + c.boxes.length + ' ' + lblC + '</span>'
+            : '<span class="sr-tag sr-free">ยังไม่เข้า ' + lblC + '</span>')
+        + '</div>';
+      if (c.boxes.length) {
+        html += '<div class="sr-sub">' + c.boxes.map(function(b) {
+          return '<span>' + b.id + ' · ' + b.count + '</span>';
+        }).join('') + '</div>';
+      }
+    });
+    html += '</div>';
+  }
+
+  if (r.zone.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Zone <b>' + r.zone.length + '</b></div>';
+    r.zone.forEach(function(z) {
+      _searchHits.push({ kind: 'zone', zone: z.zone, boxes: z.boxes.map(function(b){ return b.id; }) });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono" style="color:var(--accent2)">' + z.zone + '</span>'
+        + '<span class="sr-name">' + z.codeCount + ' Code</span>'
+        + (z.total
+            ? '<span class="sr-cnt">' + z.total + ' SN · ' + z.boxes.length + ' ' + lblC + '</span>'
+            : '<span class="sr-tag sr-free">ยังไม่เข้า ' + lblC + '</span>')
+        + '</div>';
+      if (z.boxes.length) {
+        html += '<div class="sr-sub">' + z.boxes.map(function(b) {
+          return '<span>' + b.id + ' · ' + b.count + '</span>';
+        }).join('') + '</div>';
+      }
+    });
+    html += '</div>';
+  }
+
+  if (r.box.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">' + lblC + ' <b>' + r.box.length + '</b></div>';
+    r.box.forEach(function(b) {
+      _searchHits.push({ kind: 'box', id: b.id });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono">' + b.id + '</span>'
+        + '<span class="sr-name">' + b.name + '</span>'
+        + '<span class="sr-cnt">' + b.count + ' SN</span></div>';
+    });
+    html += '</div>';
+  }
+
+  if (!html) html = '<div class="sr-empty">ไม่พบ "' + q + '"</div>';
+  else html += '<div class="sr-hint"><kbd>Enter</kbd> ไปรายการแรก · <kbd>&#8593;&#8595;</kbd> เลื่อน · <kbd>Esc</kbd> ปิด</div>';
+
+  panel.innerHTML = html;
+  panel.classList.add('open');
+}
+
+function onSearchKey(e) {
+  var items = document.querySelectorAll('#searchPanel .sr-item[data-hit]');
+  if (e.key === 'Escape') { e.preventDefault(); clearSearch(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!items.length) return;
+    e.preventDefault();
+    _srCursor += (e.key === 'ArrowDown' ? 1 : -1);
+    if (_srCursor < 0) _srCursor = items.length - 1;
+    if (_srCursor >= items.length) _srCursor = 0;
+    items.forEach(function(el) { el.classList.remove('cur'); });
+    items[_srCursor].classList.add('cur');
+    items[_srCursor].scrollIntoView({ block: 'nearest' });
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    var idx = _srCursor >= 0 ? _srCursor : 0;
+    if (items[idx]) gotoSearchHit(parseInt(items[idx].dataset.hit, 10));
+  }
+}
+
+function gotoSearchHit(i) {
+  var h = _searchHits[i];
+  if (!h) return;
+  closeSearchPanel();
+  if (h.kind === 'box') {
+    setBoxFilter(null);
+    if (curMode === 'set') selectSet(h.id); else selectBox(h.id);
+    if (h.sn) setTimeout(function() { highlightSN(h.sn); }, 400);
+  } else if (h.kind === 'code') {
+    if (!h.boxes.length) { showToast('Code ' + h.code + ' ยังไม่มีใน ' + (curMode === 'set' ? 'Set' : 'Box') + ' ใด', 'err'); return; }
+    setBoxFilter({ ids: h.boxes, label: 'Code ' + h.code });
+  } else if (h.kind === 'zone') {
+    if (!h.boxes.length) { showToast('Zone ' + h.zone + ' ยังไม่มีของใน ' + (curMode === 'set' ? 'Set' : 'Box') + ' ใด', 'err'); return; }
+    setBoxFilter({ ids: h.boxes, label: 'Zone ' + h.zone });
+  }
+}
+
+function highlightSN(sn) {
+  var els = document.querySelectorAll('#tblWrap .mono');
+  for (var i = 0; i < els.length; i++) {
+    if (String(els[i].textContent).trim() === String(sn).trim()) {
+      var row = els[i].closest('tr') || els[i].closest('.kit-row');
+      if (row) {
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        row.style.transition  = 'background .3s';
+        row.style.background  = 'rgba(251,191,36,.28)';
+        setTimeout(function() { row.style.background = ''; }, 2500);
+      }
+      return;
+    }
+  }
+}
+
+function setBoxFilter(f) {
+  _boxFilter = f;
+  if (curMode === 'set') renderSetList(Object.values(window._sets || {}));
+  else                   renderBoxList(Object.values(window._boxes || {}));
+  if (f) showToast('กรอง ' + f.label + ' — ' + f.ids.length + ' รายการ', 'ok');
+}
+
+function clearBoxFilter() { setBoxFilter(null); }
+
+function closeSearchPanel() {
+  document.getElementById('searchPanel').classList.remove('open');
+  _srCursor = -1;
+}
+
+function clearSearch() {
+  var f = document.getElementById('searchField');
+  f.value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  closeSearchPanel();
+  var sn = document.getElementById('snField');
+  if (sn && document.getElementById('snInputArea').style.display !== 'none') sn.focus();
+}
+
+// คลิกผลลัพธ์
+document.getElementById('searchPanel').addEventListener('click', function(e) {
+  var it = e.target.closest('[data-hit]');
+  if (it) gotoSearchHit(parseInt(it.dataset.hit, 10));
+});
+
+// คลิกนอกพาเนล → ปิด
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#searchWrap')) closeSearchPanel();
+});
+
+// คีย์ลัด "/"
+document.addEventListener('keydown', function(e) {
+  if (e.key !== '/' || e.ctrlKey || e.altKey || e.metaKey) return;
+  var t = e.target.tagName;
+  if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+  if (document.querySelector('.overlay.open')) return;
+  e.preventDefault();
+  var f = document.getElementById('searchField');
+  if (f && document.getElementById('searchWrap').style.display !== 'none') f.focus();
+});
+// ======== END SEARCH ========
+
+// ======== AUTO REFRESH ========
+var AR_KEY       = 'sn_ar_interval';
+var _arInterval  = 900;      // วินาที (0 = ปิด)
+var _arLeft      = 0;
+var _arTicker    = null;
+var _arRunning   = false;
+
+function arInit() {
+  var saved = null;
+  try { saved = localStorage.getItem(AR_KEY); } catch (e) {}
+  if (saved !== null && !isNaN(parseInt(saved, 10))) _arInterval = parseInt(saved, 10);
+  var sel = document.getElementById('arInterval');
+  if (sel) sel.value = String(_arInterval);
+  arReset();
+  if (!_arTicker) _arTicker = setInterval(arTick, 1000);
+}
+
+function onArIntervalChange() {
+  _arInterval = parseInt(document.getElementById('arInterval').value, 10) || 0;
+  try { localStorage.setItem(AR_KEY, String(_arInterval)); } catch (e) {}
+  arReset();
+  showToast(_arInterval ? 'Auto Refresh ทุก ' + arLabel(_arInterval) : 'ปิด Auto Refresh', 'ok');
+}
+
+function arLabel(sec) {
+  return sec >= 3600 ? (sec / 3600) + ' ชม.' : (sec / 60) + ' นาที';
+}
+
+function arReset() {
+  _arLeft = _arInterval;
+  arRender();
+}
+
+// เงื่อนไขที่ไม่ควร refresh — คืนข้อความเหตุผล หรือ null ถ้าพร้อม
+function arBlockedReason() {
+  if (window._uploading) return 'กำลัง Upload';
+  if (_printBusy || (_printQueue && _printQueue.length)) return 'กำลังปริ้น';
+  if (_kitDraft && Object.keys(_kitDraft.rows || {}).length) return 'มีชุด Kit ค้าง';
+  if (document.querySelector('.overlay.open')) return 'เปิดหน้าต่างอยู่';
+  if (document.hidden) return 'แท็บไม่ได้ใช้งาน';
+  var p = document.getElementById('searchPanel');
+  if (p && p.classList.contains('open')) return 'กำลังค้นหา';
+  return null;
+}
+
+function arActive() {
+  if (!_arInterval) return false;
+  return curMode === 'set' ? !!curWarehouse : !!curZone;
+}
+
+function arTick() {
+  if (!arActive() || _arRunning) { arRender(); return; }
+  if (arBlockedReason()) { arRender(); return; }   // หยุดนับ ไม่ลดเวลา
+  _arLeft--;
+  if (_arLeft <= 0) { doAutoRefresh(); return; }
+  arRender();
+}
+
+function arRender() {
+  var el = document.getElementById('arCount');
+  if (!el) return;
+  if (!arActive()) { el.textContent = '--:--'; el.className = 'ar-count'; el.title = 'ปิดอยู่'; return; }
+  if (_arRunning)  { el.textContent = '···';   el.className = 'ar-count run'; el.title = 'กำลัง Refresh'; return; }
+
+  var hold = arBlockedReason();
+  var m = Math.floor(_arLeft / 60), s = _arLeft % 60;
+  el.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  if (hold)            { el.className = 'ar-count hold'; el.title = 'พักไว้: ' + hold; }
+  else if (_arLeft <= 30) { el.className = 'ar-count soon'; el.title = 'ใกล้ Refresh'; }
+  else                 { el.className = 'ar-count'; el.title = 'Refresh อัตโนมัติใน ' + _arLeft + ' วิ'; }
+}
+
+async function doAutoRefresh() {
+  if (_arRunning) return;
+  _arRunning = true;
+  arRender();
+  try {
+    await refreshAll(true);
+  } catch (e) {
+    console.warn('auto refresh failed:', e);
+  } finally {
+    _arRunning = false;
+    arReset();
+  }
+}
+
+// รีเฟรชทั้ง Data SN / รายการกล่อง / ดัชนีค้นหา
+async function refreshAll(silent) {
+  var btn = document.getElementById('btnRefresh');
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+
+  try {
+    if (curMode === 'set') {
+      if (!curWarehouse) return;
+      var w = curWarehouse;
+      _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
+
+      var resSets = await api({ action: 'getBoxSets', warehouse: w });
+      if (!resSets || resSets.error) throw new Error((resSets && resSets.error) || 'ไม่มีการตอบกลับ');
+      if (curWarehouse !== w) return;
+
+      nextSetId = resSets.next_set_id;
+      await loadCodeIndex(true);
+      if (curWarehouse !== w) return;
+
+      _cacheSetSNs = {};
+      renderSetList(resSets.sets || []);
+
+      _searchIndexed = null;
+      await ensureSearchIndex(true);
+      if (curWarehouse !== w) return;
+
+      if (curSet && window._sets[curSet.set_id]) {
+        curSet = window._sets[curSet.set_id];
+        await ensureSetData(curSet, true);
+        loadSetSNs();
+      } else if (curSet) {
+        curSet = null; resetRight();
+        if (!silent) showToast('Set ที่เปิดอยู่ถูกลบไปแล้ว', 'err');
+      }
+      setStatus('ok', 'คลัง ' + w + ' | ' + (resSets.sets || []).length + ' Set · '
+                     + (_cacheCodeIndex || []).length + ' Code');
+      api({ action: 'syncNames', warehouse: w }, 'POST').catch(function(){});
+
+    } else {
+      if (!curZone) return;
+      var z = curZone;
+      var pair = await Promise.all([
+        api({ action: 'getBoxes',  zone: z }),
+        api({ action: 'getDataSN', zone: z })
+      ]);
+      if (curZone !== z) return;
+      if (!pair[0] || pair[0].error) throw new Error((pair[0] && pair[0].error) || 'ไม่มีการตอบกลับ');
+
+      nextBoxId    = pair[0].next_box_id;
+      _cacheDataSN = (pair[1] && pair[1].rows) || [];
+      _cacheBoxSNs = {};
+      renderBoxList(pair[0].boxes || []);
+
+      _searchIndexed = null;
+      await ensureSearchIndex(true);
+      if (curZone !== z) return;
+
+      if (curBox && window._boxes[curBox.box_id]) {
+        curBox = window._boxes[curBox.box_id];
+        loadBoxSNs();
+      } else if (curBox) {
+        curBox = null; resetRight();
+        if (!silent) showToast('Box ที่เปิดอยู่ถูกลบไปแล้ว', 'err');
+      }
+      setStatus('ok', 'Zone ' + z + ' | Data SN: ' + _cacheDataSN.length + ' รายการ');
+      api({ action: 'syncNames', zone: z }, 'POST').catch(function(){});
+    }
+
+    if (!silent) showToast('Refresh สำเร็จ', 'ok');
+  } catch (e) {
+    setStatus('err', 'Refresh ไม่สำเร็จ: ' + e.message);
+    if (!silent) showToast('Refresh ไม่สำเร็จ: ' + e.message, 'err');
+    throw e;
+  } finally {
+    if (btn) { btn.textContent = '↻ Refresh'; btn.disabled = false; }
+  }
+}
+// ======== END AUTO REFRESH ========
 
 // ---- Toast ----
 var _tt;
