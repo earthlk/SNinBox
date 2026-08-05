@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SN Manager 1.2</title>
+<title>SN Manager 1.3</title>
 <style>
 :root {
   --bg:      #0d0f18;
@@ -36,6 +36,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',san
 .ztab{padding:6px 22px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:.15s;letter-spacing:.5px}
 .ztab:hover{color:var(--text);background:var(--card2)}
 .ztab.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(91,141,238,.4)}
+.zone-bar .search-wrap{margin-left:auto}
+.zone-bar .search-panel{left:auto;right:0}
 
 /* Body */
 .body{display:flex;flex:1;overflow:hidden}
@@ -298,6 +300,30 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .ar-count.soon{color:var(--yellow)}
 .ar-count.run{color:var(--accent)}
 .ar-count.hold{color:var(--muted);opacity:.55}
+
+/* ===== GLOBAL SEARCH ===== */
+.gs-modal{width:680px;max-width:96vw}
+.gs-state{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:rgba(107,114,128,.15);color:var(--muted);white-space:nowrap}
+.gs-state.ready{background:rgba(52,211,153,.15);color:var(--green)}
+.gs-state.load{background:rgba(91,141,238,.15);color:var(--accent)}
+.gs-state.err{background:rgba(248,113,113,.15);color:var(--red)}
+.gs-inputwrap{display:flex;align-items:center;gap:8px;background:var(--card);
+  border:2px solid var(--border);border-radius:10px;padding:0 12px;height:42px;margin-bottom:10px}
+.gs-inputwrap:focus-within{border-color:var(--accent)}
+.gs-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);
+  font-size:15px;font-family:'Courier New',monospace;font-weight:700;min-width:0}
+.gs-input::placeholder{font-family:'Segoe UI','Sarabun',sans-serif;font-weight:400;
+  font-size:13px;color:var(--muted)}
+.gs-results{max-height:56vh;overflow-y:auto;background:var(--card);
+  border:1px solid var(--border);border-radius:10px;padding:6px}
+.gs-scope{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;flex-shrink:0}
+.gs-scope.sn{background:rgba(52,211,153,.15);color:var(--green)}
+.gs-scope.set{background:rgba(124,92,252,.18);color:var(--accent2)}
+.gs-prog{padding:20px;text-align:center;font-size:12px;color:var(--muted)}
+.gs-bar{background:var(--border);border-radius:20px;height:6px;overflow:hidden;margin-top:10px}
+.gs-bar div{background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;
+  border-radius:20px;transition:width .3s}
 </style>
 </head>
 <body>
@@ -309,6 +335,19 @@ tr:hover td{background:rgba(91,141,238,.04)}
     <button id="modeSN"  onclick="setMode('sn')"  class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:6px">Box SN</button>
     <button id="modeSet" onclick="setMode('set')" class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:transparent;color:var(--muted);border-radius:6px">Box Set</button>
   </div>
+  <span id="statusPill" class="pill p-dim">-- เลือกโซน</span>
+  <button class="btn btn-ghost btn-sm no-print" onclick="openGlobalSearch()" style="font-size:11px;margin-left:8px">&#127758; ค้นทุกโซน</button>
+  <button class="btn btn-ghost btn-sm no-print" onclick="openUpload()" style="font-size:11px;margin-left:8px">&#8679; Upload CSV</button>
+</div>
+
+<!-- Zone / Warehouse Bar -->
+<div class="zone-bar">
+  <div class="ztabs" id="zoneTabs" style="display:none"></div>
+  <div class="ztabs" id="warehouseTabs" style="display:none">
+    <button class="ztab" id="wtab_001" onclick="selectWarehouse('001')">001</button>
+    <button class="ztab" id="wtab_002" onclick="selectWarehouse('002')">002</button>
+  </div>
+
   <div class="ar-wrap no-print" id="arWrap" style="display:none">
     <button class="btn btn-ghost btn-sm" onclick="refreshDataSN()" id="btnRefresh" style="font-size:11px">&#8635; Refresh</button>
     <span class="ar-sep"></span>
@@ -326,27 +365,12 @@ tr:hover td{background:rgba(91,141,238,.04)}
   <div class="search-wrap no-print" id="searchWrap" style="display:none">
     <span class="search-ico">&#128269;</span>
     <input id="searchField" class="search-input" type="text" autocomplete="off"
-      placeholder="ค้นหา SN / Code / ชื่อสินค้า..."
+      placeholder="ค้นหา SN / Code / ชื่อสินค้า / Zone..."
       oninput="onSearchInput()"
       onfocus="onSearchInput()"
       onkeydown="onSearchKey(event)">
     <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none">&#10005;</button>
     <div class="search-panel" id="searchPanel"></div>
-  </div>
-  <span id="statusPill" class="pill p-dim">-- เลือกโซน</span>
-  <button class="btn btn-ghost btn-sm no-print" onclick="openUpload()" style="font-size:11px;margin-left:8px">&#8679; Upload CSV</button>
-</div>
-
-<!-- Zone Tabs (Box SN mode) -->
-<!-- Zone Tabs (Box SN mode) -->
-<div class="zone-bar" id="snZoneBar">
-  <div class="ztabs" id="zoneTabs"></div>
-</div>
-<!-- Warehouse Tabs (Box Set mode) -->
-<div class="zone-bar" id="setZoneBar" style="display:none">
-  <div class="ztabs" id="warehouseTabs">
-    <button class="ztab" id="wtab_001" onclick="selectWarehouse('001')">001</button>
-    <button class="ztab" id="wtab_002" onclick="selectWarehouse('002')">002</button>
   </div>
 </div>
 
@@ -515,6 +539,29 @@ tr:hover td{background:rgba(91,141,238,.04)}
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="overlay" id="gsModal">
+  <div class="modal gs-modal">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <h3 style="margin:0">&#127758; ค้นหาทุกโซน / ทุกคลัง</h3>
+      <span class="gs-state" id="gsState">--</span>
+      <button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="rebuildGlobalIndex()" title="โหลดข้อมูลใหม่ทั้งหมด">&#8635;</button>
+      <button class="btn btn-ghost btn-xs" onclick="closeGlobalSearch()">&#10005;</button>
+    </div>
+    <div class="modal-sub" style="margin-bottom:12px">ค้นรวม Box SN ทุกโซน และ BoxSet ทุกคลัง — คลิกผลลัพธ์เพื่อกระโดดไปที่นั่น</div>
+
+    <div class="gs-inputwrap">
+      <span style="opacity:.6">&#128269;</span>
+      <input id="gsField" class="gs-input" type="text" autocomplete="off"
+        placeholder="SN / Code / ชื่อสินค้า / Zone / ชื่อกล่อง..."
+        oninput="onGsInput()" onkeydown="onGsKey(event)">
+      <button class="search-clear" onclick="document.getElementById('gsField').value='';onGsInput()">&#10005;</button>
+    </div>
+
+    <div class="gs-results" id="gsResults">
+      <div class="sr-empty">พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อค้นหา</div>
+    </div>
+  </div>
+</div>
 
 <!-- Create BoxSet Modal -->
 <div class="overlay" id="createSetModal">
@@ -601,7 +648,8 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('zoneTabs').innerHTML = ZONES.map(function(z) {
     return '<button class="ztab" id="ztab_' + z + '" onclick="selectZone(\'' + z + '\')">' + z + '</button>';
   }).join('');
-	if (isEdge()) {
+  document.getElementById('zoneTabs').style.display = '';
+  if (isEdge()) {
     setTimeout(function() {
       showToast('Edge อาจทำให้ฉลากปริ้นเพี้ยน — แนะนำให้ใช้ Chrome', 'err');
     }, 1200);
@@ -623,7 +671,6 @@ async function selectZone(z) {
   resetRight();
   document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   document.getElementById('boxCountLbl').textContent = '--';
-    _indexToken++;
   try {
     var [resBoxes, resData] = await Promise.all([
       api({ action: 'getBoxes', zone: z }),
@@ -1940,8 +1987,8 @@ function setMode(mode) {
   arReset();
   var snBtn  = document.getElementById('modeSN');
   var setBtn = document.getElementById('modeSet');
-  var snBar  = document.getElementById('snZoneBar');
-  var setBar = document.getElementById('setZoneBar');
+  var snBar  = document.getElementById('zoneTabs');
+  var setBar = document.getElementById('warehouseTabs');
 
   if (mode === 'sn') {
     snBtn.style.background  = 'var(--accent)';
@@ -1995,7 +2042,6 @@ async function selectWarehouse(w) {
   resetRight();
   document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   document.getElementById('boxCountLbl').textContent = '--';
-    _indexToken++;
   try {
     var [resSets] = await Promise.all([
       api({ action: 'getBoxSets', warehouse: w }),
@@ -2835,9 +2881,6 @@ function setIdxBadge(state, txt) {
   el.innerHTML = txt;        // ← เดิมเป็น textContent
 }
 
-// สร้างดัชนี — เรียกซ้ำได้ ถ้ากำลังทำอยู่จะรอตัวเดิม
-var _indexPromiseKey = null;
-
 function ensureSearchIndex(force) {
   var key = _scopeKey();
   if (!force && _searchIndexed === key) return Promise.resolve(true);
@@ -3061,7 +3104,8 @@ function searchAll(q) {
     var id = c[idKey];
     var nm = String(c[nmKey] || '');
     if (id.toLowerCase().indexOf(q) === -1 && nm.toLowerCase().indexOf(q) === -1) return;
-    res.box.push({ id: id, name: cname(c), count: (cache[id] || []).length });
+    res.box.push({ id: id, name: cname(c), count: (cache[id] || []).length,
+    zone: isSet ? '' : String(c.data_zone || '').trim() });
   });
 
   res.sn.sort(function(a, b) { return a.sn.localeCompare(b.sn); });
@@ -3103,13 +3147,18 @@ function renderSearchResults(r, q) {
   var lblC  = isSet ? 'Set' : 'Box';
   var html  = '';
 
+  function zTag(z) {
+    return z ? '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>' : '';
+  }
+
   if (r.dup.length) {
     html += '<div class="sr-group"><div class="sr-glbl" style="color:var(--red)">&#9888; SN ซ้ำข้าม ' + lblC + '</div>';
     r.dup.slice(0, 5).forEach(function(d) {
       html += '<div class="sr-item"><span class="sr-mono">' + d.sn + '</span>'
         + '<span class="sr-name" style="color:var(--red)">พบใน ' + d.hits.length + ' ' + lblC + '</span>'
         + '<span class="sr-tag sr-dup">ตรวจสอบ</span></div>'
-        + '<div class="sr-sub">' + d.hits.map(function(h) { return '<span>' + h.id + '</span>'; }).join('') + '</div>';
+        + '<div class="sr-sub">' + d.hits.map(function(h) { return '<span>' + h.id + '</span>';  
+        }).join('') + '</div>';
     });
     html += '</div>';
   }
@@ -3121,6 +3170,7 @@ function renderSearchResults(r, q) {
       _searchHits.push({ kind: 'box', id: h.id, sn: s.sn });
       html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
         + '<span class="sr-mono">' + s.sn + '</span>'
+        + zTag(h.row && h.row.zone)
         + '<span class="sr-name">' + s.name + '</span>'
         + '<span class="sr-tag sr-in">' + h.id + (s.seq ? ' · ชุด ' + s.seq : '') + '</span></div>';
     });
@@ -3131,8 +3181,9 @@ function renderSearchResults(r, q) {
     html += '<div class="sr-group"><div class="sr-glbl">SN ที่ยังไม่เข้า ' + lblC + ' <b>' + r.free.length + '</b></div>';
     r.free.forEach(function(s) {
       html += '<div class="sr-item" style="cursor:default"><span class="sr-mono">' + s.sn + '</span>'
+        + zTag(s.zone)
         + '<span class="sr-name">' + s.name + '</span>'
-        + '<span class="sr-tag sr-free">ว่าง · ' + s.zone + '</span></div>';
+        + '<span class="sr-tag sr-free">ยังว่าง</span></div>';
     });
     html += '</div>';
   }
@@ -3143,6 +3194,7 @@ function renderSearchResults(r, q) {
       _searchHits.push({ kind: 'code', code: c.code, boxes: c.boxes.map(function(b){ return b.id; }) });
       html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
         + '<span class="sr-mono">' + c.code + '</span>'
+        + zTag(c.zone)
         + '<span class="sr-name">' + c.name + '</span>'
         + (c.total
             ? '<span class="sr-cnt">' + c.total + ' SN · ' + c.boxes.length + ' ' + lblC + '</span>'
@@ -3183,6 +3235,7 @@ function renderSearchResults(r, q) {
       _searchHits.push({ kind: 'box', id: b.id });
       html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
         + '<span class="sr-mono">' + b.id + '</span>'
+        + zTag(b.zone)
         + '<span class="sr-name">' + b.name + '</span>'
         + '<span class="sr-cnt">' + b.count + ' SN</span></div>';
     });
@@ -3461,6 +3514,370 @@ async function refreshAll(silent) {
 }
 // ======== END AUTO REFRESH ========
 
+// ======== GLOBAL SEARCH ========
+var _gIndex   = null;   // { rows:[...], boxes:{}, builtAt: Date }
+var _gLoading = false;
+var _gTimer   = null;
+var _gHits    = [];
+var _gCursor  = -1;
+
+function openGlobalSearch() {
+  document.getElementById('gsModal').classList.add('open');
+  document.getElementById('gsField').value = '';
+  renderGsIdle();
+  setTimeout(function(){ document.getElementById('gsField').focus(); }, 100);
+  if (!_gIndex && !_gLoading) buildGlobalIndex();
+  else gsState();
+}
+
+function closeGlobalSearch() {
+  document.getElementById('gsModal').classList.remove('open');
+}
+
+function gsState() {
+  var el = document.getElementById('gsState');
+  if (!el) return;
+  if (_gLoading) { el.className = 'gs-state load'; el.textContent = 'กำลังโหลด...'; return; }
+  if (!_gIndex)  { el.className = 'gs-state';      el.textContent = 'ยังไม่มีข้อมูล'; return; }
+  var mins = Math.floor((Date.now() - _gIndex.builtAt) / 60000);
+  el.className = 'gs-state ready';
+  el.textContent = _gIndex.rows.length.toLocaleString('th-TH') + ' SN · '
+    + (mins < 1 ? 'เพิ่งโหลด' : mins + ' นาทีที่แล้ว');
+}
+
+function renderGsIdle() {
+  document.getElementById('gsResults').innerHTML =
+    '<div class="sr-empty">พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อค้นหา</div>';
+  _gHits = []; _gCursor = -1;
+}
+
+function gsProgress(done, total, label) {
+  document.getElementById('gsResults').innerHTML =
+    '<div class="gs-prog"><span class="spin"></span>'
+    + '<div style="margin-top:10px">' + label + '</div>'
+    + '<div class="gs-bar"><div style="width:' + Math.round(done / total * 100) + '%"></div></div>'
+    + '<div style="margin-top:6px;font-size:11px">' + done + '/' + total + '</div></div>';
+}
+
+// โหลดข้อมูลทุกโซน + ทุกคลัง
+async function buildGlobalIndex() {
+  if (_gLoading) return;
+  _gLoading = true;
+  gsState();
+
+  var tasks = ZONES.map(function(z) { return { kind: 'sn', key: z }; })
+    .concat(['001', '002'].map(function(w) { return { kind: 'set', key: w }; }));
+
+  var rows = [], boxes = {}, done = 0, failed = [];
+  gsProgress(0, tasks.length, 'กำลังรวบรวมข้อมูล');
+
+  await _mapLimit(tasks, 3, async function(t) {
+    try {
+      var res = t.kind === 'sn'
+        ? await api({ action: 'getAllBoxSNs',    zone: t.key })
+        : await api({ action: 'getAllBoxSetSNs', warehouse: t.key });
+      if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
+
+      (res.boxes || []).forEach(function(b) {
+        var id = t.kind === 'sn' ? b.box_id : b.set_id;
+        boxes[t.kind + ':' + id] = {
+          kind: t.kind, scope: t.key, id: id,
+          name: t.kind === 'sn' ? (b.box_name || b.code || id) : (b.set_name || id),
+          code: String(b.code || '').trim(),
+          codes: String(b.codes || '').trim(),
+          data_zone: String(b.data_zone || '').trim(),
+          type: b.type || b.set_type || ''
+        };
+      });
+      (res.rows || []).forEach(function(r) {
+        var id = t.kind === 'sn' ? r.box_id : r.set_id;
+        rows.push({
+          kind: t.kind, scope: t.key, loc: id,
+          sn: String(r.sn || '').trim(),
+          code: String(r.code || '').trim(),
+          name: String(r.shortname || r.item_name || '').trim(),
+          zone: String(r.zone || '').trim(),
+          seq: r.seq || ''
+        });
+      });
+    } catch (e) {
+      failed.push((t.kind === 'sn' ? 'Zone ' : 'คลัง ') + t.key);
+      console.warn('global index failed:', t, e);
+    }
+    done++;
+    gsProgress(done, tasks.length, 'กำลังรวบรวมข้อมูล');
+  });
+
+// โหลด CodeIndex เพื่อรู้ว่ามี Code อะไรบ้างในระบบ (รวมที่ยังไม่เข้ากล่อง)
+  var codeMaster = {};
+  try {
+    var ciz = await api({ action: 'getCodeIndex' });
+    (ciz && ciz.rows || []).forEach(function(r) {
+      var c = String(r.code || '').trim();
+      if (!c) return;
+      codeMaster[c] = { code: c, name: String(r.shortname || '').trim(),
+                        zone: String(r.zone || '').trim(), src: 'zone' };
+    });
+    var ciw = await api({ action: 'getCodeIndexW', warehouse: '002' });
+    (ciw && ciw.rows || []).forEach(function(r) {
+      var c = String(r.code || '').trim();
+      if (!c || codeMaster[c]) return;
+      codeMaster[c] = { code: c, name: String(r.shortname || '').trim(),
+                        zone: String(r.zone || '').trim(), src: 'wh002' };
+    });
+  } catch (e) { console.warn('CodeIndex load failed:', e); }
+
+  _gIndex = { rows: rows, boxes: boxes, codes: codeMaster, builtAt: Date.now() };
+
+  _gLoading = false;
+  gsState();
+
+  if (failed.length) showToast('โหลดไม่สำเร็จ: ' + failed.join(', '), 'err');
+
+  var q = document.getElementById('gsField').value.trim();
+  if (q.length >= 2) runGlobalSearch(q); else renderGsIdle();
+}
+
+function rebuildGlobalIndex() {
+  _gIndex = null;
+  buildGlobalIndex();
+}
+
+function onGsInput() {
+  clearTimeout(_gTimer);
+  var q = document.getElementById('gsField').value.trim();
+  if (q.length < 2) { renderGsIdle(); return; }
+  if (_gLoading) return;
+  _gTimer = setTimeout(function(){ runGlobalSearch(q); }, 200);
+}
+
+function runGlobalSearch(q) {
+  if (!_gIndex) { if (!_gLoading) buildGlobalIndex(); return; }
+  var ql = q.toLowerCase();
+
+  var snHits = {}, codeAgg = {}, zoneAgg = {}, locHits = [];
+
+  _gIndex.rows.forEach(function(r) {
+    var lk = r.kind + ':' + r.loc;
+    if (r.sn.toLowerCase().indexOf(ql) !== -1) { 
+      (snHits[r.sn] = snHits[r.sn] || []).push(r);
+    }
+    if (r.code && (r.code.toLowerCase().indexOf(ql) !== -1 || r.name.toLowerCase().indexOf(ql) !== -1)) {
+      if (!codeAgg[r.code]) codeAgg[r.code] = { name: r.name, zones: {}, total: 0, locs: {} };
+      codeAgg[r.code].total++;
+      if (r.zone) codeAgg[r.code].zones[r.zone] = 1;
+      codeAgg[r.code].locs[lk] = (codeAgg[r.code].locs[lk] || 0) + 1;
+    }
+    if (r.zone && r.zone.toLowerCase().indexOf(ql) !== -1) {
+      if (!zoneAgg[r.zone]) zoneAgg[r.zone] = { total: 0, locs: {} };
+      zoneAgg[r.zone].total++;
+      zoneAgg[r.zone].locs[lk] = 1;
+    }
+  });
+
+// เติม Code ที่ตรงคำค้น แต่ยังไม่มี SN เข้ากล่องเลย
+  Object.keys(_gIndex.codes || {}).forEach(function(cd) {
+    var m = _gIndex.codes[cd];
+    if (cd.toLowerCase().indexOf(ql) === -1
+        && String(m.name).toLowerCase().indexOf(ql) === -1) return;
+    if (!codeAgg[cd]) {
+      codeAgg[cd] = { name: m.name, zones: {}, total: 0, locs: {} };
+      if (m.zone) codeAgg[cd].zones[m.zone] = 1;
+    } else if (!codeAgg[cd].name && m.name) {
+      codeAgg[cd].name = m.name;
+    }
+  });
+
+  Object.keys(_gIndex.boxes).forEach(function(lk) {
+    var b = _gIndex.boxes[lk];
+    var hay = [b.id, b.name, b.code, b.codes].join(' ').toLowerCase();
+    if (hay.indexOf(ql) === -1) return;
+    locHits.push(b);
+  });
+
+  renderGlobalResults(snHits, codeAgg, zoneAgg, locHits, q);
+}
+
+function _gsLocLabel(lk) {
+  var b = _gIndex.boxes[lk];
+  if (!b) return lk.split(':')[1];
+  return b.id;
+}
+
+function renderGlobalResults(snHits, codeAgg, zoneAgg, locHits, q) {
+  _gHits = []; _gCursor = -1;
+  var html = '';
+
+  function scopeTag(kind, scope) {
+    return kind === 'sn'
+      ? '<span class="gs-scope sn">Zone ' + scope + '</span>'
+      : '<span class="gs-scope set">คลัง ' + scope + '</span>';
+  }
+
+  function zTag(z) {
+    return z ? '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>' : '';
+  }
+
+  // --- SN ---
+  var snKeys = Object.keys(snHits).sort().slice(0, 40);
+  if (snKeys.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">SN <b>' + Object.keys(snHits).length + '</b></div>';
+    snKeys.forEach(function(sn) {
+      snHits[sn].forEach(function(r) {
+        _gHits.push({ act: 'goto', kind: r.kind, scope: r.scope, id: r.loc, sn: sn });
+        html += '<div class="sr-item" data-gh="' + (_gHits.length - 1) + '">'
+          + '<span class="sr-mono">' + sn + '</span>'
+          + scopeTag(r.kind, r.scope)
+          + zTag(r.zone)
+          + '<span class="sr-name">' + (r.name || r.code) + '</span>'
+          + '<span class="sr-tag sr-in">' + r.loc + (r.seq ? ' · ชุด ' + r.seq : '') + '</span></div>';
+      });
+    });
+    html += '</div>';
+  }
+
+// --- Code ---
+  var codeKeys = Object.keys(codeAgg)
+    .sort(function(a, b){ return codeAgg[b].total - codeAgg[a].total; })
+    .slice(0, 25);
+  if (codeKeys.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Code / ชื่อสินค้า <b>' + Object.keys(codeAgg).length + '</b></div>';
+    codeKeys.forEach(function(cd) {
+      var a   = codeAgg[cd];
+      var lks = Object.keys(a.locs);
+      var zs  = Object.keys(a.zones);
+      html += '<div class="sr-item" style="cursor:default">'
+        + '<span class="sr-mono">' + cd + '</span>'
+        + zs.slice(0, 3).map(function(z){ return zTag(z); }).join('')
+        + '<span class="sr-name">' + (a.name || '(ไม่มีชื่อ)') + '</span>'
+        + (a.total
+            ? '<span class="sr-cnt">' + a.total + ' SN · ' + lks.length + ' ที่</span>'
+            : '<span class="sr-tag sr-free">ยังไม่เข้ากล่อง</span>')
+        + '</div>';
+      if (lks.length) {
+        html += '<div class="sr-sub">' + lks.map(function(lk) {
+            var b = _gIndex.boxes[lk];
+            _gHits.push({ act: 'goto', kind: b ? b.kind : 'sn', scope: b ? b.scope : '', id: _gsLocLabel(lk) });
+            return '<span data-gh="' + (_gHits.length - 1) + '" style="cursor:pointer">'
+              + (b ? (b.kind === 'sn' ? 'Z' + b.scope : 'W' + b.scope) + ' · ' : '')
+              + _gsLocLabel(lk) + ' · ' + a.locs[lk] + '</span>';
+         }).join('') + '</div>';
+      }
+    });
+    html += '</div>';
+  }
+
+  // --- Zone ---
+  var zoneKeys = Object.keys(zoneAgg)
+    .sort(function(a, b){ return zoneAgg[b].total - zoneAgg[a].total; }).slice(0, 15);
+  if (zoneKeys.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Zone <b>' + Object.keys(zoneAgg).length + '</b></div>';
+    zoneKeys.forEach(function(z) {
+      var a = zoneAgg[z];
+      var lks = Object.keys(a.locs);
+      html += '<div class="sr-item" style="cursor:default">'
+        + '<span class="sr-mono" style="color:var(--accent2)">' + z + '</span>'
+        + '<span class="sr-name"></span>'
+        + '<span class="sr-cnt">' + a.total + ' SN · ' + lks.length + ' ที่</span></div>';
+      if (lks.length) {
+        html += '<div class="sr-sub">' + lks.map(function(lk) {
+            var b = _gIndex.boxes[lk];
+            _gHits.push({ act: 'goto', kind: b ? b.kind : 'sn', scope: b ? b.scope : '', id: _gsLocLabel(lk) });
+            return '<span data-gh="' + (_gHits.length - 1) + '" style="cursor:pointer">'
+              + (b ? (b.kind === 'sn' ? 'Z' + b.scope : 'W' + b.scope) + ' · ' : '')
+              + _gsLocLabel(lk) + '</span>';
+          }).join('') + '</div>';
+      }
+    });
+    html += '</div>';
+  }
+
+  // --- Box / Set ---
+  if (locHits.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Box / BoxSet <b>' + locHits.length + '</b></div>';
+    locHits.slice(0, 20).forEach(function(b) {
+      _gHits.push({ act: 'goto', kind: b.kind, scope: b.scope, id: b.id });
+     html += '<div class="sr-item" data-gh="' + (_gHits.length - 1) + '">'
+        + '<span class="sr-mono">' + b.id + '</span>'
+        + scopeTag(b.kind, b.scope)
+        + '<span class="sr-name">' + b.name
+        + (b.code ? ' <span style="color:var(--muted);font-family:monospace;font-size:10px">· ' + b.code + '</span>' : '')
+        + (b.codes ? ' <span style="color:var(--muted);font-size:10px">· ' + b.codes.split(',').length + ' Code</span>' : '')
+        + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  if (!html) html = '<div class="sr-empty">ไม่พบ "' + q + '" ในทุกโซนและทุกคลัง</div>';
+  else html += '<div class="sr-hint"><kbd>Enter</kbd> ไปรายการแรก · <kbd>&#8593;&#8595;</kbd> เลื่อน · <kbd>Esc</kbd> ปิด</div>';
+
+  document.getElementById('gsResults').innerHTML = html;
+}
+
+// กระโดดข้ามโซน/คลัง
+async function gotoGlobalHit(i) {
+  var h = _gHits[i];
+  if (!h) return;
+
+  if (_kitDraft && Object.keys(_kitDraft.rows || {}).length) {
+    if (!confirm('มีชุด Kit ที่ยังกรอกไม่เสร็จค้างอยู่\nย้ายไป ' + h.id + ' จะทิ้งของเดิม — ยืนยัน?')) return;
+    _kitDraft = null;
+  }
+
+  closeGlobalSearch();
+  showToast('กำลังเปิด ' + h.id + '...', 'ok');
+
+  if (h.kind === 'sn') {
+    if (curMode !== 'sn') setMode('sn');
+    await selectZone(h.scope);
+    if (window._boxes && window._boxes[h.id]) {
+      selectBox(h.id);
+      if (h.sn) setTimeout(function(){ highlightSN(h.sn); }, 700);
+    } else {
+      showToast('ไม่พบ ' + h.id + ' ใน Zone ' + h.scope + ' — อาจถูกลบไปแล้ว', 'err');
+    }
+  } else {
+    if (curMode !== 'set') setMode('set');
+    await selectWarehouse(h.scope);
+    if (window._sets && window._sets[h.id]) {
+      await selectSet(h.id);
+      if (h.sn) setTimeout(function(){ highlightSN(h.sn); }, 700);
+    } else {
+      showToast('ไม่พบ ' + h.id + ' ในคลัง ' + h.scope + ' — อาจถูกลบไปแล้ว', 'err');
+    }
+  }
+}
+
+function onGsKey(e) {
+  var items = document.querySelectorAll('#gsResults [data-gh]');
+  if (e.key === 'Escape') { e.preventDefault(); closeGlobalSearch(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!items.length) return;
+    e.preventDefault();
+    _gCursor += (e.key === 'ArrowDown' ? 1 : -1);
+    if (_gCursor < 0) _gCursor = items.length - 1;
+    if (_gCursor >= items.length) _gCursor = 0;
+    items.forEach(function(el){ el.classList.remove('cur'); });
+    items[_gCursor].classList.add('cur');
+    items[_gCursor].scrollIntoView({ block: 'nearest' });
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    var idx = _gCursor >= 0 ? _gCursor : 0;
+    if (items[idx]) gotoGlobalHit(parseInt(items[idx].dataset.gh, 10));
+  }
+}
+
+document.getElementById('gsResults').addEventListener('click', function(e) {
+  var it = e.target.closest('[data-gh]');
+  if (it) gotoGlobalHit(parseInt(it.dataset.gh, 10));
+});
+document.getElementById('gsModal').addEventListener('click', function(e) {
+  if (e.target === this) closeGlobalSearch();
+});
+// ======== END GLOBAL SEARCH ========
+
 // ---- Toast ----
 var _tt;
 function showToast(msg, type) {
@@ -3493,7 +3910,7 @@ async function doUpload002() {
   document.getElementById('progressSteps').innerHTML =
     '<div class="progress-step step-running" id="step_002">&#9654; คลัง 002 (' + rows.length + ' rows)</div>';
   var stepEl = document.getElementById('step_002');
-
+ 
   function setProgress(pct, text) {
     document.getElementById('progressFill').style.width = Math.min(pct,100) + '%';
     document.getElementById('progressPct').textContent  = Math.min(pct,100) + '%';
