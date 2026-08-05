@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SN Manager 1.3</title>
+<title>SN Manager 1.3.1</title>
 <style>
 :root {
   --bg:      #0d0f18;
@@ -324,6 +324,15 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .gs-bar{background:var(--border);border-radius:20px;height:6px;overflow:hidden;margin-top:10px}
 .gs-bar div{background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;
   border-radius:20px;transition:width .3s}
+
+.sr-toggle{display:flex;align-items:center;gap:8px;padding:8px 10px;margin-top:4px;
+  border-top:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--muted);
+  user-select:none;transition:.1s}
+.sr-toggle:hover{color:var(--text)}
+.sr-toggle b{color:var(--accent);font-weight:700}
+.sr-toggle .sr-caret{margin-left:auto;font-size:9px;transition:transform .15s}
+.sr-toggle.open .sr-caret{transform:rotate(180deg)}
+
 </style>
 </head>
 <body>
@@ -3177,28 +3186,18 @@ function renderSearchResults(r, q) {
     html += '</div>';
   }
 
-  if (r.free.length) {
-    html += '<div class="sr-group"><div class="sr-glbl">SN ที่ยังไม่เข้า ' + lblC + ' <b>' + r.free.length + '</b></div>';
-    r.free.forEach(function(s) {
-      html += '<div class="sr-item" style="cursor:default"><span class="sr-mono">' + s.sn + '</span>'
-        + zTag(s.zone)
-        + '<span class="sr-name">' + s.name + '</span>'
-        + '<span class="sr-tag sr-free">ยังว่าง</span></div>';
-    });
-    html += '</div>';
-  }
+   var codeIn   = r.code.filter(function(c){ return c.total > 0; });
+  var codeFree = r.code.filter(function(c){ return !c.total; });
 
-  if (r.code.length) {
-    html += '<div class="sr-group"><div class="sr-glbl">Code / ชื่อสินค้า <b>' + r.code.length + '</b></div>';
-    r.code.forEach(function(c) {
+  if (codeIn.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Code / ชื่อสินค้า <b>' + codeIn.length + '</b></div>';
+    codeIn.forEach(function(c) {
       _searchHits.push({ kind: 'code', code: c.code, boxes: c.boxes.map(function(b){ return b.id; }) });
       html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
         + '<span class="sr-mono">' + c.code + '</span>'
         + zTag(c.zone)
         + '<span class="sr-name">' + c.name + '</span>'
-        + (c.total
-            ? '<span class="sr-cnt">' + c.total + ' SN · ' + c.boxes.length + ' ' + lblC + '</span>'
-            : '<span class="sr-tag sr-free">ยังไม่เข้า ' + lblC + '</span>')
+        + '<span class="sr-cnt">' + c.total + ' SN · ' + c.boxes.length + ' ' + lblC + '</span>'
         + '</div>';
       if (c.boxes.length) {
         html += '<div class="sr-sub">' + c.boxes.map(function(b) {
@@ -3209,16 +3208,16 @@ function renderSearchResults(r, q) {
     html += '</div>';
   }
 
-  if (r.zone.length) {
-    html += '<div class="sr-group"><div class="sr-glbl">Zone <b>' + r.zone.length + '</b></div>';
-    r.zone.forEach(function(z) {
+  var zoneIn = r.zone.filter(function(z){ return z.total > 0; });
+
+  if (zoneIn.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Zone <b>' + zoneIn.length + '</b></div>';
+    zoneIn.forEach(function(z) {
       _searchHits.push({ kind: 'zone', zone: z.zone, boxes: z.boxes.map(function(b){ return b.id; }) });
       html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
         + '<span class="sr-mono" style="color:var(--accent2)">' + z.zone + '</span>'
         + '<span class="sr-name">' + z.codeCount + ' Code</span>'
-        + (z.total
-            ? '<span class="sr-cnt">' + z.total + ' SN · ' + z.boxes.length + ' ' + lblC + '</span>'
-            : '<span class="sr-tag sr-free">ยังไม่เข้า ' + lblC + '</span>')
+        + '<span class="sr-cnt">' + z.total + ' SN · ' + z.boxes.length + ' ' + lblC + '</span>'
         + '</div>';
       if (z.boxes.length) {
         html += '<div class="sr-sub">' + z.boxes.map(function(b) {
@@ -3240,6 +3239,34 @@ function renderSearchResults(r, q) {
         + '<span class="sr-cnt">' + b.count + ' SN</span></div>';
     });
     html += '</div>';
+  }
+
+    var freeTotal = codeFree.length + r.free.length;
+  if (freeTotal) {
+    html += '<div class="sr-group">'
+      + '<div class="sr-toggle" data-toggle="free">'
+        + '<span>&#9679; ยังไม่เข้า ' + lblC + ' <b>' + freeTotal + '</b> รายการ</span>'
+        + '<span class="sr-caret">&#9660;</span>'
+      + '</div>'
+      + '<div id="srFreeBody" style="display:none">';
+
+    codeFree.forEach(function(c) {
+      html += '<div class="sr-item" style="cursor:default">'
+        + '<span class="sr-mono">' + c.code + '</span>'
+        + zTag(c.zone)
+        + '<span class="sr-name">' + c.name + '</span>'
+        + '<span class="sr-tag sr-free">Code</span></div>';
+    });
+
+    r.free.forEach(function(s) {
+      html += '<div class="sr-item" style="cursor:default">'
+        + '<span class="sr-mono">' + s.sn + '</span>'
+        + zTag(s.zone)
+        + '<span class="sr-name">' + s.name + '</span>'
+        + '<span class="sr-tag sr-free">SN</span></div>';
+    });
+
+    html += '</div></div>';
   }
 
   if (!html) html = '<div class="sr-empty">ไม่พบ "' + q + '"</div>';
@@ -3326,8 +3353,18 @@ function clearSearch() {
   if (sn && document.getElementById('snInputArea').style.display !== 'none') sn.focus();
 }
 
-// คลิกผลลัพธ์
+// คลิกผลลัพธ์ + ปุ่มยุบ/ขยาย
 document.getElementById('searchPanel').addEventListener('click', function(e) {
+  var tg = e.target.closest('[data-toggle]');
+  if (tg) {
+    e.stopPropagation();
+    var body = document.getElementById('srFreeBody');
+    if (!body) return;
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : '';
+    tg.classList.toggle('open', !open);
+    return;
+  }
   var it = e.target.closest('[data-hit]');
   if (it) gotoSearchHit(parseInt(it.dataset.hit, 10));
 });
@@ -3737,11 +3774,14 @@ function renderGlobalResults(snHits, codeAgg, zoneAgg, locHits, q) {
   }
 
 // --- Code ---
-  var codeKeys = Object.keys(codeAgg)
+  var allCodes  = Object.keys(codeAgg);
+  var codeKeys  = allCodes.filter(function(c){ return codeAgg[c].total > 0; })
     .sort(function(a, b){ return codeAgg[b].total - codeAgg[a].total; })
     .slice(0, 25);
+  var freeCodes = allCodes.filter(function(c){ return !codeAgg[c].total; }).slice(0, 40);
+
   if (codeKeys.length) {
-    html += '<div class="sr-group"><div class="sr-glbl">Code / ชื่อสินค้า <b>' + Object.keys(codeAgg).length + '</b></div>';
+    html += '<div class="sr-group"><div class="sr-glbl">Code / ชื่อสินค้า <b>' + codeKeys.length + '</b></div>';
     codeKeys.forEach(function(cd) {
       var a   = codeAgg[cd];
       var lks = Object.keys(a.locs);
@@ -3750,9 +3790,7 @@ function renderGlobalResults(snHits, codeAgg, zoneAgg, locHits, q) {
         + '<span class="sr-mono">' + cd + '</span>'
         + zs.slice(0, 3).map(function(z){ return zTag(z); }).join('')
         + '<span class="sr-name">' + (a.name || '(ไม่มีชื่อ)') + '</span>'
-        + (a.total
-            ? '<span class="sr-cnt">' + a.total + ' SN · ' + lks.length + ' ที่</span>'
-            : '<span class="sr-tag sr-free">ยังไม่เข้ากล่อง</span>')
+        + '<span class="sr-cnt">' + a.total + ' SN · ' + lks.length + ' ที่</span>'
         + '</div>';
       if (lks.length) {
         html += '<div class="sr-sub">' + lks.map(function(lk) {
@@ -3806,6 +3844,24 @@ function renderGlobalResults(snHits, codeAgg, zoneAgg, locHits, q) {
         + '</span></div>';
     });
     html += '</div>';
+  }
+
+if (freeCodes.length) {
+    html += '<div class="sr-group">'
+      + '<div class="sr-toggle" data-gtoggle="free">'
+        + '<span>&#9679; Code ที่ยังไม่เข้ากล่อง <b>' + freeCodes.length + '</b> รายการ</span>'
+        + '<span class="sr-caret">&#9660;</span>'
+      + '</div>'
+      + '<div id="gsFreeBody" style="display:none">';
+    freeCodes.forEach(function(cd) {
+      var a = codeAgg[cd];
+      html += '<div class="sr-item" style="cursor:default">'
+        + '<span class="sr-mono">' + cd + '</span>'
+        + Object.keys(a.zones).slice(0, 3).map(function(z){ return zTag(z); }).join('')
+        + '<span class="sr-name">' + (a.name || '(ไม่มีชื่อ)') + '</span>'
+        + '<span class="sr-tag sr-free">ยังไม่เข้ากล่อง</span></div>';
+    });
+    html += '</div></div>';
   }
 
   if (!html) html = '<div class="sr-empty">ไม่พบ "' + q + '" ในทุกโซนและทุกคลัง</div>';
@@ -3870,9 +3926,20 @@ function onGsKey(e) {
 }
 
 document.getElementById('gsResults').addEventListener('click', function(e) {
+  var tg = e.target.closest('[data-gtoggle]');
+  if (tg) {
+    e.stopPropagation();
+    var body = document.getElementById('gsFreeBody');
+    if (!body) return;
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : '';
+    tg.classList.toggle('open', !open);
+    return;
+  }
   var it = e.target.closest('[data-gh]');
   if (it) gotoGlobalHit(parseInt(it.dataset.gh, 10));
 });
+
 document.getElementById('gsModal').addEventListener('click', function(e) {
   if (e.target === this) closeGlobalSearch();
 });
