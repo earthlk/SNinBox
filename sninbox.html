@@ -333,6 +333,79 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .sr-toggle .sr-caret{margin-left:auto;font-size:9px;transition:transform .15s}
 .sr-toggle.open .sr-caret{transform:rotate(180deg)}
 
+/* ===== ERROR FLASH ===== */
+.err-flash{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;
+  background:rgba(120,15,15,.6);backdrop-filter:blur(2px)}
+.err-flash.show{display:flex;animation:errIn .18s ease-out}
+@keyframes errIn{from{opacity:0}to{opacity:1}}
+.err-box{background:var(--surface);border:3px solid var(--red);border-radius:18px;
+  padding:28px 40px;text-align:center;max-width:640px;box-shadow:0 20px 70px rgba(0,0,0,.7);
+  animation:errShake .4s}
+@keyframes errShake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-12px)}
+  40%{transform:translateX(12px)}
+  60%{transform:translateX(-7px)}
+  80%{transform:translateX(7px)}
+}
+.err-ico{font-size:46px;line-height:1;margin-bottom:10px}
+.err-sn{font-family:'Courier New',monospace;font-size:30px;font-weight:900;color:var(--red);
+  letter-spacing:2px;margin-bottom:8px}
+.err-msg{font-size:17px;font-weight:700;color:var(--text);line-height:1.5}
+.err-hint{font-size:12px;color:var(--muted);margin-top:12px}
+.err-btns{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.err-btn{border:none;border-radius:10px;padding:11px 30px;font-size:14px;font-weight:800;
+  cursor:pointer;font-family:inherit;transition:.15s}
+.err-btn:active{transform:scale(.97)}
+.err-btn-stay{background:var(--card2);border:2px solid var(--border);color:var(--muted)}
+.err-btn-stay:focus{outline:none;border-color:var(--muted);color:var(--text)}
+.err-btn-ok{background:var(--red);color:#fff;box-shadow:0 4px 16px rgba(248,113,113,.35)}
+.err-btn-ok:focus{outline:3px solid rgba(248,113,113,.5);outline-offset:2px}
+.err-btn-ok:hover{opacity:.9}
+
+
+/* ===== ERROR LOG ===== */
+.elog{background:var(--card);border:1px solid rgba(248,113,113,.35);border-radius:10px;margin-bottom:8px}
+.elog-head{display:flex;align-items:center;gap:8px;padding:7px 11px;cursor:pointer;user-select:none;
+  font-size:11px;font-weight:700;color:var(--red)}
+.elog-head:hover{background:rgba(248,113,113,.06)}
+.elog-cnt{background:rgba(248,113,113,.2);color:var(--red);padding:1px 7px;border-radius:20px;font-size:10px}
+.elog-clear{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px}
+.elog-clear:hover{color:var(--red)}
+.elog-caret{font-size:9px;transition:transform .15s}
+.elog.open .elog-caret{transform:rotate(180deg)}
+.elog-body{display:none;border-top:1px solid var(--border);max-height:180px;overflow-y:auto}
+.elog.open .elog-body{display:block}
+.elog-row{display:flex;align-items:center;gap:9px;padding:6px 11px;font-size:11px;
+  border-top:1px solid rgba(255,255,255,.03)}
+.elog-row:first-child{border-top:none}
+.elog-sn{font-family:'Courier New',monospace;font-weight:700;color:var(--red);flex-shrink:0}
+.elog-why{flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.elog-t{font-size:10px;color:var(--muted);opacity:.7;flex-shrink:0}
+
+/* ===== VERIFY MODE ===== */
+.vf-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.vf-tabs{display:flex;gap:3px;background:var(--card);padding:3px;border-radius:8px;
+  border:1px solid var(--border);flex-shrink:0}
+.vf-tab{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+  border:none;background:transparent;color:var(--muted);transition:.15s}
+.vf-tab:hover{color:var(--text)}
+.vf-tab.on-save{background:var(--accent);color:#fff}
+.vf-tab.on-check{background:var(--accent2);color:#fff}
+.vf-stat{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;flex-shrink:0}
+.vf-s{padding:2px 9px;border-radius:20px}
+.vf-s.ok{background:rgba(52,211,153,.15);color:var(--green)}
+.vf-s.wait{background:rgba(251,191,36,.15);color:var(--yellow)}
+.vf-s.bad{background:rgba(248,113,113,.15);color:var(--red)}
+.vf-reset{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 6px}
+.vf-reset:hover{color:var(--red)}
+
+.sn-field.checking{border-color:var(--accent2);background:rgba(124,92,252,.06)}
+tr.vf-hit td{background:rgba(52,211,153,.10)!important}
+tr.vf-hit td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+.kit-row.vf-hit{background:rgba(52,211,153,.10);box-shadow:inset 3px 0 0 var(--green)}
+.vf-mark{color:var(--green);font-weight:900;margin-right:5px}
+
 </style>
 </head>
 <body>
@@ -408,6 +481,11 @@ tr:hover td{background:rgba(91,141,238,.04)}
         <div class="right-sub" id="rightSub">หากไม่มี Box ที่ต้องการ กด สร้าง Box ใหม่</div>
       </div>
       <div class="right-actions">
+        <div class="vf-stat" id="vfStat" style="display:none"></div>
+        <div class="vf-tabs" id="vfTabs" style="display:none">
+          <button class="vf-tab on-save" id="vfTabSave"  onclick="setScanMode('save')">&#128190; บันทึก</button>
+          <button class="vf-tab" id="vfTabCheck" onclick="setScanMode('check')">&#9989; ตรวจสอบ</button>
+        </div>
         <button class="btn btn-print" id="btnPrint" onclick="doPrint()" style="display:none">&#128424; ปริ้น</button>
       </div>
     </div>
@@ -419,6 +497,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
       <div id="snInputArea" style="display:none">
         <div class="sec-lbl">บันทึก SN</div>
         <div id="kitProgress" style="display:none;font-size:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:6px"></div>
+	<div id="errLog"></div>
         <div class="sn-block">
           <div class="sn-row">
             <input class="sn-field" id="snField" type="text"
@@ -544,6 +623,23 @@ tr:hover td{background:rgba(91,141,238,.04)}
       <button class="btn btn-ghost" id="btnUploadCancel" onclick="closeUpload()">ยกเลิก</button>
       <button class="btn btn-primary" id="btnUploadConfirm" onclick="doUpload()" disabled style="opacity:.5">&#8679; Upload</button>
     </div>
+  </div>
+</div>
+
+<div class="err-flash" id="errFlash">
+  <div class="err-box">
+    <div class="err-ico">&#9940;</div>
+    <div class="err-sn" id="errFlashSN"></div>
+    <div class="err-msg" id="errFlashMsg"></div>
+    <div class="err-btns">
+      <button class="err-btn err-btn-stay" id="errBtnStay" onclick="errStayClick()">
+        ยังไม่อ่าน
+      </button>
+      <button class="err-btn err-btn-ok" id="errBtnOk" onclick="hideErrorFlash()">
+        &#10003; รับทราบ · สแกนต่อ
+      </button>
+    </div>
+    <div class="err-hint">กด <b>Tab</b> แล้ว <b>Enter</b> เพื่อยืนยัน · หรือคลิกปุ่มขวา</div>
   </div>
 </div>
 
@@ -776,8 +872,11 @@ function selectBox(boxId) {
   document.getElementById('snInputArea').style.display   = '';
   document.getElementById('snTableArea').style.display   = '';
   document.getElementById('btnPrint').style.display      = '';
+    document.getElementById('vfTabs').style.display = '';
   document.getElementById('snTableLbl').textContent      = 'รายการ SN ใน ' + box.box_id;
   clearSN();
+  renderErrLog();
+  renderVfStat();
   loadBoxSNs();
 }
 
@@ -841,6 +940,7 @@ function renderSNTable(rows) {
     '<table><thead><tr><th>#</th>'
     + '<th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>บันทึกเมื่อ</th><th class="no-print">ลบ</th></tr></thead><tbody>'
     + tbody + '</tbody></table>';
+  paintVfHits();
   renderKitProgress();
 }
 
@@ -859,12 +959,14 @@ function lookupSNFromCache(sn) {
 }
 
 async function doLookup(sn) {
+    if (errFlashOpen()) return 'มี error รอยืนยัน';
   if (!sn) return;
   if (!/^[0-9]{10}$/.test(sn)) {
     showSNErr('SN ต้องเป็นตัวเลข 10 หลักเท่านั้น');
     return;
   }
-  document.getElementById('snField').className = 'sn-field';
+  var _f = document.getElementById('snField');
+  _f.className = 'sn-field' + (_scanMode === 'check' ? ' checking' : '');
 
   if (curMode === 'set') {
     if (!curWarehouse || !curSet) return;
@@ -881,12 +983,20 @@ async function doLookup(sn) {
 }
 
 async function doLookupAndSave(sn) {
+    if (errFlashOpen()) return;
   if (!sn) return;
   if (!/^[0-9]{10}$/.test(sn)) {
     showSNErr('SN ต้องเป็นตัวเลข 10 หลักเท่านั้น (ได้รับ: "' + sn + '")');
     return;
   }
-  document.getElementById('snField').className = 'sn-field';
+  var _f = document.getElementById('snField');
+  _f.className = 'sn-field' + (_scanMode === 'check' ? ' checking' : '');
+
+  if (_scanMode === 'check') {
+    if (curMode === 'set' ? !curSet : !curBox) return;
+    doVerifyScan(sn);
+    return;
+  }
 
   if (curMode === 'set') {
     // BoxSet mode
@@ -922,44 +1032,48 @@ function showSNOk(d) {
   document.getElementById('snResult').className = 'sn-result show-ok';
 }
 
+var _audioCtx = null;
 function playErrorSound() {
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    var ctx  = _audioCtx;
+    var osc  = ctx.createOscillator();
     var gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    osc.connect(gain); gain.connect(ctx.destination);
     osc.type = 'square';
     osc.frequency.setValueAtTime(220, ctx.currentTime);
     osc.frequency.setValueAtTime(180, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
-  } catch(e) {}
+    osc.stop(ctx.currentTime + 0.6);
+  } catch (e) {}
 }
 
-function showSNErr(msg) {
+function showSNErr(msg, sn) {
   curSNData = null;
   var field = document.getElementById('snField');
+  var bad   = sn || (field ? field.value.trim() : '');
   if (field) {
     field.classList.add('notfound');
     field.value = '';
+    field.focus();
   }
   document.getElementById('snGrid').innerHTML = '';
   document.getElementById('snErrMsg').textContent = msg;
   document.getElementById('snResult').className = 'sn-result show-err';
-  // เสียงแจ้งเตือน
+
   playErrorSound();
-  // Popup
-  setTimeout(function() { alert(msg); }, 50);
+  flashError(bad, msg);
+  logScanError(bad, msg);
 }
 
 function resetSNResult() {
   curSNData = null;
   var field  = document.getElementById('snField');
   var result = document.getElementById('snResult');
-  if (field)  field.className  = 'sn-field';
+  if (field)  field.className = 'sn-field' + (_scanMode === 'check' ? ' checking' : '');
   if (result) result.className = 'sn-result';
 }
 
@@ -1429,6 +1543,8 @@ function resetRight() {
   document.getElementById('snInputArea').style.display  = 'none';
   document.getElementById('snTableArea').style.display  = 'none';
   document.getElementById('btnPrint').style.display     = 'none';
+    document.getElementById('vfTabs').style.display = 'none';
+  document.getElementById('vfStat').style.display = 'none';
 }
 
 function setStatus(t, txt) {
@@ -1496,6 +1612,7 @@ function openUpload() {
     '<p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>' +
     '<p style="font-size:11px;margin-top:4px">รองรับ .csv เท่านั้น</p>';
   setUploadTarget('zone');
+  document.getElementById('btnUploadConfirm').style.display = '';
   enableUpload(false);
   document.getElementById('btnUploadCancel').textContent = 'ยกเลิก';
   document.getElementById('btnUploadCancel').onclick = closeUpload;
@@ -1772,8 +1889,8 @@ async function doUpload() {
   }
 
   window._uploading = false;
-  document.getElementById('btnUploadConfirm').style.display = 'none';
-  document.getElementById('btnUploadCancel').textContent    = 'ยกเลิก';
+  document.getElementById('btnUploadConfirm').style.display = '';
+  document.getElementById('btnUploadCancel').textContent    = 'ปิด';
   document.getElementById('btnUploadCancel').onclick        = closeUpload;
 }
 
@@ -2170,9 +2287,12 @@ async function selectSet(setId) {
   document.getElementById('snInputArea').style.display  = '';
   document.getElementById('snTableArea').style.display  = '';
   document.getElementById('btnPrint').style.display     = '';
+    document.getElementById('vfTabs').style.display = '';
   document.getElementById('snTableLbl').textContent     = 'รายการ SN ใน ' + s.set_id;
   document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
   clearSN();
+  renderErrLog();
+  renderVfStat();
 
   try {
     await ensureSetData(s);
@@ -3421,11 +3541,13 @@ function arReset() {
 
 // เงื่อนไขที่ไม่ควร refresh — คืนข้อความเหตุผล หรือ null ถ้าพร้อม
 function arBlockedReason() {
+    if (errFlashOpen()) return 'มี error รอยืนยัน';
   if (window._uploading) return 'กำลัง Upload';
   if (_printBusy || (_printQueue && _printQueue.length)) return 'กำลังปริ้น';
   if (_kitDraft && Object.keys(_kitDraft.rows || {}).length) return 'มีชุด Kit ค้าง';
   if (document.querySelector('.overlay.open')) return 'เปิดหน้าต่างอยู่';
   if (document.hidden) return 'แท็บไม่ได้ใช้งาน';
+  if (_scanMode === 'check') return 'อยู่ในโหมดตรวจสอบ';
   var p = document.getElementById('searchPanel');
   if (p && p.classList.contains('open')) return 'กำลังค้นหา';
   return null;
@@ -3945,6 +4067,262 @@ document.getElementById('gsModal').addEventListener('click', function(e) {
 });
 // ======== END GLOBAL SEARCH ========
 
+// ======== ERROR FLASH + LOG ========
+var _errLog   = {};    // { 'Z-D:D-001': [ {sn, why, at} ] }
+var _errTimer = null;
+
+function _errKey() {
+  if (curMode === 'set') return curSet ? ('W' + curWarehouse + ':' + curSet.set_id) : null;
+  return curBox ? ('Z' + curZone + ':' + curBox.box_id) : null;
+}
+
+function flashError(sn, msg) {
+  var el = document.getElementById('errFlash');
+  if (!el) return;
+  document.getElementById('errFlashSN').textContent  = sn || '';
+  document.getElementById('errFlashMsg').textContent = msg || '';
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  // โฟกัสปุ่มซ้าย — Enter จากเครื่องสแกนจะไม่ปิดกล่อง
+  setTimeout(function(){
+    var b = document.getElementById('errBtnStay');
+    if (b) b.focus();
+  }, 50);
+}
+
+function hideErrorFlash() {
+  var el = document.getElementById('errFlash');
+  if (!el || !el.classList.contains('show')) return;
+  el.classList.remove('show');
+  var f = document.getElementById('snField');
+  if (f && document.getElementById('snInputArea').style.display !== 'none') {
+    f.value = '';
+    f.focus();
+  }
+}
+
+function errFlashOpen() {
+  var el = document.getElementById('errFlash');
+  return !!(el && el.classList.contains('show'));
+}
+
+function logScanError(sn, why) {
+  var k = _errKey();
+  if (!k) return;
+  if (!_errLog[k]) _errLog[k] = [];
+  _errLog[k].unshift({
+    sn: sn || '-', why: why,
+    at: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  });
+  if (_errLog[k].length > 20) _errLog[k].length = 20;
+  renderErrLog();
+}
+
+function renderErrLog() {
+  var el = document.getElementById('errLog');
+  if (!el) return;
+  var k = _errKey();
+  var list = (k && _errLog[k]) || [];
+  if (!list.length) { el.innerHTML = ''; return; }
+
+  var wasOpen = el.querySelector('.elog.open') !== null;
+  el.innerHTML = '<div class="elog' + (wasOpen ? ' open' : '') + '">'
+    + '<div class="elog-head" onclick="toggleErrLog(this)">'
+      + '<span>&#9888; สแกนไม่ผ่านในกล่องนี้</span>'
+      + '<span class="elog-cnt">' + list.length + '</span>'
+      + '<span class="elog-caret" style="margin-left:auto">&#9660;</span>'
+      + '<button class="elog-clear" onclick="event.stopPropagation();clearErrLog()">ล้าง</button>'
+    + '</div>'
+    + '<div class="elog-body">'
+    + list.map(function(e) {
+        return '<div class="elog-row">'
+          + '<span class="elog-sn">' + e.sn + '</span>'
+          + '<span class="elog-why">' + e.why + '</span>'
+          + '<span class="elog-t">' + e.at + '</span></div>';
+      }).join('')
+    + '</div></div>';
+}
+
+function toggleErrLog(head) {
+  var box = head.closest('.elog');
+  if (box) box.classList.toggle('open');
+}
+
+function clearErrLog() {
+  var k = _errKey();
+  if (k) delete _errLog[k];
+  renderErrLog();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (!errFlashOpen()) return;
+
+  // Esc ปิดได้ตลอด (ทางลัดสำหรับคนที่อ่านแล้ว)
+  if (e.key === 'Escape') {
+    e.preventDefault(); e.stopPropagation();
+    hideErrorFlash();
+    return;
+  }
+
+  if (e.key === 'Enter') {
+    e.preventDefault(); e.stopPropagation();
+    if (document.activeElement === document.getElementById('errBtnOk')) {
+      hideErrorFlash();
+    } else {
+      errStayClick();      // เสียงเตือนซ้ำ + ย้ายโฟกัสไปปุ่มยืนยัน
+    }
+    return;
+  }
+
+  // ขังโฟกัสไว้ในสองปุ่มนี้ — Tab สลับไปมา
+  if (e.key === 'Tab') {
+    e.preventDefault(); e.stopPropagation();
+    var ok   = document.getElementById('errBtnOk');
+    var stay = document.getElementById('errBtnStay');
+    (document.activeElement === ok ? stay : ok).focus();
+    return;
+  }
+
+  // ตัวเลขจากเครื่องสแกนระหว่างนี้ — กลืนทิ้ง ไม่ให้ไปโผล่ที่ไหน
+  if (e.key.length === 1) { e.preventDefault(); e.stopPropagation(); }
+}, true);
+
+function errStayClick() {
+  playErrorSound();
+}
+
+// ======== END ERROR FLASH ========
+
+// ======== VERIFY MODE ========
+var _scanMode = 'save';        // 'save' | 'check'
+var _vfHits   = {};            // { boxKey: { sn: true } }
+var _vfExtra  = {};            // { boxKey: [sn, ...] }
+
+function _vfKey() {
+  if (curMode === 'set') return curSet ? ('W' + curWarehouse + ':' + curSet.set_id) : null;
+  return curBox ? ('Z' + curZone + ':' + curBox.box_id) : null;
+}
+
+function setScanMode(m) {
+  _scanMode = (m === 'check') ? 'check' : 'save';
+  var ts = document.getElementById('vfTabSave');
+  var tc = document.getElementById('vfTabCheck');
+  if (ts) ts.className = 'vf-tab' + (_scanMode === 'save'  ? ' on-save'  : '');
+  if (tc) tc.className = 'vf-tab' + (_scanMode === 'check' ? ' on-check' : '');
+
+  var f = document.getElementById('snField');
+  if (f) {
+    f.classList.toggle('checking', _scanMode === 'check');
+    f.placeholder = _scanMode === 'check'
+      ? 'สแกน SN เพื่อตรวจสอบ (ไม่บันทึก)...'
+      : 'กรอก หรือ สแกน SN แล้วกด Enter...';
+    f.focus();
+  }
+  renderVfStat();
+  paintVfHits();
+  showToast(_scanMode === 'check' ? 'โหมดตรวจสอบ — ไม่บันทึกข้อมูล' : 'โหมดบันทึก', 'ok');
+}
+
+function currentRows() {
+  var k = curMode === 'set' ? (curSet && curSet.set_id) : (curBox && curBox.box_id);
+  if (!k) return [];
+  return (curMode === 'set' ? _cacheSetSNs[k] : _cacheBoxSNs[k]) || [];
+}
+
+function renderVfStat() {
+  var el = document.getElementById('vfStat');
+  if (!el) return;
+  var k = _vfKey();
+  if (_scanMode !== 'check' || !k) { el.style.display = 'none'; return; }
+
+  var rows  = currentRows();
+  var hits  = _vfHits[k] || {};
+  var done  = rows.filter(function(r){ return hits[String(r.sn).trim()]; }).length;
+  var extra = (_vfExtra[k] || []).length;
+
+  el.style.display = '';
+  el.innerHTML =
+      '<span class="vf-s ok">&#10003; ' + done + '/' + rows.length + '</span>'
+    + '<span class="vf-s wait">เหลือ ' + (rows.length - done) + '</span>'
+    + (extra ? '<span class="vf-s bad">&#9888; แปลกปน ' + extra + '</span>' : '')
+    + '<button class="vf-reset" onclick="resetVfHits()">ล้าง</button>';
+}
+
+function paintVfHits() {
+  var k = _vfKey();
+  var hits = (k && _scanMode === 'check') ? (_vfHits[k] || {}) : {};
+  var els = document.querySelectorAll('#tblWrap .mono');
+  for (var i = 0; i < els.length; i++) {
+    var sn  = String(els[i].textContent).replace(/^✓\s*/, '').trim();
+    var row = els[i].closest('tr') || els[i].closest('.kit-row');
+    if (!row) continue;
+    var on = !!hits[sn];
+    row.classList.toggle('vf-hit', on);
+    var mk = els[i].previousElementSibling;
+    var has = mk && mk.classList && mk.classList.contains('vf-mark');
+    if (on && !has) {
+      var s = document.createElement('span');
+      s.className = 'vf-mark';
+      s.textContent = '✓';
+      els[i].parentNode.insertBefore(s, els[i]);
+    } else if (!on && has) {
+      mk.remove();
+    }
+  }
+}
+
+function resetVfHits() {
+  var k = _vfKey();
+  if (!k) return;
+  if (!confirm('ล้างผลการตรวจสอบของกล่องนี้?')) return;
+  delete _vfHits[k];
+  delete _vfExtra[k];
+  renderVfStat();
+  paintVfHits();
+}
+
+// สแกนในโหมดตรวจสอบ
+function doVerifyScan(sn) {
+  var k = _vfKey();
+  if (!k) return;
+  sn = String(sn).trim();
+
+  var rows = currentRows();
+  var hit  = rows.find(function(r){ return String(r.sn).trim() === sn; });
+
+  if (hit) {
+    if (!_vfHits[k]) _vfHits[k] = {};
+    if (_vfHits[k][sn]) {
+      showToast('SN ' + sn + ' ตรวจไปแล้ว', 'ok');
+    } else {
+      _vfHits[k][sn] = true;
+      showToast('✓ ' + sn + ' — ' + (hit.shortname || hit.code || ''), 'ok');
+    }
+    clearSN();
+    renderVfStat();
+    paintVfHits();
+    return;
+  }
+
+  // ไม่อยู่ในกล่องนี้ — หาว่าอยู่ที่อื่นไหม
+  var whereMsg = 'ไม่พบใน ' + (curMode === 'set' ? 'Set' : 'Box') + ' นี้';
+  var cache = curMode === 'set' ? _cacheSetSNs : _cacheBoxSNs;
+  var found = null;
+  Object.keys(cache).forEach(function(id) {
+    if (found) return;
+    if ((cache[id] || []).some(function(r){ return String(r.sn).trim() === sn; })) found = id;
+  });
+  if (found) whereMsg = 'SN นี้อยู่ใน ' + found + ' ไม่ใช่กล่องนี้';
+
+  if (!_vfExtra[k]) _vfExtra[k] = [];
+  if (_vfExtra[k].indexOf(sn) === -1) _vfExtra[k].push(sn);
+
+  showSNErr(whereMsg, sn);
+  renderVfStat();
+}
+// ======== END VERIFY MODE ========
+
 // ---- Toast ----
 var _tt;
 function showToast(msg, type) {
@@ -4024,8 +4402,8 @@ async function doUpload002() {
   _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
 
   window._uploading = false;
-  document.getElementById('btnUploadConfirm').style.display = 'none';
-  document.getElementById('btnUploadCancel').textContent    = 'ยกเลิก';
+  document.getElementById('btnUploadConfirm').style.display = '';
+  document.getElementById('btnUploadCancel').textContent    = 'ปิด';
   document.getElementById('btnUploadCancel').onclick        = closeUpload;
 }
 
