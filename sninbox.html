@@ -406,7 +406,48 @@ tr.vf-hit td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .kit-row.vf-hit{background:rgba(52,211,153,.10);box-shadow:inset 3px 0 0 var(--green)}
 .vf-mark{color:var(--green);font-weight:900;margin-right:5px}
 
+
+/* ===== SKELETON ===== */
+.skel{position:relative;overflow:hidden;background:var(--card2);border-radius:6px}
+.skel::after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+  animation:skelMove 1.3s ease-in-out infinite}
+@keyframes skelMove{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.skel::after{animation:none}}
+.skel-card{background:var(--card);border:1.5px solid var(--border);border-radius:10px;
+  padding:11px 13px;display:flex;flex-direction:column;gap:8px}
+.skel-line{height:10px}
+.skel-wrap{display:flex;flex-direction:column;gap:5px}
+.skel-msg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
+  padding:4px 2px 8px}
+.skel-msg .spin{width:14px;height:14px;border-width:2px}
+.skel-tbl{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.skel-tr{display:grid;gap:14px;padding:11px 14px;border-top:1px solid var(--border);align-items:center}
+.skel-tr:first-child{border-top:none;background:var(--surface)}
+.skel-tr:first-child .skel{height:8px;opacity:.6}
+.tbl-wrap > .skel-tbl{border:none;border-radius:0;border-top:1px solid var(--border)}
+.tbl-wrap > .skel-msg{padding:10px 14px}
+/* tab ที่อยู่ในแคชแล้ว */
+.ztab.cached::after{content:'';position:absolute;top:4px;right:6px;width:5px;height:5px;
+  border-radius:50%;background:var(--green);opacity:.8}
 /* ===== CHECK STOCK ===== */
+.left-hdr{gap:8px}
+.grp-mini{margin:0 0 0 auto;padding:2px;gap:2px}
+.grp-mini .grp-tab{flex:none;padding:3px 10px;font-size:10px}
+.left-hdr .grp-mini + #boxCountLbl{margin-left:8px}
+.ztab{position:relative}
+.zt-st{display:block;font-size:9px;font-weight:700;line-height:1;margin-top:2px;color:var(--muted);letter-spacing:0}
+.ztab.active .zt-st{color:rgba(255,255,255,.85)}
+.zt-st.ok{color:var(--green)}
+.zt-st.er{color:var(--red)}
+.zt-st.ld{animation:ztPulse 1s ease-in-out infinite}
+@keyframes ztPulse{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.zt-st.ld{animation:none}}
+.sum-row{cursor:pointer}
+.sum-row:hover td{background:rgba(91,141,238,.08)}
+#sumBody td,#sumBody th{white-space:nowrap}
+.dt-tab.dt-x{border-color:rgba(251,191,36,.4);color:var(--yellow);background:var(--card)}
+.dt-tab.dt-x.on{background:var(--yellow);color:#1a1d2e;border-color:var(--yellow)}
 .rnd-wrap{display:flex;align-items:center;gap:6px;background:var(--card);
   border:1px solid var(--border);border-radius:8px;padding:2px 6px;height:28px}
 .rnd-wrap .btn{height:22px;padding:0 9px;font-size:10px}
@@ -485,6 +526,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
   <div class="ztabs" id="chkZoneTabs" style="display:none"></div>
   <div class="rnd-wrap no-print" id="rndWrap" style="display:none">
     <select id="rndSel" class="ar-sel" onchange="onRoundChange()" style="max-width:230px"></select>
+    <button class="btn btn-ghost btn-xs" onclick="openSummary()">&#128202; สรุป</button>
     <button class="btn btn-ghost btn-xs" onclick="openNewRound()">+ รอบใหม่</button>
   </div>
 
@@ -520,6 +562,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
   <div class="left">
     <div class="left-hdr">
       <span class="left-title" id="leftTitle">กล่อง (Box)</span>
+      <span class="grp-tabs grp-mini" id="grpToggle" style="display:none"></span>
             <span class="idx-badge" id="idxBadge" style="display:none" onclick="rebuildSearchIndex()"></span>
       <span id="boxCountLbl" style="font-size:11px;color:var(--muted)">--</span>
     </div>
@@ -576,7 +619,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
       <div id="snTableArea" style="display:none">
         <div class="sec-lbl" id="snTableLbl">รายการ SN ใน Box</div>
         <div class="tbl-wrap" id="tblWrap">
-          <div class="empty-state"><span class="spin"></span></div>
+          <div style="padding:10px"><div class="skel-tbl"><div class="skel-tr" style="grid-template-columns:1fr 3fr 2fr"><div class="skel skel-line"></div><div class="skel skel-line"></div><div class="skel skel-line"></div></div></div></div>
         </div>
       </div>
 
@@ -702,6 +745,18 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="overlay" id="sumModal">
+  <div class="modal" style="width:820px;max-width:96vw">
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:2px">
+      <h3 style="margin:0">&#128202; สรุปการนับ</h3>
+      <span id="sumTitle" style="font-size:13px;font-weight:700;color:var(--accent)"></span>
+    </div>
+    <div class="modal-sub" id="sumSub"></div>
+    <div id="sumBody"></div>
+    <div class="modal-foot" id="sumActs"></div>
+  </div>
+</div>
+
 <div class="overlay" id="gsModal">
   <div class="modal gs-modal">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -851,23 +906,123 @@ window.addEventListener('DOMContentLoaded', function() {
   }).join('');
 
   _chkTimer = setInterval(function() {
-    if (curMode === 'chk' && curRound && _chkZone && !document.hidden) flushQueue(true);
+    if (curRound && _chkQueue.length) flushQueue();
   }, 20000);
 });
 
+// ======== MODE CACHE (Box SN ทุกโซน / BoxSet ทุกคลัง) ========
+//  เก็บข้อมูลโซน/คลังที่เคยเปิด + โหลดที่เหลือล่วงหน้า → สลับแท็บได้ทันที
+var _snStash  = {};   // zone → { boxes, dataSN, boxSNs, nextBoxId, indexed }
+var _setStash = {};   // wh   → { sets, codeIndex, codeKey, setDataSN, setSNs, nextSetId, indexed }
+var _stashGen = 0;    // เพิ่มทุกครั้งที่ Refresh ทั้งโหมด — งาน prefetch เก่าจะทิ้งผลตัวเอง
+
+function stashCurrent() {
+  if (curMode === 'sn' && curZone && _cacheDataSN) {
+    _snStash[curZone] = { boxes: window._boxes || {}, dataSN: _cacheDataSN, boxSNs: _cacheBoxSNs,
+                          nextBoxId: nextBoxId, indexed: _searchIndexed === 'Z' + curZone };
+  }
+  if (curMode === 'set' && curWarehouse && window._sets) {
+    _setStash[curWarehouse] = { sets: window._sets, codeIndex: _cacheCodeIndex, codeKey: _codeIndexKey,
+                                setDataSN: _cacheSetDataSN, setSNs: _cacheSetSNs,
+                                nextSetId: nextSetId, indexed: _searchIndexed === 'W' + curWarehouse };
+  }
+}
+
+function markTabsCached() {
+  ZONES.forEach(function(z) {
+    var t = document.getElementById('ztab_' + z);
+    if (t) t.classList.toggle('cached', !!_snStash[z] && z !== curZone);
+  });
+  ['001','002'].forEach(function(w) {
+    var t = document.getElementById('wtab_' + w);
+    if (t) t.classList.toggle('cached', !!_setStash[w] && w !== curWarehouse);
+  });
+}
+
+var _snPrefetching = false;
+async function prefetchOtherZones() {
+  if (_snPrefetching) return;
+  _snPrefetching = true;
+  var gen = _stashGen;
+  try {
+    for (var i = 0; i < ZONES.length; i++) {
+      var z = ZONES[i];
+      if (gen !== _stashGen || curMode !== 'sn') break;
+      if (_snStash[z] || z === curZone) continue;
+      try {
+        var pr = await Promise.all([ api({ action: 'getBoxes', zone: z }), api({ action: 'getDataSN', zone: z }) ]);
+        if (gen !== _stashGen || _snStash[z] || z === curZone) continue;
+        if (!pr[0] || pr[0].error || !pr[1] || pr[1].error) continue;
+        var map = {};
+        (pr[0].boxes || []).forEach(function(b){ map[b.box_id] = b; });
+        _snStash[z] = { boxes: map, dataSN: pr[1].rows || [], boxSNs: {},
+                        nextBoxId: pr[0].next_box_id, indexed: false };
+        markTabsCached();
+      } catch (e) {}
+    }
+  } finally { _snPrefetching = false; }
+}
+
+var _setPrefetching = false;
+async function prefetchOtherWarehouses() {
+  if (_setPrefetching) return;
+  _setPrefetching = true;
+  var gen = _stashGen;
+  try {
+    var whs = ['001','002'];
+    for (var i = 0; i < whs.length; i++) {
+      var w = whs[i];
+      if (gen !== _stashGen || curMode !== 'set') break;
+      if (_setStash[w] || w === curWarehouse) continue;
+      try {
+        var own = WH_OWN_DATA.indexOf(w) !== -1;
+        var pr = await Promise.all([
+          api({ action: 'getBoxSets', warehouse: w }),
+          own ? api({ action: 'getCodeIndexW', warehouse: w }) : api({ action: 'getCodeIndex' })
+        ]);
+        if (gen !== _stashGen || _setStash[w] || w === curWarehouse) continue;
+        if (!pr[0] || pr[0].error || !pr[1] || pr[1].error) continue;
+        var map = {};
+        (pr[0].sets || []).forEach(function(x){ map[x.set_id] = x; });
+        _setStash[w] = { sets: map, codeIndex: pr[1].rows || [], codeKey: own ? ('W' + w) : 'zone',
+                         setDataSN: {}, setSNs: {}, nextSetId: pr[0].next_set_id, indexed: false };
+        markTabsCached();
+      } catch (e) {}
+    }
+  } finally { _setPrefetching = false; }
+}
+// ======== END MODE CACHE ========
+
 // ---- Zone ----
 async function selectZone(z) {
+  stashCurrent();
   var tok = ++_navToken;
   curZone = z; curBox = null; curSNData = null;
-  _cacheDataSN = null; _cacheBoxSNs = {};
   _searchIndexed = null; _indexPromise = null; _indexPromiseKey = null; _indexToken++;
   _boxFilter = null; clearSearch();
   document.getElementById('searchWrap').style.display = '';
   document.querySelectorAll('.ztab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('ztab_' + z).classList.add('active');
-  setStatus('dim', 'Zone ' + z + '...');
   resetRight();
-  document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+
+  var st = _snStash[z];
+  if (st) {
+    // มีในแคชแล้ว — แสดงทันที
+    _cacheDataSN = st.dataSN; _cacheBoxSNs = st.boxSNs; nextBoxId = st.nextBoxId;
+    renderBoxList(Object.values(st.boxes));
+    setStatus('ok', 'Zone ' + z + ' | Data SN: ' + _cacheDataSN.length + ' รายการ');
+    document.getElementById('arWrap').style.display = '';
+    arReset();
+    if (st.indexed) { _searchIndexed = 'Z' + z; setIdxBadge('ready', '&#9679; ค้นหาพร้อม'); }
+    else prefetchSearchIndex();
+    markTabsCached();
+    prefetchOtherZones();
+    return;
+  }
+
+  _cacheDataSN = null; _cacheBoxSNs = {};
+  setStatus('dim', 'Zone ' + z + '...');
+  document.getElementById('boxList').innerHTML = skelCards(7, 'กำลังโหลดกล่องในโซน ' + z + '...');
   document.getElementById('boxCountLbl').textContent = '--';
   try {
     var [resBoxes, resData] = await Promise.all([
@@ -883,7 +1038,9 @@ async function selectZone(z) {
     renderBoxList(resBoxes.boxes || []);
     document.getElementById('arWrap').style.display = '';
     arReset();
-        prefetchSearchIndex();
+    prefetchSearchIndex();
+    markTabsCached();
+    prefetchOtherZones();
   } catch(e) {
     if (tok !== _navToken) return;                    // ← error ของรุ่นเก่าก็ไม่ต้องโชว์
     setStatus('err', e.message);
@@ -979,7 +1136,7 @@ async function loadBoxSNs(forceRefresh) {
   var boxId = curBox.box_id;
 
   // เคลียร์ตารางเก่าทันที — กันผู้ใช้เห็นข้อมูลกล่องก่อนหน้าค้างอยู่
-  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+  document.getElementById('tblWrap').innerHTML = skelTable(8, 'กำลังโหลด SN...');
 
   if (!forceRefresh && _cacheBoxSNs[boxId]) {
     // ปล่อยให้เบราว์เซอร์วาด spinner ก่อน แล้วค่อย render ตาราง
@@ -1973,6 +2130,7 @@ async function doUpload() {
   else showToast('Upload เสร็จสิ้น ' + zones.length + ' โซน', 'ok');
 
   _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
+  _stashGen++; _snStash = {}; _setStash = {}; markTabsCached();
 
   if (curZone && _csvData[curZone]) {
     var res = await api({ action: 'getDataSN', zone: curZone });
@@ -2196,16 +2354,18 @@ async function printKitCard(seq, btn) {
 // BoxSet variables declared at top
 
 function setMode(mode) {
+  stashCurrent();
   _navToken++;
   curMode = mode;
   _searchIndexed = null; _indexPromise = null; _indexPromiseKey = null; _indexToken++;
   _boxFilter = null;
   clearSearch();
+  document.getElementById('searchField').placeholder = 'ค้นหา SN / Code / ชื่อสินค้า / Zone...';
   document.getElementById('searchWrap').style.display = 'none';
   setIdxBadge(null);
   document.getElementById('arWrap').style.display  = 'none';
   document.getElementById('rndWrap').style.display = 'none';
-  arReset();
+  arApplyMode();
 
   ['modeSN','modeSet','modeChk'].forEach(function(id) {
     var b = document.getElementById(id);
@@ -2219,10 +2379,11 @@ function setMode(mode) {
   document.getElementById('chkZoneTabs').style.display   = mode === 'chk' ? '' : 'none';
 
   curZone = null; curBox = null; curWarehouse = null; curSet = null;
-  if (mode !== 'chk') {
-    curRound = null; _chkZone = null;
-    _snapMap = {}; _snapArr = []; _chkSet = {}; _chkExtra = {}; _grpSel = null;
-  }
+  document.querySelectorAll('#zoneTabs .ztab, #warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
+  markTabsCached();
+  // ข้อมูล Check Stock เก็บไว้ในหน่วยความจำ — สลับโหมดไปมาไม่ต้องโหลดใหม่
+  chkInputState();
+  renderGrpToggle();
 
   document.getElementById('boxCountLbl').textContent = '--';
   resetRight();
@@ -2239,9 +2400,16 @@ function setMode(mode) {
   if (mode === 'chk') {
     document.getElementById('rndWrap').style.display = '';
     document.getElementById('tblWrap').innerHTML = '';
+    if (_chkZone) {
+      var t = document.getElementById('ctab_' + _chkZone);
+      if (t) t.classList.add('active');
+    }
+    chkRender();
     loadRounds().then(function() {
-      renderChkList();
-      renderChkMain();
+      if (curMode !== 'chk') return;
+      restoreChkQueue();
+      if (_chkZone && curRound) selectChkZone(_chkZone);
+      else chkRender();
     }).catch(function(e) {
       setStatus('err', 'โหลดรอบไม่สำเร็จ: ' + e.message);
     });
@@ -2250,18 +2418,36 @@ function setMode(mode) {
 
 // ---- Warehouse ----
 async function selectWarehouse(w) {
+  stashCurrent();
   var tok = ++_navToken;
-  curWarehouse = w; curSet = null; curSNData = null;
-  _cacheSetDataSN = {}; _cacheSetSNs = {}; _kitDraft = null;
-  _cacheCodeIndex = null; _codeIndexKey = null;
+  curWarehouse = w; curSet = null; curSNData = null; _kitDraft = null;
   _searchIndexed = null; _indexPromise = null; _indexPromiseKey = null; _indexToken++;
   _boxFilter = null; clearSearch();
   document.getElementById('searchWrap').style.display = '';
   document.querySelectorAll('#warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
   document.getElementById('wtab_' + w).classList.add('active');
-  setStatus('dim', 'คลัง ' + w + '...');
   resetRight();
-  document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+
+  var st = _setStash[w];
+  if (st) {
+    _cacheCodeIndex = st.codeIndex; _codeIndexKey = st.codeKey;
+    _cacheSetDataSN = st.setDataSN; _cacheSetSNs = st.setSNs; nextSetId = st.nextSetId;
+    renderSetList(Object.values(st.sets));
+    setStatus('ok', 'คลัง ' + w + ' | CodeIndex: ' + (_cacheCodeIndex || []).length + ' Code');
+    document.getElementById('arWrap').style.display = '';
+    arReset();
+    if (st.indexed) { _searchIndexed = 'W' + w; setIdxBadge('ready', '&#9679; ค้นหาพร้อม'); }
+    else prefetchSearchIndex();
+    markTabsCached();
+    prefetchWarehouseData();
+    prefetchOtherWarehouses();
+    return;
+  }
+
+  _cacheSetDataSN = {}; _cacheSetSNs = {};
+  _cacheCodeIndex = null; _codeIndexKey = null;
+  setStatus('dim', 'คลัง ' + w + '...');
+  document.getElementById('boxList').innerHTML = skelCards(7, 'กำลังโหลด BoxSet คลัง ' + w + '...');
   document.getElementById('boxCountLbl').textContent = '--';
   try {
     var [resSets] = await Promise.all([
@@ -2275,7 +2461,10 @@ async function selectWarehouse(w) {
     renderSetList(resSets.sets || []);
     document.getElementById('arWrap').style.display = '';
     arReset();
-        prefetchSearchIndex();
+    prefetchSearchIndex();
+    markTabsCached();
+    prefetchWarehouseData();
+    prefetchOtherWarehouses();
   } catch(e) {
     if (tok !== _navToken) return;
     setStatus('err', e.message);
@@ -2347,7 +2536,7 @@ function renderSetList(sets) {
 function updateFootBtn() {
   var foot = document.getElementById('btnCreateMain');
   var lt   = document.getElementById('leftTitle');
-  if (lt) lt.textContent = curMode === 'set' ? 'ชุดกล่อง (BoxSet)' : 'กล่อง (Box)';
+  if (lt) lt.textContent = curMode === 'set' ? 'ชุดกล่อง (BoxSet)' : curMode === 'chk' ? 'กลุ่ม' : 'กล่อง (Box)';
   if (!foot) return;
   if (curMode === 'set') {
     foot.textContent = '+ สร้าง BoxSet';
@@ -2384,7 +2573,7 @@ async function selectSet(setId) {
   document.getElementById('btnPrint').style.display     = '';
     document.getElementById('vfTabs').style.display = '';
   document.getElementById('snTableLbl').textContent     = 'รายการ SN ใน ' + s.set_id;
-  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+  document.getElementById('tblWrap').innerHTML = skelTable(8, 'กำลังโหลดข้อมูล ' + setId + '...');
   clearSN();
   renderErrLog();
   renderVfStat();
@@ -2406,7 +2595,7 @@ async function loadSetSNs(forceRefresh) {
   if (!curSet) return;
   var setId = curSet.set_id;
 
-  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
+  document.getElementById('tblWrap').innerHTML = skelTable(8, 'กำลังโหลด SN...');
 
   if (!forceRefresh && _cacheSetSNs[setId]) {
     requestAnimationFrame(function() {
@@ -2504,38 +2693,83 @@ async function loadCodeIndex(force) {
 }
 
 // โหลด Data SN ให้ครอบคลุมทุก Code ของ Set — โหลดเพิ่มเฉพาะที่ยังไม่มี
+// ---- Data SN ของคลัง: โหลดทีเดียวทุก Code ของทุก Set แล้วเก็บเป็นรายโค้ด ----
+//  เก็บไว้ใน _cacheSetDataSN.__wh เพื่อให้ถูกล้าง/เก็บลงแคชคลังพร้อมกับข้อมูลอื่นอัตโนมัติ
+function whStore() {
+  return _cacheSetDataSN.__wh || (_cacheSetDataSN.__wh = { loaded: {}, byCode: {}, pending: null });
+}
+
+async function whLoadCodes(codes, W, w, quiet) {
+  W = W || whStore(); w = w || curWarehouse;
+  while (W.pending) { try { await W.pending; } catch (e) {} }
+  var need = codes.filter(function(c){ return c && !W.loaded[c]; });
+  if (!need.length) return;
+
+  var own = WH_OWN_DATA.indexOf(w) !== -1;
+  // หาไฟล์โซนที่ต้องอ่าน (คลังที่ใช้ Data SN แยกโซน) — คำนวณตอนนี้ ก่อนผู้ใช้สลับคลัง
+  var zoneOf = {};
+  if (!own) need.forEach(function(c) {
+    var i = codeInfo(c, 'set');
+    zoneOf[c] = i && i.zone_key ? String(i.zone_key).toUpperCase() : '';
+  });
+
+  W.pending = (async function() {
+    for (var k = 0; k < need.length; k += 300) {
+      var chunk = need.slice(k, k + 300);
+      if (!quiet && w === curWarehouse) {
+        setStatus('dim', 'โหลด Data SN คลัง ' + w + ' ' + Math.min(k + 300, need.length) + '/' + need.length + ' Code...');
+      }
+      var d;
+      if (own) {
+        d = await api({ action: 'getDataSNByCodesW', warehouse: w, codes: chunk.join(',') });
+      } else {
+        var zs = [];
+        chunk.forEach(function(c){ if (zoneOf[c] && zs.indexOf(zoneOf[c]) === -1) zs.push(zoneOf[c]); });
+        d = await api({ action: 'getDataSNByCodes', codes: chunk.join(','), zones: zs.join(',') });
+      }
+      if (!d || d.error) throw new Error((d && d.error) || 'โหลด Data SN ไม่สำเร็จ');
+      (d.rows || []).forEach(function(r) {
+        var c = String(r.code || '').trim();
+        (W.byCode[c] = W.byCode[c] || []).push(r);
+      });
+      chunk.forEach(function(c){ W.loaded[c] = true; });
+    }
+  })();
+  try { await W.pending; } finally { W.pending = null; }
+}
+
+// โหลด Data SN ของทุก Set ในคลังล่วงหน้า — เลือก Set ไหนก็ขึ้นทันที
+async function prefetchWarehouseData() {
+  if (curMode !== 'set' || !curWarehouse || !window._sets) return;
+  var w = curWarehouse, W = whStore(), all = {};
+  Object.keys(window._sets).forEach(function(id) {
+    setCodesOf(window._sets[id]).forEach(function(c){ all[c] = 1; });
+  });
+  try {
+    await loadCodeIndex();
+    await whLoadCodes(Object.keys(all), W, w, true);
+    if (w === curWarehouse) {
+      var n = Object.keys(W.byCode).reduce(function(s, c){ return s + W.byCode[c].length; }, 0);
+      setStatus('ok', 'คลัง ' + w + ' | ' + Object.keys(window._sets).length + ' Set · Data SN พร้อม ' + n.toLocaleString('th-TH') + ' SN');
+    }
+  } catch (e) { console.warn('prefetch warehouse data failed:', e); }
+}
+
 async function ensureSetData(set, force) {
   var setId = set.set_id;
   var codes = setCodesOf(set);
-  if (force) delete _cacheSetDataSN[setId];
+  var W = whStore();
+  if (force) codes.forEach(function(c){ delete W.loaded[c]; delete W.byCode[c]; });
 
-  var entry = _cacheSetDataSN[setId] || { codes: [], rows: [] };
-  _cacheSetDataSN[setId] = entry;
-
-  var need = codes.filter(function(c){ return entry.codes.indexOf(c) === -1; });
-  if (!need.length) return entry.rows;
-
-  await loadCodeIndex();
-
-  var d;
-  if (WH_OWN_DATA.indexOf(curWarehouse) !== -1) {
-    setStatus('dim', 'โหลด Data SN คลัง ' + curWarehouse + ' (' + need.length + ' Code)...');
-    d = await api({ action: 'getDataSNByCodesW', warehouse: curWarehouse, codes: need.join(',') });
-  } else {
-    var zones = [];
-    need.forEach(function(c) {
-      var i = codeInfo(c, 'set');
-      var z = i && i.zone_key ? String(i.zone_key).toUpperCase() : null;
-      if (z && zones.indexOf(z) === -1) zones.push(z);
-    });
-    setStatus('dim', 'โหลด Data SN (' + need.length + ' Code)...');
-    d = await api({ action: 'getDataSNByCodes', codes: need.join(','), zones: zones.join(',') });
+  if (codes.some(function(c){ return !W.loaded[c]; })) {
+    await loadCodeIndex();
+    await whLoadCodes(codes, W, curWarehouse, false);
   }
-  if (!d || d.error) throw new Error((d && d.error) || 'โหลด Data SN ไม่สำเร็จ');
 
-  entry.rows  = entry.rows.concat(d.rows || []);
-  entry.codes = entry.codes.concat(need);
-  setStatus('ok', 'คลัง ' + curWarehouse + ' | ' + setId + ': ' + entry.rows.length + ' SN');
+  var rows = [];
+  codes.forEach(function(c){ if (W.byCode[c]) rows = rows.concat(W.byCode[c]); });
+  var entry = { codes: codes.slice(), rows: rows };
+  _cacheSetDataSN[setId] = entry;
   return entry.rows;
 }
 
@@ -3157,8 +3391,8 @@ async function _buildSearchIndex(key, force) {
       setIdxBadge('load', 'ดัชนี ' + done + '/' + need.length);
       var p = document.getElementById('searchPanel');
       if (p && p.classList.contains('open') && p.querySelector('.sr-load')) {
-        p.innerHTML = '<div class="sr-load"><span class="spin"></span>'
-          + '<div style="margin-top:8px">กำลังสร้างดัชนีค้นหา ' + done + '/' + need.length + '</div></div>';
+        p.innerHTML = '<div class="sr-load" style="padding:4px;text-align:left">'
+          + skelSearch(5, 'กำลังสร้างดัชนีค้นหา ' + done + '/' + need.length) + '</div>';
       }
     }
   });
@@ -3251,9 +3485,8 @@ function searchAll(q) {
   if (/^[0-9]{4,10}$/.test(q)) {
     var pool = isSet ? [] : (_cacheDataSN || []);
     if (isSet) {
-      Object.keys(_cacheSetDataSN).forEach(function(k) {
-        pool = pool.concat((_cacheSetDataSN[k] || {}).rows || []);
-      });
+      var W = whStore();
+      Object.keys(W.byCode).forEach(function(c) { pool = pool.concat(W.byCode[c]); });
     }
     var seen = {};
     pool.forEach(function(r) {
@@ -3350,11 +3583,18 @@ function onSearchInput() {
 }
 
 async function runSearch(q) {
+  if (curMode === 'chk') { renderChkSearch(searchChk(q), q); return; }
   if (curMode === 'set' ? !curWarehouse : !curZone) {
     document.getElementById('searchPanel').innerHTML =
       '<div class="sr-empty">' + (curMode === 'set' ? 'เลือกคลังก่อน' : 'เลือกโซนก่อน') + '</div>';
     document.getElementById('searchPanel').classList.add('open');
     return;
+  }
+  if (_searchIndexed !== _scopeKey()) {
+    var sp = document.getElementById('searchPanel');
+    sp.innerHTML = '<div class="sr-load" style="padding:4px;text-align:left">'
+      + skelSearch(5, 'กำลังเตรียมข้อมูลค้นหา...') + '</div>';
+    sp.classList.add('open');
   }
   try { await ensureSearchIndex(); }
   catch (e) { showToast('สร้างดัชนีไม่สำเร็จ: ' + e.message, 'err'); return; }
@@ -3516,6 +3756,7 @@ function gotoSearchHit(i) {
   var h = _searchHits[i];
   if (!h) return;
   closeSearchPanel();
+  if (curMode === 'chk') { gotoChkHit(h); return; }
   if (h.kind === 'box') {
     setBoxFilter(null);
     if (curMode === 'set') selectSet(h.id); else selectBox(h.id);
@@ -3603,29 +3844,53 @@ document.addEventListener('keydown', function(e) {
 
 // ======== AUTO REFRESH ========
 var AR_KEY       = 'sn_ar_interval';
+var AR_KEY_CHK   = 'sn_ar_chk';
+var AR_OPTS      = [[0,'ปิด'],[300,'5 น.'],[600,'10 น.'],[900,'15 น.'],[1800,'30 น.'],[3600,'60 น.']];
+var AR_OPTS_CHK  = [[0,'ปิด'],[10,'10 วิ'],[20,'20 วิ'],[30,'30 วิ'],[60,'1 น.'],[120,'2 น.']];
+
+function arKey() { return curMode === 'chk' ? AR_KEY_CHK : AR_KEY; }
+
+// โหมด Check Stock ใช้รอบเวลาสั้นกว่า (ไว้ sync กับคนอื่น) และจำค่าแยกจากโหมดอื่น
+function arApplyMode() {
+  var isChk = (curMode === 'chk');
+  var opts  = isChk ? AR_OPTS_CHK : AR_OPTS;
+  var def   = isChk ? 20 : 900;
+  var saved = null;
+  try { saved = localStorage.getItem(arKey()); } catch (e) {}
+  _arInterval = (saved !== null && !isNaN(parseInt(saved, 10))) ? parseInt(saved, 10) : def;
+  if (!opts.some(function(o){ return o[0] === _arInterval; })) _arInterval = def;
+  var sel = document.getElementById('arInterval');
+  if (sel) {
+    sel.innerHTML = opts.map(function(o) {
+      return '<option value="' + o[0] + '">' + o[1] + '</option>';
+    }).join('');
+    sel.value = String(_arInterval);
+    sel.title = isChk ? 'รอบ Sync ผลนับกับผู้ใช้อื่น' : 'รอบ Auto Refresh';
+  }
+  var btn = document.getElementById('btnRefresh');
+  if (btn) btn.innerHTML = isChk ? '&#8635; Sync' : '&#8635; Refresh';
+  arReset();
+}
 var _arInterval  = 900;      // วินาที (0 = ปิด)
 var _arLeft      = 0;
 var _arTicker    = null;
 var _arRunning   = false;
 
 function arInit() {
-  var saved = null;
-  try { saved = localStorage.getItem(AR_KEY); } catch (e) {}
-  if (saved !== null && !isNaN(parseInt(saved, 10))) _arInterval = parseInt(saved, 10);
-  var sel = document.getElementById('arInterval');
-  if (sel) sel.value = String(_arInterval);
-  arReset();
+  arApplyMode();
   if (!_arTicker) _arTicker = setInterval(arTick, 1000);
 }
 
 function onArIntervalChange() {
   _arInterval = parseInt(document.getElementById('arInterval').value, 10) || 0;
-  try { localStorage.setItem(AR_KEY, String(_arInterval)); } catch (e) {}
+  try { localStorage.setItem(arKey(), String(_arInterval)); } catch (e) {}
   arReset();
-  showToast(_arInterval ? 'Auto Refresh ทุก ' + arLabel(_arInterval) : 'ปิด Auto Refresh', 'ok');
+  var what = curMode === 'chk' ? 'Sync' : 'Auto Refresh';
+  showToast(_arInterval ? what + ' ทุก ' + arLabel(_arInterval) : 'ปิด ' + what, 'ok');
 }
 
 function arLabel(sec) {
+  if (sec < 60) return sec + ' วินาที';
   return sec >= 3600 ? (sec / 3600) + ' ชม.' : (sec / 60) + ' นาที';
 }
 
@@ -3642,7 +3907,7 @@ function arBlockedReason() {
   if (_kitDraft && Object.keys(_kitDraft.rows || {}).length) return 'มีชุด Kit ค้าง';
   if (document.querySelector('.overlay.open')) return 'เปิดหน้าต่างอยู่';
   if (document.hidden) return 'แท็บไม่ได้ใช้งาน';
-  if (_scanMode === 'check') return 'อยู่ในโหมดตรวจสอบ';
+  if (curMode !== 'chk' && _scanMode === 'check') return 'อยู่ในโหมดตรวจสอบ';
   var p = document.getElementById('searchPanel');
   if (p && p.classList.contains('open')) return 'กำลังค้นหา';
   if (window._rndBusy) return 'กำลังสร้างรอบ';
@@ -3651,6 +3916,7 @@ function arBlockedReason() {
 
 function arActive() {
   if (!_arInterval) return false;
+  if (curMode === 'chk') return !!(curRound && _chkZone && _snapArr.length);
   return curMode === 'set' ? !!curWarehouse : !!curZone;
 }
 
@@ -3672,7 +3938,7 @@ function arRender() {
   var m = Math.floor(_arLeft / 60), s = _arLeft % 60;
   el.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
   if (hold)            { el.className = 'ar-count hold'; el.title = 'พักไว้: ' + hold; }
-  else if (_arLeft <= 30) { el.className = 'ar-count soon'; el.title = 'ใกล้ Refresh'; }
+  else if (_arLeft <= Math.min(30, Math.floor(_arInterval / 4))) { el.className = 'ar-count soon'; el.title = 'ใกล้ Refresh'; }
   else                 { el.className = 'ar-count'; el.title = 'Refresh อัตโนมัติใน ' + _arLeft + ' วิ'; }
 }
 
@@ -3696,10 +3962,12 @@ async function refreshAll(silent) {
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
 
   try {
+    if (curMode === 'chk') { await refreshChk(silent); return; }
     if (curMode === 'set') {
       if (!curWarehouse) return;
       var w = curWarehouse;
       _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
+  _stashGen++; _snStash = {}; _setStash = {}; markTabsCached();
 
       var resSets = await api({ action: 'getBoxSets', warehouse: w });
       if (!resSets || resSets.error) throw new Error((resSets && resSets.error) || 'ไม่มีการตอบกลับ');
@@ -3726,6 +3994,9 @@ async function refreshAll(silent) {
       }
       setStatus('ok', 'คลัง ' + w + ' | ' + (resSets.sets || []).length + ' Set · '
                      + (_cacheCodeIndex || []).length + ' Code');
+      // คลังอื่นโหลดใหม่เบื้องหลัง
+      _stashGen++; _setStash = {}; markTabsCached();
+      prefetchWarehouseData(); prefetchOtherWarehouses();
       api({ action: 'syncNames', warehouse: w }, 'POST').catch(function(){});
 
     } else {
@@ -3756,6 +4027,8 @@ async function refreshAll(silent) {
       }
       setStatus('ok', 'Zone ' + z + ' | Data SN: ' + _cacheDataSN.length + ' รายการ');
       api({ action: 'syncNames', zone: z }, 'POST').catch(function(){});
+      // โซนอื่นโหลดใหม่เบื้องหลัง
+      _stashGen++; _snStash = {}; markTabsCached(); prefetchOtherZones();
     }
 
     if (!silent) showToast('Refresh สำเร็จ', 'ok');
@@ -3764,7 +4037,7 @@ async function refreshAll(silent) {
     if (!silent) showToast('Refresh ไม่สำเร็จ: ' + e.message, 'err');
     throw e;
   } finally {
-    if (btn) { btn.textContent = '↻ Refresh'; btn.disabled = false; }
+    if (btn) { btn.innerHTML = curMode === 'chk' ? '&#8635; Sync' : '&#8635; Refresh'; btn.disabled = false; }
   }
 }
 // ======== END AUTO REFRESH ========
@@ -3808,10 +4081,11 @@ function renderGsIdle() {
 
 function gsProgress(done, total, label) {
   document.getElementById('gsResults').innerHTML =
-    '<div class="gs-prog"><span class="spin"></span>'
-    + '<div style="margin-top:10px">' + label + '</div>'
-    + '<div class="gs-bar"><div style="width:' + Math.round(done / total * 100) + '%"></div></div>'
-    + '<div style="margin-top:6px;font-size:11px">' + done + '/' + total + '</div></div>';
+    '<div class="gs-prog" style="padding:12px 14px 6px;text-align:left">'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span>' + label + '</span>'
+    + '<span>' + done + '/' + total + '</span></div>'
+    + '<div class="gs-bar"><div style="width:' + Math.round(done / total * 100) + '%"></div></div></div>'
+    + skelSearch(6, '');
 }
 
 // โหลดข้อมูลทุกโซน + ทุกคลัง
@@ -4158,6 +4432,9 @@ document.getElementById('gsResults').addEventListener('click', function(e) {
   if (it) gotoGlobalHit(parseInt(it.dataset.gh, 10));
 });
 
+document.getElementById('sumModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSummary();
+});
 document.getElementById('gsModal').addEventListener('click', function(e) {
   if (e.target === this) closeGlobalSearch();
 });
@@ -4419,30 +4696,144 @@ function doVerifyScan(sn) {
 }
 // ======== END VERIFY MODE ========
 
+
+// ======== SKELETON ========
+function _skMsg(msg) {
+  return msg ? '<div class="skel-msg"><span class="spin"></span><span>' + msg + '</span></div>' : '';
+}
+// รายการกล่อง/กลุ่มฝั่งซ้าย
+function skelCards(n, msg, compact) {
+  n = n || 6;
+  var h = _skMsg(msg) + '<div class="skel-wrap">';
+  for (var i = 0; i < n; i++) {
+    var w = 45 + ((i * 37) % 40);
+    h += '<div class="skel-card">'
+      + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<div class="skel skel-line" style="width:' + w + '%;height:12px"></div>'
+        + '<div class="skel skel-line" style="width:38px;margin-left:auto;border-radius:20px"></div>'
+      + '</div>'
+      + (compact
+          ? '<div class="skel" style="height:5px;border-radius:20px"></div>'
+          : '<div class="skel skel-line" style="width:60%"></div>'
+          + '<div class="skel skel-line" style="width:40%"></div>')
+      + '</div>';
+  }
+  return h + '</div>';
+}
+// ตาราง SN ฝั่งขวา
+function skelTable(n, msg, cols) {
+  n = n || 8;
+  cols = cols || [4, 14, 11, 30, 9, 10];
+  var tpl = cols.map(function(c){ return c + 'fr'; }).join(' ');
+  var h = _skMsg(msg) + '<div class="skel-tbl">';
+  for (var r = 0; r <= n; r++) {
+    h += '<div class="skel-tr" style="grid-template-columns:' + tpl + '">';
+    cols.forEach(function(c, k) {
+      var w = r === 0 ? 60 : 55 + (((r + 1) * (k + 3) * 13) % 45);
+      h += '<div class="skel skel-line" style="width:' + w + '%"></div>';
+    });
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+// ผลค้นหา
+function skelSearch(n, msg) {
+  n = n || 5;
+  var h = _skMsg(msg) + '<div style="display:flex;flex-direction:column;gap:8px;padding:6px 8px">';
+  for (var i = 0; i < n; i++) {
+    h += '<div style="display:flex;gap:9px;align-items:center">'
+      + '<div class="skel skel-line" style="width:88px"></div>'
+      + '<div class="skel skel-line" style="flex:1;max-width:' + (40 + (i * 23) % 50) + '%"></div>'
+      + '<div class="skel skel-line" style="width:54px;margin-left:auto;border-radius:20px"></div>'
+      + '</div>';
+  }
+  return h + '</div>';
+}
+// ======== END SKELETON ========
+
 // ======== CHECK STOCK ========
+//  เก็บข้อมูลทุกโซนของรอบไว้ในหน่วยความจำ (_chkZ) — สลับโซนได้ทันที, Sync ทีเดียวทุกโซน
+//  ตัวแปร _snapArr / _snapMap / _chkSet / _chkExtra / _chkLoad ชี้ไปที่ข้อมูลของ "โซนที่เปิดอยู่"
 var curRound   = null;
 var _rounds    = [];
 var _chkZone   = null;
-var _snapMap   = {};      // { sn: {code, shortname, zone, cost, sn_date} }
+var _chkZ      = {};      // { A: {arr, map, set, extra, cursor, state, msg, promise} }
+var _snapMap   = {};
 var _snapArr   = [];
-var _chkSet    = {};      // { sn: {at, by} } นับแล้ว
-var _chkExtra  = {};      // { sn: true }
-var _chkQueue  = [];
-var _chkCursor = 1;
+var _chkSet    = {};      // { sn: {at, by, fresh} }
+var _chkExtra  = {};      // { sn: {at, fresh} }
+var _chkLoad   = { state: 'idle', msg: '' };
+var _chkQueue  = [];      // [{sn, status, zone}]
 var _grpBy     = 'zone';
 var _grpSel    = null;
 var _chkBusy   = false;
-var _dtTab     = 'todo';  // 'todo' | 'done'
+var _dtTab     = 'todo';  // 'todo' | 'done' | 'extra'
 var _chkTimer  = null;
+var _chkTok    = 0;
+var _roundsReq = null;
+
+function Zc(z) {
+  return _chkZ[z] || (_chkZ[z] = { arr: [], map: {}, set: {}, extra: {}, cursor: 1,
+                                    state: 'idle', msg: '', promise: null });
+}
+
+// ชี้ตัวแปรหลักไปที่โซนที่เปิดอยู่
+function chkBind() {
+  if (!_chkZone) {
+    _snapArr = []; _snapMap = {}; _chkSet = {}; _chkExtra = {};
+    _chkLoad = { state: 'idle', msg: '' };
+    return;
+  }
+  var Z = Zc(_chkZone);
+  _snapArr = Z.arr; _snapMap = Z.map; _chkSet = Z.set; _chkExtra = Z.extra; _chkLoad = Z;
+}
+
+// ล้างข้อมูลทุกโซน (ใช้ตอนเปลี่ยนรอบ / ออกจากโหมด)
+function resetChkAll() {
+  _chkTok++;
+  _chkZ = {};
+  _grpSel = null; _chkFocusSN = null; _dtTab = 'todo';
+  chkBind();
+}
+
+function roundZones() {
+  if (!curRound) return [];
+  var ready = String(curRound.zones_ready || '').split(',')
+                .map(function(s){ return s.trim(); }).filter(Boolean);
+  return ZONES.filter(function(z){ return ready.indexOf(z) !== -1; });
+}
+
+function chkRender() {
+  if (curMode !== 'chk') return;
+  chkBind();
+  renderGrpToggle();
+  renderChkList();
+  renderChkMain();
+  updateChkHeader();
+  chkInputState();
+  renderChkZoneTabs();
+  if (document.getElementById('sumModal').classList.contains('open')) renderSummary();
+}
+
+// ---- สถิติ ----
+function zoneStat(z) {
+  var Z = Zc(z), found = 0, value = 0;
+  Z.arr.forEach(function(r) {
+    if (Z.set[r.sn]) found++; else value += r.cost || 0;
+  });
+  return { total: Z.arr.length, found: found, miss: Z.arr.length - found,
+           extra: Object.keys(Z.extra).length, value: value };
+}
 
 function chkGroups() {
   var agg = {};
   _snapArr.forEach(function(r) {
     var key = _grpBy === 'code' ? r.code : r.zone;
     if (!key) return;
-    if (!agg[key]) agg[key] = { key: key, name: '', total: 0, done: 0, value: 0 };
+    if (!agg[key]) agg[key] = { key: key, name: '', zone: r.zone, total: 0, done: 0, value: 0, codes: {} };
     if (!agg[key].name && r.shortname) agg[key].name = r.shortname;
     agg[key].total++;
+    if (r.code) agg[key].codes[r.code] = 1;
     if (_chkSet[r.sn]) agg[key].done++;
     else agg[key].value += r.cost || 0;
   });
@@ -4450,32 +4841,151 @@ function chkGroups() {
     .sort(function(a, b){ return a.key.localeCompare(b.key); });
 }
 
+// SN นี้อยู่ใน snapshot ของโซนไหน (ค้นเฉพาะโซนที่โหลดแล้ว)
+function homeOf(sn, skip) {
+  var zs = Object.keys(_chkZ);
+  for (var i = 0; i < zs.length; i++) {
+    if (zs[i] === skip) continue;
+    var Z = _chkZ[zs[i]];
+    if (Z.state === 'ready' && Z.map[sn]) return { z: zs[i], row: Z.map[sn] };
+  }
+  return null;
+}
+
+// ---- ส่วนหัว ----
+function renderGrpToggle() {
+  var el = document.getElementById('grpToggle');
+  if (!el) return;
+  if (curMode !== 'chk') { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML =
+      '<button class="grp-tab' + (_grpBy === 'zone' ? ' on' : '') + '" onclick="setGroupBy(\'zone\')">Zone</button>'
+    + '<button class="grp-tab' + (_grpBy === 'code' ? ' on' : '') + '" onclick="setGroupBy(\'code\')">Code</button>';
+}
+
+function updateChkHeader() {
+  var t = document.getElementById('rightTitle');
+  var s = document.getElementById('rightSub');
+  if (!t || !s) return;
+  if (!curRound) { t.textContent = '-- เลือกรอบนับ'; s.textContent = 'เลือกรอบจากด้านบน หรือกด + รอบใหม่'; return; }
+  if (!_chkZone) {
+    t.textContent = curRound.round_id + ' - ' + (curRound.round_name || '');
+    s.textContent = 'เลือกโซนที่จะนับจากแท็บด้านบน';
+    return;
+  }
+  if (_chkLoad.state !== 'ready') {
+    t.textContent = 'โซน ' + _chkZone;
+    s.textContent = _chkLoad.msg || '';
+    return;
+  }
+  var baht = function(v){ return Math.round(v).toLocaleString('th-TH') + ' บาท'; };
+
+  if (_dtTab === 'extra') {
+    t.textContent = 'โซน ' + _chkZone + ' - ของแปลกปน';
+    s.textContent = Object.keys(_chkExtra).length + ' รายการ | สแกนเจอแต่ไม่มีใน Data SN ของโซนนี้';
+    return;
+  }
+  if (!_grpSel) {
+    var st = zoneStat(_chkZone);
+    t.textContent = 'โซน ' + _chkZone + ' - ทั้งโซน';
+    s.textContent = curRound.round_id + ' | นับแล้ว ' + st.found.toLocaleString('th-TH')
+      + '/' + st.total.toLocaleString('th-TH') + ' | เหลือ ' + st.miss.toLocaleString('th-TH')
+      + (st.value ? ' | มูลค่าที่ยังไม่พบ ' + baht(st.value) : '');
+    return;
+  }
+  var g = chkGroups().find(function(x){ return x.key === _grpSel; });
+  if (!g) { t.textContent = _grpSel; s.textContent = ''; return; }
+  if (_grpBy === 'code') {
+    t.textContent = g.key + (g.name ? ' - ' + g.name : '');
+    s.textContent = 'Zone ' + (g.zone || '-') + ' | นับแล้ว ' + g.done + '/' + g.total
+      + ' | เหลือ ' + (g.total - g.done) + (g.value ? ' | ' + baht(g.value) : '');
+  } else {
+    t.textContent = 'Zone ' + g.key;
+    s.textContent = Object.keys(g.codes).length + ' Code | นับแล้ว ' + g.done + '/' + g.total
+      + ' | เหลือ ' + (g.total - g.done) + (g.value ? ' | ' + baht(g.value) : '');
+  }
+}
+
+// ยิง SN ได้เฉพาะตอนโหลดโซนเสร็จ และรอบยังเปิดอยู่
+function chkInputState() {
+  var f = document.getElementById('snField');
+  if (!f) return;
+  if (curMode !== 'chk') {
+    if (f.disabled) { f.disabled = false; f.placeholder = 'กรอก หรือ สแกน SN แล้วกด Enter...'; }
+    f.classList.toggle('checking', _scanMode === 'check');
+    return;
+  }
+  var why = !curRound ? 'เลือกรอบนับก่อน'
+          : !_chkZone ? 'เลือกโซนก่อน'
+          : _chkLoad.state === 'loading' ? 'รอโหลดข้อมูลโซน ' + _chkZone + ' ให้เสร็จก่อน...'
+          : _chkLoad.state !== 'ready' ? 'โหลดข้อมูลโซนไม่สำเร็จ'
+          : String(curRound.status).trim() === 'closed' ? 'รอบนี้ปิดแล้ว สแกนเพิ่มไม่ได้'
+          : '';
+  var wasOff = f.disabled;
+  f.disabled = !!why;
+  f.placeholder = why || 'สแกน SN เพื่อนับ แล้วกด Enter...';
+  f.classList.toggle('checking', !why);
+  if (wasOff && !why) f.focus();
+}
+
+// จุดสถานะบนแท็บโซน
+function renderChkZoneTabs() {
+  ZONES.forEach(function(z) {
+    var tab = document.getElementById('ctab_' + z);
+    if (!tab) return;
+    var Z = _chkZ[z], badge = '';
+    if (curRound && Z) {
+      if (Z.state === 'loading') badge = '<span class="zt-st ld">&#8226;&#8226;&#8226;</span>';
+      else if (Z.state === 'error') badge = '<span class="zt-st er">!</span>';
+      else if (Z.state === 'ready') {
+        var st = zoneStat(z);
+        var pct = st.total ? Math.floor(st.found / st.total * 100) : 0;
+        badge = '<span class="zt-st ' + (pct >= 100 ? 'ok' : '') + '">' + pct + '%</span>';
+      }
+    }
+    tab.innerHTML = z + badge;
+    tab.title = Z && Z.state === 'ready' ? zoneStat(z).found + '/' + zoneStat(z).total : '';
+  });
+}
+
+// ---- รายการกลุ่มฝั่งซ้าย ----
 function renderChkList() {
   var el = document.getElementById('boxList');
   if (!el) return;
-  var head = '<div class="grp-tabs">'
-    + '<button class="grp-tab' + (_grpBy === 'zone' ? ' on' : '') + '" onclick="setGroupBy(\'zone\')">ตาม Zone</button>'
-    + '<button class="grp-tab' + (_grpBy === 'code' ? ' on' : '') + '" onclick="setGroupBy(\'code\')">ตาม Code</button>'
-    + '</div>';
+  var cnt = document.getElementById('boxCountLbl');
 
-  if (!curRound || !_chkZone || !_snapArr.length) {
-    el.innerHTML = head + '<div class="empty-state"><div class="empty-ico">&#128202;</div>'
-      + '<p style="font-size:12px">'
-      + (!curRound ? 'เลือกรอบนับก่อน' : !_chkZone ? 'เลือกโซน' : 'กำลังโหลด...')
-      + '</p></div>';
-    document.getElementById('boxCountLbl').textContent = '--';
+  if (!curRound || !_chkZone || _chkLoad.state !== 'ready' || !_snapArr.length) {
+    var body;
+    if (!curRound)      body = '<div class="empty-ico">&#128202;</div><p style="font-size:12px">เลือกรอบนับก่อน</p>';
+    else if (!_chkZone) body = '<div class="empty-ico">&#128070;</div><p style="font-size:12px">เลือกโซน</p>';
+    else if (_chkLoad.state === 'loading') {
+      el.innerHTML = skelCards(8, _chkLoad.msg, true);
+      cnt.textContent = '--';
+      return;
+    }
+    else if (_chkLoad.state === 'error')
+      body = '<div class="empty-ico">&#9888;</div><p style="font-size:12px;color:var(--red)">' + _chkLoad.msg + '</p>'
+           + '<button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="retryZone()">&#8635; ลองใหม่</button>';
+    else if (_chkLoad.state === 'nozone')
+      body = '<div class="empty-ico">&#128237;</div><p style="font-size:12px;color:var(--yellow)">' + _chkLoad.msg + '</p>'
+           + '<button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="retryZone()">&#8635; ตรวจอีกครั้ง</button>';
+    else if (_chkLoad.state === 'ready')
+      body = '<div class="empty-ico">&#128237;</div><p style="font-size:12px">โซน ' + _chkZone + ' ไม่มี SN ในรอบนี้</p>';
+    else { el.innerHTML = skelCards(6, '', true); cnt.textContent = '--'; return; }
+    el.innerHTML = '<div class="empty-state">' + body + '</div>';
+    cnt.textContent = '--';
     return;
   }
 
   var gs = chkGroups();
-  document.getElementById('boxCountLbl').textContent = gs.length + ' กลุ่ม';
-  el.innerHTML = head + gs.map(function(g) {
+  cnt.textContent = gs.length + ' กลุ่ม';
+  el.innerHTML = gs.map(function(g) {
     var pct  = g.total ? Math.round(g.done / g.total * 100) : 0;
     var full = (g.done >= g.total && g.total > 0);
     return '<div class="gcard' + (full ? ' full' : '') + (_grpSel === g.key ? ' sel' : '') + '" data-grp="' + g.key + '">'
       + '<div class="gcard-top">'
         + '<span class="gcard-id">' + g.key + '</span>'
-        + '<span class="gcard-nm">' + (_grpBy === 'code' ? (g.name || '') : '') + '</span>'
+        + '<span class="gcard-nm">' + (_grpBy === 'code' ? (g.name || '') : Object.keys(g.codes).length + ' Code') + '</span>'
         + '<span class="gcard-n">' + g.done + '/' + g.total + (full ? ' &#10003;' : '') + '</span>'
       + '</div><div class="gbar"><div style="width:' + pct + '%"></div></div></div>';
   }).join('');
@@ -4483,21 +4993,66 @@ function renderChkList() {
 
 function setGroupBy(m) {
   _grpBy = (m === 'code') ? 'code' : 'zone';
-  _grpSel = null;
-  renderChkList(); renderChkMain();
+  _grpSel = null; _chkFocusSN = null;
+  if (_dtTab !== 'extra') _dtTab = 'todo';
+  chkRender();
 }
 
 function selectGroup(key) {
+  _chkFocusSN = null;
   _grpSel = (_grpSel === key) ? null : key;
   _dtTab = 'todo';
-  renderChkList(); renderChkMain();
+  chkRender();
   var f = document.getElementById('snField');
-  if (f) f.focus();
+  if (f && !f.disabled) f.focus();
 }
 
-function setDtTab(t) { _dtTab = t; renderChkMain(); }
+function setDtTab(t) { _dtTab = t; chkRender(); }
 
 // ---- หน้าหลัก ----
+function chkHeroHTML() {
+  var st   = zoneStat(_chkZone);
+  var open = String(curRound.status).trim() !== 'closed';
+  return '<div class="chk-hero" style="margin-top:12px;margin-bottom:0">'
+    + '<div class="chk-hero-top">'
+      + '<span class="chk-rnd">สรุปโซน ' + _chkZone + '</span>'
+      + '<span class="chk-badge ' + (open ? 'open' : 'closed') + '">' + (open ? 'กำลังนับ' : 'ปิดแล้ว') + '</span>'
+    + '</div>'
+    + '<div class="chk-nums">'
+      + '<div class="chk-n"><b>' + st.total.toLocaleString('th-TH') + '</b><span>ควรมี</span></div>'
+      + '<div class="chk-n f"><b>' + st.found.toLocaleString('th-TH') + '</b><span>นับแล้ว</span></div>'
+      + '<div class="chk-n m"><b>' + st.miss.toLocaleString('th-TH') + '</b><span>ยังไม่พบ</span></div>'
+      + (st.extra ? '<div class="chk-n e" style="cursor:pointer" title="ดูรายการแปลกปน" onclick="setDtTab(\'extra\')"><b>' + st.extra + '</b><span>แปลกปน &#9656;</span></div>' : '')
+      + '<div class="chk-n"><b>' + (st.total ? Math.round(st.found / st.total * 100) : 0) + '%</b><span>คืบหน้า</span></div>'
+      + (st.value ? '<div class="chk-n m"><b>' + Math.round(st.value).toLocaleString('th-TH') + '</b><span>มูลค่าที่ยังไม่พบ (บาท)</span></div>' : '')
+    + '</div></div>';
+}
+
+function snTableHTML(pool, withTime) {
+  var show = pool.slice(0, 300);
+  var html = '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto">'
+    + '<table><thead><tr><th>#</th><th>SN</th><th>Code</th><th>ชื่อสินค้า</th>'
+    + '<th>Zone</th><th>Cost</th>' + (withTime ? '<th>เวลา</th>' : '') + '</tr></thead><tbody>';
+  show.forEach(function(r, i) {
+    var c = _chkSet[r.sn];
+    html += '<tr' + (c && c.fresh ? ' class="row-new"' : '') + '>'
+      + '<td class="row-n">' + (i + 1) + '</td>'
+      + '<td><span class="mono">' + r.sn + '</span></td>'
+      + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
+      + '<td>' + (r.shortname || '-') + '</td>'
+      + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
+      + '<td class="cost-v">' + (r.cost ? Number(r.cost).toLocaleString('th-TH') : '-') + '</td>'
+      + (withTime ? '<td style="font-size:11px;color:var(--muted)">' + (c ? fmtTime(c.at) : '') + '</td>' : '')
+      + '</tr>';
+  });
+  html += '</tbody></table></div>';
+  if (pool.length > 300) {
+    html += '<div style="font-size:11px;color:var(--muted);padding:7px 4px">แสดง 300 แถวแรก จากทั้งหมด '
+      + pool.length.toLocaleString('th-TH') + '</div>';
+  }
+  return html;
+}
+
 function renderChkMain() {
   var el = document.getElementById('tblWrap');
   if (!el) return;
@@ -4509,92 +5064,520 @@ function renderChkMain() {
   }
   if (!_chkZone) {
     el.innerHTML = '<div class="empty-state"><div class="empty-ico">&#128070;</div>'
-      + '<p>' + curRound.round_id + ' · ' + (curRound.round_name || '') + '</p>'
+      + '<p>' + curRound.round_id + ' - ' + (curRound.round_name || '') + '</p>'
       + '<p style="font-size:12px;margin-top:4px;color:var(--muted)">เลือกโซนที่จะนับจากแท็บด้านบน</p></div>';
     return;
   }
-
-  var total = _snapArr.length;
-  var found = 0;
-  _snapArr.forEach(function(r){ if (_chkSet[r.sn]) found++; });
-  var extra = Object.keys(_chkExtra).length;
-  var miss  = total - found;
-  var open  = String(curRound.status).trim() !== 'closed';
-
-  var html = '<div class="chk-hero">'
-    + '<div class="chk-hero-top">'
-      + '<span class="chk-rnd">' + curRound.round_id + ' · ' + (curRound.round_name || '') + '</span>'
-      + '<span class="chk-badge ' + (open ? 'open' : 'closed') + '">' + (open ? 'กำลังนับ' : 'ปิดแล้ว') + '</span>'
-      + '<div class="chk-acts">'
-        + (open ? '<button class="btn btn-danger btn-xs" onclick="doCloseRound()">&#128274; ปิดรอบ</button>'
-                : '<button class="btn btn-ghost btn-xs" onclick="doReopenRound()">เปิดใหม่</button>')
-        + '<button class="btn btn-ghost btn-xs" onclick="openRoundFile()">&#128196; เปิดไฟล์</button>'
-      + '</div>'
-    + '</div>'
-    + '<div class="chk-nums">'
-      + '<div class="chk-n"><b>' + total.toLocaleString('th-TH') + '</b><span>ควรมี</span></div>'
-      + '<div class="chk-n f"><b>' + found.toLocaleString('th-TH') + '</b><span>นับแล้ว</span></div>'
-      + '<div class="chk-n m"><b>' + miss.toLocaleString('th-TH') + '</b><span>ยังไม่พบ</span></div>'
-      + (extra ? '<div class="chk-n e"><b>' + extra + '</b><span>แปลกปน</span></div>' : '')
-      + '<div class="chk-n"><b>' + (total ? Math.round(found / total * 100) : 0) + '%</b><span>คืบหน้า</span></div>'
-    + '</div></div>';
-
-  if (!_grpSel) {
-    html += '<div class="empty-state" style="padding:26px">'
-      + '<p style="font-size:12px">สแกนได้เลยทั้งโซน หรือเลือกกลุ่มทางซ้ายเพื่อดูรายการ</p></div>';
-    el.innerHTML = html;
+  if (_chkLoad.state === 'loading' || _chkLoad.state === 'idle') {
+    el.innerHTML = skelTable(8, _chkLoad.msg || 'กำลังโหลด...', [4, 14, 11, 30, 9, 10]);
+    return;
+  }
+  if (_chkLoad.state === 'error' || _chkLoad.state === 'nozone') {
+    el.innerHTML = '<div class="empty-state"><p style="color:var(--'
+      + (_chkLoad.state === 'error' ? 'red' : 'yellow') + ')">' + _chkLoad.msg + '</p>'
+      + '<button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="retryZone()">&#8635; ลองใหม่</button></div>';
     return;
   }
 
+  var xList = Object.keys(_chkExtra);
+  var html  = '';
+
+  // ---- แท็บแปลกปน ----
+  if (_dtTab === 'extra') {
+    html += '<div class="dt-tabs">'
+      + '<button class="dt-tab" onclick="setDtTab(\'todo\')">&#8592; กลับ</button>'
+      + '<button class="dt-tab dt-x on">&#9888; แปลกปน ' + xList.length + '</button></div>';
+    if (!xList.length) {
+      html += '<div class="empty-state" style="padding:24px"><p style="font-size:12px">ไม่มีของแปลกปน</p></div>';
+    } else {
+      html += '<div style="background:var(--card);border:1px solid rgba(251,191,36,.35);border-radius:12px;overflow:auto">'
+        + '<table><thead><tr><th>#</th><th>SN</th><th>เป็นของ</th><th>ชื่อสินค้า</th><th>เวลา</th><th class="no-print">ค้น</th></tr></thead><tbody>';
+      xList.forEach(function(sn, i) {
+        var c = _chkExtra[sn] || {};
+        var h = homeOf(sn, _chkZone);
+        html += '<tr' + (c.fresh ? ' class="row-new"' : '') + '>'
+          + '<td class="row-n">' + (i + 1) + '</td>'
+          + '<td><span class="mono" style="color:var(--yellow)">' + sn + '</span></td>'
+          + '<td>' + (h ? '<span class="gs-scope sn">โซน ' + h.z + '</span> <span class="zone-tag">' + (h.row.zone || '-') + '</span>'
+                        : '<span style="color:var(--muted)">ไม่พบในทุกโซน</span>') + '</td>'
+          + '<td>' + (h ? (h.row.shortname || h.row.code || '-') : '-') + '</td>'
+          + '<td style="font-size:11px;color:var(--muted)">' + (c.at ? fmtTime(c.at) : '-') + '</td>'
+          + '<td class="no-print"><button class="btn btn-ghost btn-xs" onclick="findExtraSN(\'' + sn + '\')">&#128269; หากล่อง</button></td>'
+          + '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    el.innerHTML = html + chkHeroHTML();
+    return;
+  }
+
+  // ---- ทั้งโซน ----
+  if (!_grpSel) {
+    html += '<div class="empty-state" style="padding:26px">'
+      + '<p style="font-size:13px">สแกนได้เลยทั้งโซน หรือเลือกกลุ่มทางซ้ายเพื่อดูรายการ SN</p>'
+      + (xList.length ? '<button class="dt-tab dt-x" style="margin-top:10px" onclick="setDtTab(\'extra\')">&#9888; ดูของแปลกปน ' + xList.length + '</button>' : '')
+      + '</div>';
+    el.innerHTML = html + chkHeroHTML();
+    return;
+  }
+
+  // ---- กลุ่มที่เลือก ----
   var rows = _snapArr.filter(function(r) {
     return (_grpBy === 'code' ? r.code : r.zone) === _grpSel;
   });
   var gDone = rows.filter(function(r){ return _chkSet[r.sn]; });
   var gTodo = rows.filter(function(r){ return !_chkSet[r.sn]; });
-  var gVal  = gTodo.reduce(function(s, r){ return s + (r.cost || 0); }, 0);
-  var nm    = (rows[0] && rows[0].shortname) || '';
-
-  html += '<div class="chk-scope">&#128269; <b>' + _grpSel + '</b>'
-    + (_grpBy === 'code' && nm ? ' <span style="color:var(--muted)">' + nm + '</span>' : '')
-    + ' <span class="vf-s ok">&#10003; ' + gDone.length + '</span>'
-    + ' <span class="vf-s wait">เหลือ ' + gTodo.length + '</span>'
-    + (gVal ? ' <span class="vf-s bad">' + Math.round(gVal).toLocaleString('th-TH') + ' บาท</span>' : '')
-    + '<button onclick="selectGroup(\'' + _grpSel + '\')">&#10005; ทั้งโซน</button></div>';
 
   html += '<div class="dt-tabs">'
     + '<button class="dt-tab' + (_dtTab === 'todo' ? ' on' : '') + '" onclick="setDtTab(\'todo\')">ยังไม่นับ ' + gTodo.length + '</button>'
     + '<button class="dt-tab' + (_dtTab === 'done' ? ' on' : '') + '" onclick="setDtTab(\'done\')">นับแล้ว ' + gDone.length + '</button>'
+    + (xList.length ? '<button class="dt-tab dt-x" onclick="setDtTab(\'extra\')">&#9888; แปลกปน ' + xList.length + '</button>' : '')
+    + '<button class="dt-tab" style="margin-left:auto" onclick="selectGroup(\'' + _grpSel + '\')">&#10005; ทั้งโซน</button>'
     + '</div>';
 
   var pool = (_dtTab === 'done' ? gDone : gTodo);
-  var show = pool.slice(0, 300);
-  if (!show.length) {
+  if (_chkFocusSN) {
+    var fi = pool.findIndex(function(r){ return r.sn === _chkFocusSN; });
+    if (fi > 0) pool = [pool[fi]].concat(pool.slice(0, fi), pool.slice(fi + 1));
+  }
+  if (!pool.length) {
     html += '<div class="empty-state" style="padding:24px"><p style="font-size:12px">'
       + (_dtTab === 'done' ? 'ยังไม่มีที่นับ' : '&#10003; นับครบทุกชิ้นแล้ว') + '</p></div>';
   } else {
-    html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto">'
-      + '<table><thead><tr><th>#</th><th>SN</th><th>Code</th><th>ชื่อสินค้า</th>'
-      + '<th>Zone</th><th>Cost</th>' + (_dtTab === 'done' ? '<th>เวลา</th>' : '') + '</tr></thead><tbody>';
-    show.forEach(function(r, i) {
-      var c = _chkSet[r.sn];
-      html += '<tr' + (c && c.fresh ? ' class="row-new"' : '') + '>'
-        + '<td class="row-n">' + (i + 1) + '</td>'
-        + '<td><span class="mono">' + r.sn + '</span></td>'
-        + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
-        + '<td>' + (r.shortname || '-') + '</td>'
-        + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
-        + '<td class="cost-v">' + (r.cost ? Number(r.cost).toLocaleString('th-TH') : '-') + '</td>'
-        + (_dtTab === 'done' ? '<td style="font-size:11px;color:var(--muted)">' + (c ? fmtTime(c.at) : '') + '</td>' : '')
-        + '</tr>';
-    });
-    html += '</tbody></table></div>';
-    if (pool.length > 300) {
-      html += '<div style="font-size:11px;color:var(--muted);padding:7px 4px">แสดง 300 แถวแรก จากทั้งหมด '
-        + pool.length.toLocaleString('th-TH') + '</div>';
+    html += snTableHTML(pool, _dtTab === 'done');
+  }
+  el.innerHTML = html + chkHeroHTML();
+}
+
+// ---- รอบ ----
+function loadRounds() {
+  if (_roundsReq) return _roundsReq;
+  _roundsReq = _loadRounds().then(function(r){ _roundsReq = null; return r; },
+                                  function(e){ _roundsReq = null; throw e; });
+  return _roundsReq;
+}
+
+async function _loadRounds() {
+  var res = await api({ action: 'getStockRounds' });
+  if (!res || res.error) throw new Error((res && res.error) || 'โหลดรอบไม่สำเร็จ');
+  _rounds = res.rounds || [];
+  window._nextRoundId = res.next_round_id;
+
+  var sel = document.getElementById('rndSel');
+  sel.innerHTML = '<option value="">-- เลือกรอบ --</option>'
+    + _rounds.map(function(r) {
+        return '<option value="' + r.round_id + '">' + r.round_id + ' - ' + (r.round_name || '')
+          + (String(r.status).trim() === 'closed' ? ' (ปิดแล้ว)' : '') + '</option>';
+      }).join('');
+
+  var keep = curRound && _rounds.find(function(r){ return r.round_id === curRound.round_id; });
+  if (keep) curRound = keep;
+  else {
+    var open = _rounds.find(function(r){ return String(r.status).trim() !== 'closed'; });
+    curRound = open || null;
+  }
+  sel.value = curRound ? curRound.round_id : '';
+  return curRound;
+}
+
+async function onRoundChange() {
+  var sel = document.getElementById('rndSel');
+  var id  = sel.value;
+  if (_chkQueue.length && curRound) {
+    var keepId = curRound.round_id;
+    sel.disabled = true;
+    await flushQueue(true);
+    sel.disabled = false;
+    if (_chkQueue.length) {
+      sel.value = keepId;
+      showToast('ยังส่งผลนับของ ' + keepId + ' ไม่สำเร็จ — สลับรอบไม่ได้ ลอง Sync อีกครั้ง', 'err');
+      return;
     }
   }
-  el.innerHTML = html;
+  curRound = id ? _rounds.find(function(x){ return x.round_id === id; }) : null;
+  _chkQueue = []; saveChkQueue();
+  resetChkAll();
+  if (curRound && _chkZone) selectChkZone(_chkZone);
+  else chkRender();
 }
+
+// ---- โหลดข้อมูลโซน (ใส่ลง _chkZ[z] ไม่ยุ่งกับโซนที่เปิดอยู่) ----
+function loadZone(z) {
+  var Z = Zc(z);
+  if (Z.state === 'ready') return Promise.resolve(Z);
+  if (Z.promise) return Z.promise;
+  Z.promise = _loadZone(z, Z, _chkTok).then(function(){ Z.promise = null; return Z; },
+                                            function(){ Z.promise = null; return Z; });
+  return Z.promise;
+}
+
+async function _loadZone(z, Z, tok) {
+  var rid = curRound.round_id;
+  Z.state = 'loading'; Z.msg = 'กำลังโหลดโซน ' + z + '...';
+  Z.arr.length = 0; clearObj(Z.map); clearObj(Z.set); clearObj(Z.extra); Z.cursor = 1;
+  if (z === _chkZone) chkRender(); else renderChkZoneTabs();
+
+  function hasZone() { return roundZones().indexOf(z) !== -1; }
+
+  try {
+    if (!hasZone()) {
+      await loadRounds();
+      if (tok !== _chkTok) return;
+      if (!curRound || curRound.round_id !== rid || !hasZone()) {
+        Z.state = 'nozone'; Z.msg = 'รอบนี้ยังไม่มีข้อมูลโซน ' + z;
+        if (z === _chkZone) chkRender(); else renderChkZoneTabs();
+        return;
+      }
+    }
+
+    var off = 0, guard = 0, total = 0;
+    while (guard++ < 20) {
+      Z.msg = 'กำลังโหลดโซน ' + z + ' — ' + off.toLocaleString('th-TH')
+            + (total ? ' / ' + total.toLocaleString('th-TH') : '') + ' รายการ';
+      if (z === _chkZone) { setStatus('dim', Z.msg); renderChkList(); updateChkHeader(); chkInputState(); }
+      var res = await api({ action: 'getRoundSnapshot', round_id: rid, zone: z, offset: off, limit: 20000 });
+      if (tok !== _chkTok) return;
+      if (!res || res.error) throw new Error((res && res.error) || 'โหลด snapshot ไม่สำเร็จ');
+      total = res.total || total;
+      (res.rows || []).forEach(function(r) {
+        r.sn = normSN(r.sn);
+        Z.map[r.sn] = r;
+        Z.arr.push(r);
+      });
+      if (res.done) break;
+      off = res.next_offset;
+    }
+
+    Z.msg = 'กำลังโหลดผลนับโซน ' + z + '...';
+    if (z === _chkZone) { renderChkList(); updateChkHeader(); }
+    var lg = await api({ action: 'getStockLog', round_id: rid, zone: z, after_row: 1 });
+    if (tok !== _chkTok) return;
+    if (!lg || lg.error) throw new Error((lg && lg.error) || 'โหลดผลนับไม่สำเร็จ');
+    applyLog(z, lg.rows, lg.last_row, true);
+
+    Z.state = 'ready'; Z.msg = '';
+    if (z === _chkZone) {
+      setStatus('ok', 'โซน ' + z + ' | ' + Z.arr.length.toLocaleString('th-TH')
+                      + ' SN · นับแล้ว ' + Object.keys(Z.set).length.toLocaleString('th-TH'));
+      arReset();
+    }
+  } catch (e) {
+    if (tok !== _chkTok) return;
+    Z.arr.length = 0; clearObj(Z.map);
+    Z.state = 'error'; Z.msg = 'โหลดโซน ' + z + ' ไม่สำเร็จ: ' + e.message;
+    if (z === _chkZone) { setStatus('err', e.message); showToast(Z.msg, 'err'); }
+  }
+  if (tok === _chkTok) chkRender();
+}
+
+function clearObj(o) { Object.keys(o).forEach(function(k){ delete o[k]; }); }
+
+function retryZone() {
+  if (!_chkZone) return;
+  var Z = Zc(_chkZone);
+  Z.state = 'idle';
+  loadZone(_chkZone).then(prefetchAllZones);
+}
+
+// โหลดโซนที่เหลือต่อเบื้องหลังทีละโซน
+var _prefetching = false;
+async function prefetchAllZones() {
+  if (_prefetching || !curRound) return;
+  _prefetching = true;
+  var tok = _chkTok;
+  try {
+    var zs = roundZones();
+    for (var i = 0; i < zs.length; i++) {
+      if (tok !== _chkTok || curMode !== 'chk') break;
+      var Z = Zc(zs[i]);
+      if (Z.state === 'ready' || Z.state === 'nozone') continue;
+      await loadZone(zs[i]);
+    }
+  } finally { _prefetching = false; }
+}
+
+function applyLog(z, rows, lastRow, silent) {
+  var Z = Zc(z), n = 0;
+  (rows || []).forEach(function(r) {
+    var sn = normSN(r.sn);
+    if (!sn) return;
+    if (String(r.status).trim() === 'extra') {
+      if (!Z.extra[sn]) { Z.extra[sn] = { at: r.counted_at, fresh: !silent }; n++; }
+      return;
+    }
+    if (!Z.set[sn]) { Z.set[sn] = { at: r.counted_at, by: r.counted_by, fresh: !silent }; n++; }
+  });
+  if (lastRow) Z.cursor = lastRow;
+  if (n && !silent) {
+    setTimeout(function() {
+      Object.keys(Z.set).forEach(function(k){ Z.set[k].fresh = false; });
+      Object.keys(Z.extra).forEach(function(k){ Z.extra[k].fresh = false; });
+    }, 2500);
+  }
+  return n;
+}
+
+// ---- สแกน ----
+function doStockScan(sn) {
+  if (!curRound)  { showSNErr('ยังไม่ได้เลือกรอบนับ', sn); return; }
+  if (!_chkZone)  { showSNErr('ยังไม่ได้เลือกโซน', sn); return; }
+  if (String(curRound.status).trim() === 'closed') { showSNErr('รอบนี้ปิดแล้ว บันทึกเพิ่มไม่ได้', sn); return; }
+  var Z = Zc(_chkZone);
+  if (Z.state !== 'ready') { showSNErr('ข้อมูลโซน ' + _chkZone + ' ยังโหลดไม่เสร็จ — รอสักครู่แล้วสแกนใหม่', sn); return; }
+  sn = normSN(sn);
+  var now = new Date().toLocaleTimeString('th-TH');
+
+  if (Z.set[sn] || Z.extra[sn]) {
+    playErrorSound();
+    flashError(sn, 'SN นี้นับไปแล้ว — ไม่ต้องนับซ้ำ');
+    clearSN();
+    return;
+  }
+
+  var row = Z.map[sn];
+  if (!row) {
+    var h = homeOf(sn, _chkZone);
+    if (h && Zc(h.z).set[sn]) {
+      playErrorSound();
+      flashError(sn, 'SN นี้นับไปแล้วที่โซน ' + h.z + ' (' + (h.row.zone || '-') + ')');
+      clearSN();
+      return;
+    }
+    // ของวางผิดโซน: นับว่าพบที่โซนเจ้าของ + บันทึกแปลกปนที่โซนนี้
+    if (h) {
+      Zc(h.z).set[sn] = { at: now, by: '', fresh: false };
+      _chkQueue.push({ sn: sn, status: 'found', zone: h.z });
+    }
+    Z.extra[sn] = { at: now };
+    _chkQueue.push({ sn: sn, status: 'extra', zone: _chkZone });
+    saveChkQueue();
+
+    var allIn = roundZones().every(function(z){ return Zc(z).state === 'ready'; });
+    showSNErr(h
+      ? 'SN นี้เป็นของโซน ' + h.z + ' (' + (h.row.zone || '-') + ' · ' + (h.row.shortname || h.row.code || '') + ')'
+        + ' — วางผิดโซน บันทึกว่าพบแล้ว'
+      : 'ไม่มีใน Data SN ทุกโซน — บันทึกเป็นของแปลกปน' + (allIn ? '' : ' (โซนอื่นยังโหลดไม่ครบ)'), sn);
+    chkRender();
+    return;
+  }
+
+  var gKey = _grpBy === 'code' ? row.code : row.zone;
+  if (_grpSel && gKey !== _grpSel) {
+    playErrorSound();
+    flashError(sn, 'SN นี้อยู่กลุ่ม ' + gKey + ' ไม่ใช่ ' + _grpSel + ' — บันทึกให้แล้ว');
+  }
+
+  Z.set[sn] = { at: now, by: '', fresh: false };
+  _chkQueue.push({ sn: sn, status: 'found', zone: _chkZone });
+  saveChkQueue();
+
+  clearSN();
+  chkRender();
+  if (_chkQueue.length >= 25) flushQueue();
+}
+
+// ---- คิว (เก็บใน localStorage กันหาย) ----
+function saveChkQueue() {
+  try {
+    if (curRound && _chkQueue.length) {
+      localStorage.setItem('chk_q', JSON.stringify({ round: curRound.round_id, rows: _chkQueue }));
+    } else localStorage.removeItem('chk_q');
+  } catch (e) {}
+}
+
+function restoreChkQueue() {
+  try {
+    var q = JSON.parse(localStorage.getItem('chk_q') || 'null');
+    if (!q || !curRound || q.round !== curRound.round_id || !Array.isArray(q.rows)) return;
+    var rows = q.rows.map(function(r){ return { sn: r.sn, status: r.status, zone: r.zone || q.zone }; })
+                     .filter(function(r){ return r.sn && r.zone; });
+    if (!rows.length) return;
+    _chkQueue = rows.concat(_chkQueue);
+    showToast('พบผลนับค้างส่ง ' + rows.length + ' รายการ — จะส่งให้อัตโนมัติ', 'ok');
+    flushQueue(false);
+  } catch (e) {}
+}
+
+// ส่งคิว + ดึงผลนับของคนอื่น
+//   force = true → ดึงทุกโซนที่โหลดแล้ว (Sync ทั้งโหมด)
+async function flushQueue(force) {
+  if (_chkBusy || !curRound) return;
+  if (!force && !_chkQueue.length) return;
+  _chkBusy = true;
+  var rid   = curRound.round_id;
+  var tok   = _chkTok;
+  var batch = _chkQueue.splice(0, _chkQueue.length);
+
+  var zones = {};
+  batch.forEach(function(r){ zones[r.zone] = 1; });
+  if (force) Object.keys(_chkZ).forEach(function(z){ if (_chkZ[z].state === 'ready') zones[z] = 1; });
+
+  var failed = [], dups = 0, got = 0, err = null;
+  try {
+    await _mapLimit(Object.keys(zones), 3, async function(z) {
+      var rows = batch.filter(function(r){ return r.zone === z; })
+                      .map(function(r){ return { sn: r.sn, status: r.status }; });
+      try {
+        var res = await api({ action: 'pushStockLog', round_id: rid, zone: z,
+                              after_row: Zc(z).cursor, rows: rows }, 'POST');
+        if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
+        if (tok === _chkTok) got += applyLog(z, res.rows, res.last_row, false);
+        dups += (res.dup || []).length;
+      } catch (e) {
+        err = e;
+        batch.forEach(function(r){ if (r.zone === z) failed.push(r); });
+      }
+    });
+  } finally {
+    _chkBusy = false;
+  }
+
+  if (tok !== _chkTok) return;
+  _chkQueue = failed.concat(_chkQueue);
+  saveChkQueue();
+  if (dups) { playErrorSound(); showToast('⚠ ' + dups + ' SN ซ้ำกับที่คนอื่นนับแล้ว', 'err'); }
+  if (err)  showToast('บันทึกบางโซนไม่สำเร็จ: ' + err.message + ' (จะลองใหม่)', 'err');
+  if (got || batch.length) chkRender();
+  return got;
+}
+
+// ---- Sync ทั้งโหมด: สถานะรอบ + ส่งคิว + ดึงผลนับทุกโซน ----
+async function refreshChk(silent) {
+  if (!curRound) return;
+  var id = curRound.round_id;
+
+  try {
+    var rs = await api({ action: 'getStockRounds' });
+    if (rs && rs.rounds) {
+      _rounds = rs.rounds;
+      var r = _rounds.find(function(x){ return x.round_id === id; });
+      if (r && curRound && curRound.round_id === id) {
+        var was = String(curRound.status).trim();
+        curRound = r;
+        if (was !== 'closed' && String(r.status).trim() === 'closed') {
+          playErrorSound();
+          showToast('รอบ ' + id + ' ถูกปิดแล้ว — บันทึกเพิ่มไม่ได้', 'err');
+        }
+      }
+    }
+  } catch (e) {}
+
+  var got = await flushQueue(true) || 0;
+  prefetchAllZones();   // โซนที่เคยพลาด ลองโหลดใหม่
+  chkRender();
+  var n = Object.keys(_chkZ).filter(function(z){ return _chkZ[z].state === 'ready'; }).length;
+  setStatus('ok', curRound.round_id + ' | ' + n + '/' + roundZones().length + ' โซน'
+                  + ' · sync ' + new Date().toLocaleTimeString('th-TH'));
+  if (!silent) showToast('Sync ' + n + ' โซนแล้ว' + (got ? ' — ได้รับเพิ่ม ' + got + ' รายการ' : ''), 'ok');
+}
+
+// ---- เลือกโซน ----
+async function selectChkZone(z) {
+  _chkZone = z; _grpSel = null; _chkFocusSN = null;
+  if (_dtTab === 'extra') _dtTab = 'todo';
+  clearSearch();
+  document.getElementById('searchWrap').style.display = '';
+  document.getElementById('searchField').placeholder = 'ค้นหา SN / Code / ชื่อสินค้า / Zone ในโซน ' + z + '...';
+  document.getElementById('arWrap').style.display = '';
+  document.querySelectorAll('#chkZoneTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
+  var tab = document.getElementById('ctab_' + z);
+  if (tab) tab.classList.add('active');
+
+  document.getElementById('snInputArea').style.display = '';
+  document.getElementById('snTableArea').style.display = '';
+  document.getElementById('defaultEmpty').style.display = 'none';
+  document.getElementById('snTableLbl').textContent = 'รายการ SN';
+
+  if (!curRound && (_roundsReq || !_rounds.length)) {
+    _chkLoad = { state: 'loading', msg: 'กำลังโหลดรายการรอบ...' };
+    renderChkList(); renderChkMain(); chkInputState();
+    try { await loadRounds(); } catch (e) {}
+    if (_chkZone !== z) return;
+  }
+  if (!curRound) {
+    showToast('เลือกรอบนับก่อน', 'err');
+    chkRender();
+    return;
+  }
+
+  chkRender();                       // โซนที่โหลดไว้แล้วจะขึ้นทันที
+  if (Zc(z).state !== 'ready') await loadZone(z);
+  if (_chkZone === z) { chkRender(); arReset(); }
+  prefetchAllZones();
+}
+
+// ---- สรุปทุกโซน ----
+function openSummary() {
+  if (!curRound) { showToast('เลือกรอบนับก่อน', 'err'); return; }
+  document.getElementById('sumModal').classList.add('open');
+  renderSummary();
+  prefetchAllZones();
+}
+function closeSummary() { document.getElementById('sumModal').classList.remove('open'); }
+
+function renderSummary() {
+  var el = document.getElementById('sumBody');
+  if (!el || !curRound) return;
+  var open = String(curRound.status).trim() !== 'closed';
+  document.getElementById('sumTitle').textContent = curRound.round_id + ' - ' + (curRound.round_name || '');
+  document.getElementById('sumSub').textContent = (open ? 'กำลังนับ' : 'ปิดแล้วเมื่อ ' + (curRound.closed_date || ''))
+    + ' | สร้างเมื่อ ' + fmtDate(curRound.created_date);
+
+  var T = { total: 0, found: 0, miss: 0, extra: 0, value: 0 }, pending = 0;
+  var rows = roundZones().map(function(z) {
+    var Z = Zc(z);
+    if (Z.state !== 'ready') {
+      pending++;
+      return '<tr><td><b>' + z + '</b></td><td colspan="6" style="color:var(--muted)">'
+        + (Z.state === 'error' ? '<span style="color:var(--red)">โหลดไม่สำเร็จ</span>'
+           : '<span class="spin" style="width:12px;height:12px;border-width:2px"></span> กำลังโหลด...') + '</td></tr>';
+    }
+    var st = zoneStat(z);
+    T.total += st.total; T.found += st.found; T.miss += st.miss; T.extra += st.extra; T.value += st.value;
+    var pct = st.total ? Math.floor(st.found / st.total * 100) : 0;
+    return '<tr class="sum-row" onclick="closeSummary();selectChkZone(\'' + z + '\')">'
+      + '<td><b>' + z + '</b></td>'
+      + '<td>' + st.total.toLocaleString('th-TH') + '</td>'
+      + '<td style="color:var(--green)">' + st.found.toLocaleString('th-TH') + '</td>'
+      + '<td style="color:var(--red)">' + st.miss.toLocaleString('th-TH') + '</td>'
+      + '<td style="color:var(--yellow)">' + (st.extra || '-') + '</td>'
+      + '<td><div class="gbar" style="width:90px;display:inline-block;vertical-align:middle"><div style="width:' + pct + '%"></div></div> ' + pct + '%</td>'
+      + '<td class="cost-v" style="color:var(--red)">' + Math.round(st.value).toLocaleString('th-TH') + '</td>'
+      + '</tr>';
+  }).join('');
+
+  var tp = T.total ? Math.floor(T.found / T.total * 100) : 0;
+  el.innerHTML = '<div class="chk-nums" style="margin-bottom:14px">'
+      + '<div class="chk-n"><b>' + T.total.toLocaleString('th-TH') + '</b><span>ควรมี</span></div>'
+      + '<div class="chk-n f"><b>' + T.found.toLocaleString('th-TH') + '</b><span>นับแล้ว</span></div>'
+      + '<div class="chk-n m"><b>' + T.miss.toLocaleString('th-TH') + '</b><span>ยังไม่พบ</span></div>'
+      + '<div class="chk-n e"><b>' + T.extra + '</b><span>แปลกปน</span></div>'
+      + '<div class="chk-n"><b>' + tp + '%</b><span>คืบหน้า</span></div>'
+      + '<div class="chk-n m"><b>' + Math.round(T.value).toLocaleString('th-TH') + '</b><span>มูลค่าที่ยังไม่พบ (บาท)</span></div>'
+    + '</div>'
+    + (pending ? '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">ยังโหลดไม่ครบ ' + pending + ' โซน — ตัวเลขรวมจะเพิ่มเมื่อโหลดเสร็จ</div>' : '')
+    + '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto">'
+    + '<table><thead><tr><th>โซน</th><th>ควรมี</th><th>นับแล้ว</th><th>ยังไม่พบ</th><th>แปลกปน</th><th>คืบหน้า</th><th>มูลค่าที่ยังไม่พบ</th></tr></thead>'
+    + '<tbody>' + (rows || '<tr><td colspan="7" style="color:var(--muted)">รอบนี้ยังไม่มีข้อมูลโซน</td></tr>') + '</tbody></table></div>'
+    + '<div style="font-size:11px;color:var(--muted);margin-top:8px">คลิกแถวเพื่อไปที่โซนนั้น</div>';
+
+  document.getElementById('sumActs').innerHTML = (open
+      ? '<button class="btn btn-danger btn-sm" onclick="closeSummary();doCloseRound()">&#128274; ปิดรอบ</button>'
+      : '<button class="btn btn-ghost btn-sm" onclick="closeSummary();doReopenRound()">เปิดรอบใหม่</button>')
+    + '<button class="btn btn-ghost btn-sm" onclick="openRoundFile()">&#128196; เปิดไฟล์รอบ</button>'
+    + '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeSummary()">ปิด</button>';
+}
+
+// Event delegation
+document.getElementById('boxList').addEventListener('click', function(e) {
+  if (curMode !== 'chk') return;
+  var g = e.target.closest('[data-grp]');
+  if (g) selectGroup(g.dataset.grp);
+});
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden && curMode === 'chk' && _chkQueue.length) flushQueue(false);
+});
 
 function fmtTime(v) {
   if (!v) return '';
@@ -4604,99 +5587,6 @@ function fmtTime(v) {
 }
 
 // ---- รอบ ----
-async function loadRounds() {
-  var res = await api({ action: 'getStockRounds' });
-  if (!res || res.error) throw new Error((res && res.error) || 'โหลดรอบไม่สำเร็จ');
-  _rounds = res.rounds || [];
-  window._nextRoundId = res.next_round_id;
-
-  var sel = document.getElementById('rndSel');
-  sel.innerHTML = '<option value="">-- เลือกรอบ --</option>'
-    + _rounds.map(function(r) {
-        return '<option value="' + r.round_id + '">' + r.round_id + ' · ' + (r.round_name || '')
-          + (String(r.status).trim() === 'closed' ? ' (ปิดแล้ว)' : '') + '</option>';
-      }).join('');
-
-  var open = _rounds.find(function(r){ return String(r.status).trim() !== 'closed'; });
-  if (open) { sel.value = open.round_id; curRound = open; }
-  return curRound;
-}
-
-function onRoundChange() {
-  var id = document.getElementById('rndSel').value;
-  curRound = id ? _rounds.find(function(x){ return x.round_id === id; }) : null;
-  _snapMap = {}; _snapArr = []; _chkSet = {}; _chkExtra = {};
-  _chkQueue = []; _chkCursor = 1; _grpSel = null;
-  if (curRound && _chkZone) loadZoneData();
-  else { renderChkList(); renderChkMain(); }
-}
-
-// โหลด snapshot + log ของโซนที่เลือก
-async function loadZoneData() {
-  if (!curRound || !_chkZone) return;
-  var tok = ++_navToken;
-  _snapMap = {}; _snapArr = []; _chkSet = {}; _chkExtra = {}; _chkCursor = 1;
-
-  var ready = String(curRound.zones_ready || '').split(',')
-                .map(function(s){ return s.trim(); }).filter(Boolean);
-  if (ready.indexOf(_chkZone) === -1) {
-    document.getElementById('tblWrap').innerHTML =
-      '<div class="empty-state"><p style="color:var(--yellow)">รอบนี้ยังไม่มีข้อมูลโซน ' + _chkZone + '</p></div>';
-    renderChkList();
-    return;
-  }
-
-  try {
-    var off = 0, guard = 0;
-    while (guard++ < 20) {
-      setStatus('dim', 'โหลด ' + _chkZone + ' — ' + off.toLocaleString('th-TH') + ' รายการ...');
-      var res = await api({ action: 'getRoundSnapshot', round_id: curRound.round_id,
-                            zone: _chkZone, offset: off, limit: 20000 });
-      if (tok !== _navToken) return;
-      if (!res || res.error) throw new Error((res && res.error) || 'โหลด snapshot ไม่สำเร็จ');
-      (res.rows || []).forEach(function(r) {
-        _snapMap[r.sn] = r;
-        _snapArr.push(r);
-      });
-      if (res.done) break;
-      off = res.next_offset;
-    }
-
-    setStatus('dim', 'โหลดผลนับ...');
-    var lg = await api({ action: 'getStockLog', round_id: curRound.round_id,
-                         zone: _chkZone, after_row: 1 });
-    if (tok !== _navToken) return;
-    if (lg && lg.rows) applyLog(lg.rows, lg.last_row, true);
-
-    setStatus('ok', 'โซน ' + _chkZone + ' | ' + _snapArr.length.toLocaleString('th-TH')
-                    + ' SN · นับแล้ว ' + Object.keys(_chkSet).length.toLocaleString('th-TH'));
-  } catch (e) {
-    if (tok !== _navToken) return;
-    setStatus('err', e.message);
-    showToast('โหลดข้อมูลไม่สำเร็จ: ' + e.message, 'err');
-  }
-  renderChkList(); renderChkMain();
-}
-
-function applyLog(rows, lastRow, silent) {
-  var n = 0;
-  (rows || []).forEach(function(r) {
-    var sn = String(r.sn || '').trim();
-    if (!sn) return;
-    if (String(r.status).trim() === 'extra') { _chkExtra[sn] = true; return; }
-    if (!_chkSet[sn]) {
-      _chkSet[sn] = { at: r.counted_at, by: r.counted_by, fresh: !silent };
-      n++;
-    }
-  });
-  if (lastRow) _chkCursor = lastRow;
-  if (n && !silent) {
-    setTimeout(function() {
-      Object.keys(_chkSet).forEach(function(k){ _chkSet[k].fresh = false; });
-    }, 2500);
-  }
-  return n;
-}
 
 function openNewRound() {
   document.getElementById('rndNextId').textContent = window._nextRoundId || '--';
@@ -4760,10 +5650,11 @@ async function doCreateRound() {
     closeNewRound();
 
     await loadRounds();
+    curRound = _rounds.find(function(x){ return x.round_id === rid; }) || curRound;
     document.getElementById('rndSel').value = rid;
-    curRound = _rounds.find(function(x){ return x.round_id === rid; });
-    if (_chkZone) await loadZoneData();
-    else { renderChkList(); renderChkMain(); }
+    resetChkAll();
+    if (_chkZone) await selectChkZone(_chkZone);
+    else chkRender();
   } catch (e) {
     prog(0, 'ล้มเหลว');
     showToast('สร้างรอบไม่สำเร็จ: ' + e.message, 'err');
@@ -4793,8 +5684,8 @@ async function doCloseRound() {
               + ' ชิ้น มูลค่า ' + Math.round(res.missing_value).toLocaleString('th-TH') + ' บาท', 'ok');
     await loadRounds();
     document.getElementById('rndSel').value = res.round_id;
-    curRound = _rounds.find(function(x){ return x.round_id === res.round_id; });
-    renderChkMain();
+    curRound = _rounds.find(function(x){ return x.round_id === res.round_id; }) || curRound;
+    chkRender();
   } catch (e) {
     clearInterval(tick); hidePrintProgress();
     showToast('ปิดรอบไม่สำเร็จ: ' + e.message, 'err');
@@ -4811,8 +5702,8 @@ async function doReopenRound() {
     var id = curRound.round_id;
     await loadRounds();
     document.getElementById('rndSel').value = id;
-    curRound = _rounds.find(function(x){ return x.round_id === id; });
-    renderChkMain();
+    curRound = _rounds.find(function(x){ return x.round_id === id; }) || curRound;
+    chkRender();
   } catch (e) {
     showToast('เปิดรอบไม่สำเร็จ: ' + e.message, 'err');
   }
@@ -4824,115 +5715,161 @@ function openRoundFile() {
 }
 
 // ---- สแกน ----
-function doStockScan(sn) {
-  if (!curRound)  { showSNErr('ยังไม่ได้เลือกรอบนับ', sn); return; }
-  if (!_chkZone)  { showSNErr('ยังไม่ได้เลือกโซน', sn); return; }
-  if (String(curRound.status).trim() === 'closed') {
-    showSNErr('รอบนี้ปิดแล้ว บันทึกเพิ่มไม่ได้', sn); return;
-  }
-  sn = String(sn).trim();
 
-  if (_chkSet[sn] || _chkExtra[sn]) {
-    playErrorSound();
-    flashError(sn, 'SN นี้นับไปแล้ว — ไม่ต้องนับซ้ำ');
-    clearSN();
-    return;
-  }
-
-  var row = _snapMap[sn];
-  if (!row) {
-    _chkExtra[sn] = true;
-    _chkQueue.push({ sn: sn, status: 'extra' });
-    saveChkQueue();
-    showSNErr('ไม่มีใน Data SN โซน ' + _chkZone + ' — บันทึกเป็นของแปลกปน', sn);
-    renderChkMain();
-    return;
-  }
-
-  var gKey = _grpBy === 'code' ? row.code : row.zone;
-  if (_grpSel && gKey !== _grpSel) {
-    playErrorSound();
-    flashError(sn, 'SN นี้อยู่กลุ่ม ' + gKey + ' ไม่ใช่ ' + _grpSel + ' — บันทึกให้แล้ว');
-  }
-
-  _chkSet[sn] = { at: new Date().toLocaleTimeString('th-TH'), by: '', fresh: false };
-  _chkQueue.push({ sn: sn, status: 'found' });
-  saveChkQueue();
-
-  clearSN();
-  renderChkList(); renderChkMain();
-  if (_chkQueue.length >= 25) flushQueue();
+function normSN(v) {
+  var s = String(v == null ? '' : v).trim().replace(/^'/, '');
+  if (/^[0-9]{1,9}$/.test(s)) s = ('0000000000' + s).slice(-10);
+  return s;
 }
 
-// ---- คิว ----
-function saveChkQueue() {
-  try {
-    if (curRound && _chkZone && _chkQueue.length) {
-      localStorage.setItem('chk_q', JSON.stringify({
-        round: curRound.round_id, zone: _chkZone, rows: _chkQueue
-      }));
-    } else localStorage.removeItem('chk_q');
-  } catch (e) {}
-}
+var _chkFocusSN = null;   // SN ที่ต้องดันขึ้นบนสุดของตาราง
 
-async function flushQueue(force) {
-  if (_chkBusy || !curRound || !_chkZone) return;
-  if (!force && !_chkQueue.length) return;
-  _chkBusy = true;
-  var batch = _chkQueue.splice(0, _chkQueue.length);
-  try {
-    var res = await api({ action: 'pushStockLog', round_id: curRound.round_id,
-                          zone: _chkZone, after_row: _chkCursor, rows: batch }, 'POST');
-    if (!res || res.error) throw new Error((res && res.error) || 'ไม่มีการตอบกลับ');
-    saveChkQueue();
-    var n = applyLog(res.rows, res.last_row, false);
-    if (res.dup && res.dup.length) {
-      playErrorSound();
-      showToast('⚠ ' + res.dup.length + ' SN ซ้ำกับที่คนอื่นนับแล้ว', 'err');
+function searchChk(q) {
+  q = String(q || '').trim().toLowerCase();
+  if (q.length < 2 || !_snapArr.length) return null;
+
+  var res = { sn: [], code: {}, zone: {}, extra: [] };
+
+  _snapArr.forEach(function(r) {
+    var done = !!_chkSet[r.sn];
+    if (r.sn.toLowerCase().indexOf(q) !== -1 && res.sn.length < 40) {
+      res.sn.push({ row: r, done: done });
     }
-    if (n) { renderChkList(); renderChkMain(); }
-  } catch (e) {
-    _chkQueue = batch.concat(_chkQueue);
-    saveChkQueue();
-    showToast('บันทึกไม่สำเร็จ: ' + e.message + ' (จะลองใหม่)', 'err');
-  } finally {
-    _chkBusy = false;
-  }
+    if (r.code && (r.code.toLowerCase().indexOf(q) !== -1
+                   || String(r.shortname || '').toLowerCase().indexOf(q) !== -1)) {
+      var c = res.code[r.code] || (res.code[r.code] = { code: r.code, name: r.shortname, zone: r.zone, total: 0, done: 0, value: 0 });
+      c.total++;
+      if (done) c.done++; else c.value += r.cost || 0;
+    }
+    if (r.zone && r.zone.toLowerCase().indexOf(q) !== -1) {
+      var z = res.zone[r.zone] || (res.zone[r.zone] = { zone: r.zone, total: 0, done: 0, value: 0 });
+      z.total++;
+      if (done) z.done++; else z.value += r.cost || 0;
+    }
+  });
+
+  Object.keys(_chkExtra).forEach(function(sn) {
+    if (sn.toLowerCase().indexOf(q) !== -1) res.extra.push(sn);
+  });
+
+  res.code = Object.keys(res.code).map(function(k){ return res.code[k]; })
+               .sort(function(a, b){ return (b.total - b.done) - (a.total - a.done); }).slice(0, 25);
+  res.zone = Object.keys(res.zone).map(function(k){ return res.zone[k]; })
+               .sort(function(a, b){ return a.zone.localeCompare(b.zone); }).slice(0, 20);
+  return res;
 }
 
-// ---- เลือกโซน ----
-async function selectChkZone(z) {
-  _chkZone = z; _grpSel = null;
-  document.querySelectorAll('#chkZoneTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
-  var tab = document.getElementById('ctab_' + z);
-  if (tab) tab.classList.add('active');
-
-  document.getElementById('snInputArea').style.display = '';
-  document.getElementById('snTableArea').style.display = '';
-  document.getElementById('defaultEmpty').style.display = 'none';
-  document.getElementById('snTableLbl').textContent = 'สรุปการนับ';
-
-  if (!curRound) {
-    showToast('เลือกรอบนับก่อน', 'err');
-    renderChkList(); renderChkMain();
+function renderChkSearch(r, q) {
+  var panel = document.getElementById('searchPanel');
+  _searchHits = []; _srCursor = -1;
+  if (!r) {
+    if (!_snapArr.length) {
+      panel.innerHTML = '<div class="sr-empty">ยังไม่ได้โหลดข้อมูลโซน — เลือกรอบและโซนก่อน</div>';
+      panel.classList.add('open');
+    } else closeSearchPanel();
     return;
   }
 
-  document.getElementById('boxList').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
-  document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><span class="spin"></span></div>';
-  await loadZoneData();
+  function zTag(z) {
+    return z ? '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>' : '';
+  }
+  function prog(g) {
+    var full = g.done >= g.total;
+    return '<span class="sr-cnt"' + (full ? ' style="color:var(--green);background:rgba(52,211,153,.15)"' : '') + '>'
+      + g.done + '/' + g.total + (full ? ' &#10003;' : '') + '</span>'
+      + (g.value ? '<span class="sr-tag sr-dup">' + Math.round(g.value).toLocaleString('th-TH') + ' ฿</span>' : '');
+  }
+
+  var html = '';
+
+  if (r.sn.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">SN <b>' + r.sn.length + '</b></div>';
+    r.sn.forEach(function(s) {
+      var key = _grpBy === 'code' ? s.row.code : s.row.zone;
+      _searchHits.push({ kind: 'grp', key: key, sn: s.row.sn, done: s.done });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono">' + s.row.sn + '</span>'
+        + zTag(s.row.zone)
+        + '<span class="sr-name">' + (s.row.shortname || s.row.code || '') + '</span>'
+        + (s.done ? '<span class="sr-tag sr-in">&#10003; นับแล้ว</span>'
+                  : '<span class="sr-tag sr-free">ยังไม่นับ</span>')
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (r.code.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Code / ชื่อสินค้า <b>' + r.code.length + '</b></div>';
+    r.code.forEach(function(c) {
+      _searchHits.push({ kind: 'grp', by: 'code', key: c.code });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono">' + c.code + '</span>'
+        + zTag(c.zone)
+        + '<span class="sr-name">' + (c.name || '') + '</span>'
+        + prog(c) + '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (r.zone.length) {
+    html += '<div class="sr-group"><div class="sr-glbl">Zone <b>' + r.zone.length + '</b></div>';
+    r.zone.forEach(function(z) {
+      _searchHits.push({ kind: 'grp', by: 'zone', key: z.zone });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono" style="color:var(--accent2)">' + z.zone + '</span>'
+        + '<span class="sr-name"></span>'
+        + prog(z) + '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (r.extra.length) {
+    html += '<div class="sr-group"><div class="sr-glbl" style="color:var(--yellow)">&#9888; แปลกปน <b>' + r.extra.length + '</b></div>';
+    r.extra.forEach(function(sn) {
+      _searchHits.push({ kind: 'extra', sn: sn });
+      html += '<div class="sr-item" data-hit="' + (_searchHits.length - 1) + '">'
+        + '<span class="sr-mono" style="color:var(--yellow)">' + sn + '</span>'
+        + '<span class="sr-name">ไม่มีใน Data SN โซน ' + _chkZone + '</span>'
+        + '<span class="sr-tag sr-dup">ดูรายการ</span></div>';
+    });
+    html += '</div>';
+  }
+
+  if (!html) html = '<div class="sr-empty">ไม่พบ "' + q + '" ในโซน ' + _chkZone + '</div>';
+  else html += '<div class="sr-hint"><kbd>Enter</kbd> ไปรายการแรก · <kbd>&#8593;&#8595;</kbd> เลื่อน · <kbd>Esc</kbd> ปิด</div>';
+
+  panel.innerHTML = html;
+  panel.classList.add('open');
 }
 
-// Event delegation
-document.getElementById('boxList').addEventListener('click', function(e) {
-  if (curMode !== 'chk') return;
-  var g = e.target.closest('[data-grp]');
-  if (g) selectGroup(g.dataset.grp);
-});
+// หาว่าของแปลกปนเก็บอยู่กล่องไหน — ใช้ Global Search ที่มีอยู่
+function findExtraSN(sn) {
+  openGlobalSearch();
+  setTimeout(function() {
+    var f = document.getElementById('gsField');
+    if (f) { f.value = sn; onGsInput(); }
+  }, 300);
+}
 
-document.addEventListener('visibilitychange', function() {
-  if (document.hidden && curMode === 'chk' && _chkQueue.length) flushQueue(true);
-});
+function gotoChkHit(h) {
+  if (h.kind === 'extra') {
+    _dtTab = 'extra';
+    chkRender();
+    setTimeout(function(){ highlightSN(h.sn); }, 100);
+    return;
+  }
+  if (h.by && h.by !== _grpBy) _grpBy = h.by;   // ค้นเจอ Code แต่ดูแบบ Zone อยู่ → สลับให้
+  _grpSel = h.key;
+  _dtTab  = h.sn ? (h.done ? 'done' : 'todo') : 'todo';
+  _chkFocusSN = h.sn || null;
+  chkRender();
+  var card = document.querySelector('[data-grp="' + h.key + '"]');
+  if (card) card.scrollIntoView({ block: 'nearest' });
+  if (h.sn) setTimeout(function(){ highlightSN(h.sn); }, 100);
+  var f = document.getElementById('snField');
+  if (f) f.focus();
+}
+
 // ======== END CHECK STOCK ========
 
 // ---- Toast ----
@@ -5012,6 +5949,7 @@ async function doUpload002() {
   }
 
   _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
+  _stashGen++; _snStash = {}; _setStash = {}; markTabsCached();
 
   window._uploading = false;
   document.getElementById('btnUploadConfirm').style.display = '';
