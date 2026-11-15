@@ -18,14 +18,24 @@
   --yellow:  #fbbf24;
   --text:    #e2e6f0;
   --muted:   #6b7280;
+  --fs: 1.15;            /* ขนาดฟอนต์รวมทั้งแอป — 1 = ขนาดเดิม, 1.3 = ใหญ่ขึ้น 30% */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 /* Header */
-.hdr{height:50px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:14px;flex-shrink:0}
-.logo{font-size:15px;font-weight:800}.logo b{color:var(--accent)}
-.pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;margin-left:auto}
+body.bars-off .hdr,body.bars-off .zone-bar{display:none!important}
+.bars-btn{position:fixed;top:0;right:0;z-index:300;border:none;cursor:pointer;
+  background:var(--card2);color:var(--muted);font-size:calc(11px*var(--fs));font-weight:700;
+  padding:3px 10px;border-radius:0 0 0 8px;border-left:1px solid var(--border);
+  border-bottom:1px solid var(--border);opacity:.75;font-family:inherit}
+.bars-btn:hover{opacity:1;color:var(--accent)}
+body.bars-off .bars-btn{background:var(--accent);color:#fff;opacity:.9}
+@media print{.bars-btn{display:none!important}}
+.hdr{height:50px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 128px 0 18px;gap:14px;flex-shrink:0}
+body.bars-off .right-top{padding-right:128px}
+.logo{font-size:calc(15px*var(--fs));font-weight:800}.logo b{color:var(--accent)}
+.pill{font-size:calc(11px*var(--fs));font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;margin-left:auto}
 .p-ok{background:rgba(52,211,153,.15);color:var(--green)}
 .p-err{background:rgba(248,113,113,.15);color:var(--red)}
 .p-dim{background:rgba(107,114,128,.12);color:var(--muted)}
@@ -33,7 +43,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',san
 /* Zone Bar */
 .zone-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
 .ztabs{display:flex;gap:5px;background:var(--card);padding:4px;border-radius:10px;border:1px solid var(--border)}
-.ztab{padding:6px 22px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:.15s;letter-spacing:.5px}
+.ztab{padding:6px 22px;border-radius:7px;font-size:calc(14px*var(--fs));font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:.15s;letter-spacing:.5px}
 .ztab:hover{color:var(--text);background:var(--card2)}
 .ztab.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(91,141,238,.4)}
 .zone-bar .search-wrap{margin-left:auto}
@@ -45,7 +55,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',san
 /* LEFT */
 .left{width:270px;min-width:270px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .left-hdr{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.left-title{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
+.left-title{font-size:calc(10px*var(--fs));font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
 .box-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px}
 
 /* Box Card */
@@ -54,33 +64,36 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',san
 .bcard.sel{border-color:var(--accent);background:rgba(91,141,238,.08)}
 .bcard.sel::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);border-radius:3px 0 0 3px}
 .bcard-head{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.bcard-id{font-size:15px;font-weight:900;color:var(--accent)}
-.bcard-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px}
+.bcard-id{font-size:calc(15px*var(--fs));font-weight:900;color:var(--accent)}
+.bcard-badge{font-size:calc(10px*var(--fs));font-weight:700;padding:1px 7px;border-radius:4px}
 .badge-single{background:rgba(52,211,153,.15);color:var(--green)}
 .badge-multi{background:rgba(251,191,36,.15);color:var(--yellow)}
-.bcard-count{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(91,141,238,.15);color:var(--accent)}
+.bcard-count{margin-left:auto;font-size:calc(10px*var(--fs));font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(91,141,238,.15);color:var(--accent)}
 .bcard-info{display:flex;flex-direction:column;gap:2px}
-.binfo-row{display:flex;gap:6px;font-size:11px;align-items:baseline}
+.binfo-row{display:flex;gap:6px;font-size:calc(11px*var(--fs));align-items:baseline}
 .binfo-lbl{color:var(--muted);min-width:38px;font-weight:600;flex-shrink:0}
 .binfo-val{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bcard-del{position:absolute;top:7px;right:7px;opacity:0;transition:.15s;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red);border-radius:5px;padding:1px 7px;font-size:11px;cursor:pointer}
+.bcard-del{position:absolute;top:7px;right:7px;opacity:0;transition:.15s;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red);border-radius:5px;padding:1px 7px;font-size:calc(11px*var(--fs));cursor:pointer}
 .bcard:hover .bcard-del{opacity:1}
-.bcard-name{font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.bcard-idsm{font-size:11px;font-weight:700;font-family:'Courier New',monospace;color:var(--accent);background:rgba(91,141,238,.12);padding:1px 6px;border-radius:4px;flex-shrink:0}
+.bcard-name{font-size:calc(13px*var(--fs));font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.bcard-idsm{font-size:calc(11px*var(--fs));font-weight:700;font-family:'Courier New',monospace;color:var(--accent);background:rgba(91,141,238,.12);padding:1px 6px;border-radius:4px;flex-shrink:0}
 .left-foot{padding:8px 10px;border-top:1px solid var(--border);flex-shrink:0}
 
 /* RIGHT */
 .right{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .right-top{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-.right-title{font-size:14px;font-weight:800}
-.right-sub{font-size:12px;color:var(--muted)}
+.right-title{font-size:calc(14px*var(--fs));font-weight:800}
+.right-sub{font-size:calc(12px*var(--fs));color:var(--muted)}
 .right-actions{margin-left:auto;display:flex;gap:7px}
 .right-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+/* ช่องสแกนติดอยู่บนสุดเสมอ — เลื่อนดูรายการแล้วยังยิงต่อได้ */
+#snInputArea{position:sticky;top:-14px;z-index:20;background:var(--bg);
+  padding:14px 0 10px;margin:-14px 0 0;box-shadow:0 10px 12px -10px rgba(0,0,0,.65)}
 
 /* SN Input */
 .sn-block{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .sn-row{display:flex;gap:8px;align-items:center}
-.sn-field{flex:1;background:var(--card2);border:2px solid var(--border);color:var(--text);padding:10px 14px;border-radius:9px;font-size:15px;font-family:'Courier New',monospace;font-weight:700;outline:none;letter-spacing:.5px;transition:.2s}
+.sn-field{flex:1;background:var(--card2);border:2px solid var(--border);color:var(--text);padding:10px 14px;border-radius:9px;font-size:calc(15px*var(--fs));font-family:'Courier New',monospace;font-weight:700;outline:none;letter-spacing:.5px;transition:.2s}
 .sn-field:focus{border-color:var(--accent)}
 .sn-field.found{border-color:var(--green)}
 .sn-field.notfound{border-color:var(--red)}
@@ -88,30 +101,30 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Sarabun',san
 .sn-result.show-ok{display:block;border-color:rgba(52,211,153,.35)}
 .sn-result.show-err{display:block;border-color:rgba(248,113,113,.35)}
 .sn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.sn-gi label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:2px}
-.sn-gi span{font-size:13px;font-weight:600;color:var(--text)}
-.sn-err-msg{font-size:13px;color:var(--red);font-weight:600}
+.sn-gi label{font-size:calc(10px*var(--fs));font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:2px}
+.sn-gi span{font-size:calc(13px*var(--fs));font-weight:600;color:var(--text)}
+.sn-err-msg{font-size:calc(13px*var(--fs));color:var(--red);font-weight:600}
 
 /* Table */
 .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+table{width:100%;border-collapse:collapse;font-size:calc(13px*var(--fs));min-width:500px}
 thead{background:var(--surface);position:sticky;top:0;z-index:5}
-th{padding:8px 13px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap}
+th{padding:8px 13px;text-align:left;font-size:calc(10px*var(--fs));font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap}
 td{padding:8px 13px;border-top:1px solid var(--border);vertical-align:middle}
 tr:hover td{background:rgba(91,141,238,.04)}
-.mono{font-family:'Courier New',monospace;font-weight:700;color:var(--accent);font-size:12px}
+.mono{font-family:'Courier New',monospace;font-weight:700;color:var(--accent);font-size:calc(12px*var(--fs))}
 .cost-v{font-weight:700;color:var(--green)}
-.zone-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(124,92,252,.15);color:var(--accent2)}
-.row-n{color:var(--muted);font-size:11px}
+.zone-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:calc(11px*var(--fs));font-weight:700;background:rgba(124,92,252,.15);color:var(--accent2)}
+.row-n{color:var(--muted);font-size:calc(11px*var(--fs))}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:.15s;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;font-size:calc(12px*var(--fs));font-weight:700;cursor:pointer;border:none;transition:.15s;white-space:nowrap}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.85}
 .btn-ghost{background:var(--card2);border:1px solid var(--border);color:var(--text)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
 .btn-print{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff}.btn-print:hover{opacity:.85}
 .btn-danger{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.25);color:var(--red)}.btn-danger:hover{background:rgba(248,113,113,.22)}
-.btn-xs{padding:3px 9px;font-size:11px;border-radius:6px}
+.btn-xs{padding:3px 9px;font-size:calc(11px*var(--fs));border-radius:6px}
 .btn-full{width:100%;justify-content:center}
 .btn-sm{padding:5px 12px}
 
@@ -119,26 +132,46 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .spin{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
-.empty-ico{font-size:32px;margin-bottom:8px}
-.sec-lbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
+.empty-ico{font-size:calc(32px*var(--fs));margin-bottom:8px}
+.sec-lbl{font-size:calc(10px*var(--fs));font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
 
 /* Modal */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center}
 .overlay.open{display:flex}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:400px;max-width:95vw}
-.modal h3{font-size:16px;font-weight:800;margin-bottom:4px}
-.modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+.modal h3{font-size:calc(16px*var(--fs));font-weight:800;margin-bottom:4px}
+.modal-sub{font-size:calc(12px*var(--fs));color:var(--muted);margin-bottom:18px}
 .fg{margin-bottom:12px}
-.fg label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;display:block;margin-bottom:4px;text-transform:uppercase}
-.fg input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13px;outline:none;transition:.15s}
+.fg label{font-size:calc(10px*var(--fs));font-weight:700;color:var(--muted);letter-spacing:.8px;display:block;margin-bottom:4px;text-transform:uppercase}
+.fg input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:calc(13px*var(--fs));outline:none;transition:.15s}
 .fg input:focus{border-color:var(--accent)}
 .type-row{display:flex;gap:8px;margin-bottom:14px}
-.ttype{flex:1;padding:10px 8px;border-radius:9px;border:2px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;text-align:center;transition:.15s;line-height:1.5}
+.ttype{flex:1;padding:10px 8px;border-radius:9px;border:2px solid var(--border);background:var(--card);color:var(--muted);font-size:calc(12px*var(--fs));font-weight:700;cursor:pointer;text-align:center;transition:.15s;line-height:1.5}
 .ttype:hover{border-color:var(--muted);color:var(--text)}
 .ttype.sel-s{border-color:var(--green);background:rgba(52,211,153,.08);color:var(--green)}
 .ttype.sel-m{border-color:var(--yellow);background:rgba(251,191,36,.08);color:var(--yellow)}
-.next-id{background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:var(--accent);padding:6px 12px;border-radius:8px;font-size:14px;font-family:monospace;font-weight:800;text-align:center;margin-bottom:14px;letter-spacing:1px}
-.name-preview{padding:8px 11px;border-radius:7px;font-size:13px;font-weight:600;margin-top:5px;display:none}
+/* ===== สรุปข้อมูล Code ในหน้าสร้าง Box ===== */
+.code-sum{display:none;margin-top:9px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 11px}
+.code-sum.on{display:block}
+.cs-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.cs-head .c{font-family:monospace;font-size:calc(14px*var(--fs));font-weight:800;color:var(--accent);letter-spacing:1px}
+.cs-head .nm{font-size:calc(14px*var(--fs));font-weight:700;color:var(--text)}
+.cs-sub{font-size:calc(11px*var(--fs));color:var(--muted);margin-top:2px}
+.cs-zone{font-size:calc(11px*var(--fs));font-weight:700;color:var(--green);background:rgba(52,211,153,.14);border-radius:5px;padding:2px 7px}
+.cs-row{display:flex;gap:7px;margin-top:9px}
+.cs-n{flex:1;text-align:center;background:rgba(255,255,255,.035);border-radius:7px;padding:6px 4px}
+.cs-n b{display:block;font-size:calc(17px*var(--fs));font-weight:900;line-height:1.15;font-variant-numeric:tabular-nums}
+.cs-n span{display:block;font-size:calc(10px*var(--fs));color:var(--muted);margin-top:2px}
+.cs-n.g b{color:var(--green)}
+.cs-n.y b{color:var(--yellow)}
+.cs-line{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:calc(11px*var(--fs));color:var(--muted);margin-top:7px}
+.cs-line b{color:var(--text);font-weight:700}
+.cs-box{font-family:monospace;font-size:calc(11px*var(--fs));font-weight:700;color:var(--accent);
+  background:rgba(91,141,238,.14);border-radius:5px;padding:2px 6px}
+.ttype.off{opacity:.38;cursor:not-allowed;filter:grayscale(1)}
+.ttype.off:hover{border-color:var(--border);color:var(--muted)}
+.next-id{background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:var(--accent);padding:6px 12px;border-radius:8px;font-size:calc(14px*var(--fs));font-family:monospace;font-weight:800;text-align:center;margin-bottom:14px;letter-spacing:1px}
+.name-preview{padding:8px 11px;border-radius:7px;font-size:calc(13px*var(--fs));font-weight:600;margin-top:5px;display:none}
 .name-preview.ok{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.3);display:block}
 .name-preview.err{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3);display:block}
 .name-preview.warn{color:var(--yellow);background:rgba(251,191,36,.10);border-color:rgba(251,191,36,.35)}
@@ -149,7 +182,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .mode-btn-inactive{background:transparent!important;color:var(--muted)!important}
 
 /* Toast */
-.toast{position:fixed;bottom:20px;right:20px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:12px;font-weight:700;z-index:999;opacity:0;transform:translateY(8px);transition:.3s;pointer-events:none}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:calc(12px*var(--fs));font-weight:700;z-index:999;opacity:0;transform:translateY(8px);transition:.3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.ok{border-color:var(--green);color:var(--green)}
 .toast.err{border-color:var(--red);color:var(--red)}
@@ -179,20 +212,20 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .upload-modal{width:520px}
 .upload-drop{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:14px}
 .upload-drop:hover,.upload-drop.drag{border-color:var(--accent);background:rgba(91,141,238,.05)}
-.upload-drop-ico{font-size:32px;margin-bottom:8px}
-.upload-drop p{font-size:13px;color:var(--muted)}
+.upload-drop-ico{font-size:calc(32px*var(--fs));margin-bottom:8px}
+.upload-drop p{font-size:calc(13px*var(--fs));color:var(--muted)}
 .upload-drop b{color:var(--accent)}
-.preview-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
-.preview-table th{padding:6px 10px;background:var(--surface);color:var(--muted);text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.preview-table{width:100%;border-collapse:collapse;font-size:calc(12px*var(--fs));margin-top:10px}
+.preview-table th{padding:6px 10px;background:var(--surface);color:var(--muted);text-align:left;font-size:calc(10px*var(--fs));letter-spacing:1px;text-transform:uppercase}
 .preview-table td{padding:6px 10px;border-top:1px solid var(--border)}
 .preview-ok{color:var(--green);font-weight:700}
 .preview-err{color:var(--red);font-weight:700}
 .progress-wrap{margin-top:14px;display:none}
-.progress-label{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
+.progress-label{font-size:calc(12px*var(--fs));color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
 .progress-bar-bg{background:var(--border);border-radius:20px;height:8px;overflow:hidden}
 .progress-bar-fill{background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;border-radius:20px;transition:width .3s;width:0%}
 .progress-steps{margin-top:10px;display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto}
-.progress-step{font-size:11px;padding:3px 8px;border-radius:5px;display:flex;align-items:center;gap:6px}
+.progress-step{font-size:calc(11px*var(--fs));padding:3px 8px;border-radius:5px;display:flex;align-items:center;gap:6px}
 .step-pending{color:var(--muted)}
 .step-running{color:var(--accent);background:rgba(91,141,238,.1)}
 .step-done{color:var(--green)}
@@ -224,17 +257,17 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .kit-card.done{border-color:var(--green)}
 .kit-card.active{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(251,191,36,.10)}
 .kit-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
-.kit-seq{font-size:14px;font-weight:900;color:var(--text)}
-.kit-prog{font-size:11px;font-weight:700;color:var(--muted)}
-.kit-status{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.kit-seq{font-size:calc(14px*var(--fs));font-weight:900;color:var(--text)}
+.kit-prog{font-size:calc(11px*var(--fs));font-weight:700;color:var(--muted)}
+.kit-status{margin-left:auto;font-size:calc(10px*var(--fs));font-weight:700;padding:2px 8px;border-radius:20px}
 .kit-status.ok{background:rgba(52,211,153,.15);color:var(--green)}
 .kit-status.wait{background:rgba(251,191,36,.15);color:var(--yellow)}
-.kit-row{display:flex;align-items:center;gap:10px;padding:7px 12px;border-top:1px solid var(--border);font-size:12px}
+.kit-row{display:flex;align-items:center;gap:10px;padding:7px 12px;border-top:1px solid var(--border);font-size:calc(12px*var(--fs))}
 .kit-row:first-child{border-top:none}
 .kit-row.pending{opacity:.5}
-.kit-rcode{font-family:'Courier New',monospace;font-size:11px;font-weight:700;color:var(--accent);background:rgba(91,141,238,.12);padding:2px 7px;border-radius:4px;flex-shrink:0}
+.kit-rcode{font-family:'Courier New',monospace;font-size:calc(11px*var(--fs));font-weight:700;color:var(--accent);background:rgba(91,141,238,.12);padding:2px 7px;border-radius:4px;flex-shrink:0}
 .kit-rname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kit-wait{font-size:11px;color:var(--muted);font-style:italic}
+.kit-wait{font-size:calc(11px*var(--fs));color:var(--muted);font-style:italic}
 .kit-card.draft{border-color:var(--accent);border-style:dashed;box-shadow:0 0 0 3px rgba(91,141,238,.10)}
 .kit-card.draft .kit-head{background:rgba(91,141,238,.08)}
 @media print{.kit-card{break-inside:avoid}.kit-row .btn{display:none}}
@@ -245,11 +278,11 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .search-wrap{position:relative;display:flex;align-items:center;gap:6px;background:var(--card);
   border:1px solid var(--border);border-radius:8px;padding:0 8px;height:28px;width:280px;transition:.15s}
 .search-wrap:focus-within{border-color:var(--accent);width:340px}
-.search-ico{font-size:12px;opacity:.6;flex-shrink:0}
+.search-ico{font-size:calc(12px*var(--fs));opacity:.6;flex-shrink:0}
 .search-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);
-  font-size:12px;font-family:inherit;min-width:0}
+  font-size:calc(12px*var(--fs));font-family:inherit;min-width:0}
 .search-input::placeholder{color:var(--muted)}
-.search-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 4px;flex-shrink:0}
+.search-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:calc(11px*var(--fs));padding:2px 4px;flex-shrink:0}
 .search-clear:hover{color:var(--red)}
 
 .search-panel{display:none;position:absolute;top:34px;left:0;width:520px;max-height:70vh;overflow-y:auto;
@@ -257,31 +290,31 @@ tr:hover td{background:rgba(91,141,238,.04)}
   box-shadow:0 12px 40px rgba(0,0,0,.6);padding:6px}
 .search-panel.open{display:block}
 .sr-group{padding:6px 4px 2px}
-.sr-glbl{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;
+.sr-glbl{font-size:calc(9px*var(--fs));font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;
   padding:2px 8px;display:flex;align-items:center;gap:6px}
-.sr-glbl b{color:var(--accent);font-size:10px}
+.sr-glbl b{color:var(--accent);font-size:calc(10px*var(--fs))}
 .sr-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;cursor:pointer;transition:.1s}
 .sr-item:hover,.sr-item.cur{background:rgba(91,141,238,.12)}
-.sr-mono{font-family:'Courier New',monospace;font-weight:700;font-size:12px;color:var(--accent);flex-shrink:0}
-.sr-name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sr-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0}
+.sr-mono{font-family:'Courier New',monospace;font-weight:700;font-size:calc(12px*var(--fs));color:var(--accent);flex-shrink:0}
+.sr-name{flex:1;font-size:calc(12px*var(--fs));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-tag{font-size:calc(9px*var(--fs));font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0}
 .sr-in{background:rgba(52,211,153,.15);color:var(--green)}
 .sr-free{background:rgba(107,114,128,.18);color:var(--muted)}
 .sr-dup{background:rgba(248,113,113,.18);color:var(--red)}
-.sr-cnt{font-size:10px;font-weight:700;color:var(--accent);background:rgba(91,141,238,.15);
+.sr-cnt{font-size:calc(10px*var(--fs));font-weight:700;color:var(--accent);background:rgba(91,141,238,.15);
   padding:1px 7px;border-radius:20px;flex-shrink:0}
-.sr-sub{font-size:10px;color:var(--muted);padding:1px 9px 5px 9px;line-height:1.5}
+.sr-sub{font-size:calc(10px*var(--fs));color:var(--muted);padding:1px 9px 5px 9px;line-height:1.5}
 .sr-sub span{background:var(--card2);border-radius:4px;padding:1px 5px;margin-right:4px;display:inline-block}
-.sr-empty{padding:18px;text-align:center;font-size:12px;color:var(--muted)}
-.sr-load{padding:14px;text-align:center;font-size:12px;color:var(--muted)}
-.sr-hint{font-size:10px;color:var(--muted);padding:6px 10px;border-top:1px solid var(--border);margin-top:4px}
-.sr-hint kbd{background:var(--card2);border:1px solid var(--border);border-radius:3px;padding:0 4px;font-size:9px}
+.sr-empty{padding:18px;text-align:center;font-size:calc(12px*var(--fs));color:var(--muted)}
+.sr-load{padding:14px;text-align:center;font-size:calc(12px*var(--fs));color:var(--muted)}
+.sr-hint{font-size:calc(10px*var(--fs));color:var(--muted);padding:6px 10px;border-top:1px solid var(--border);margin-top:4px}
+.sr-hint kbd{background:var(--card2);border:1px solid var(--border);border-radius:3px;padding:0 4px;font-size:calc(9px*var(--fs))}
 
 .filter-chip{display:flex;align-items:center;gap:6px;background:rgba(91,141,238,.12);
-  border:1px solid rgba(91,141,238,.35);border-radius:8px;padding:6px 10px;margin-bottom:5px;font-size:11px}
+  border:1px solid rgba(91,141,238,.35);border-radius:8px;padding:6px 10px;margin-bottom:5px;font-size:calc(11px*var(--fs))}
 .filter-chip b{color:var(--accent)}
-.filter-chip button{margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:12px}
-.idx-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;
+.filter-chip button{margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:calc(12px*var(--fs))}
+.idx-badge{font-size:calc(9px*var(--fs));font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap;
   background:rgba(107,114,128,.15);color:var(--muted);flex-shrink:0}
 .idx-badge.ready{background:rgba(52,211,153,.15);color:var(--green)}
 .idx-badge.load{background:rgba(91,141,238,.15);color:var(--accent)}
@@ -292,10 +325,10 @@ tr:hover td{background:rgba(91,141,238,.04)}
   border-radius:8px;padding:2px 6px 2px 2px;height:28px}
 .ar-wrap .btn{height:22px;padding:0 9px}
 .ar-sep{width:1px;height:16px;background:var(--border);flex-shrink:0}
-.ar-sel{background:transparent;border:none;color:var(--muted);font-size:11px;font-family:inherit;
+.ar-sel{background:transparent;border:none;color:var(--muted);font-size:calc(11px*var(--fs));font-family:inherit;
   font-weight:700;outline:none;cursor:pointer;padding:2px 0}
 .ar-sel option{background:var(--card);color:var(--text)}
-.ar-count{font-size:11px;font-weight:700;font-family:'Courier New',monospace;color:var(--muted);
+.ar-count{font-size:calc(11px*var(--fs));font-weight:700;font-family:'Courier New',monospace;color:var(--muted);
   min-width:40px;text-align:center;letter-spacing:.5px}
 .ar-count.soon{color:var(--yellow)}
 .ar-count.run{color:var(--accent)}
@@ -303,7 +336,7 @@ tr:hover td{background:rgba(91,141,238,.04)}
 
 /* ===== GLOBAL SEARCH ===== */
 .gs-modal{width:680px;max-width:96vw}
-.gs-state{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;
+.gs-state{font-size:calc(9px*var(--fs));font-weight:700;padding:2px 8px;border-radius:20px;
   background:rgba(107,114,128,.15);color:var(--muted);white-space:nowrap}
 .gs-state.ready{background:rgba(52,211,153,.15);color:var(--green)}
 .gs-state.load{background:rgba(91,141,238,.15);color:var(--accent)}
@@ -312,25 +345,25 @@ tr:hover td{background:rgba(91,141,238,.04)}
   border:2px solid var(--border);border-radius:10px;padding:0 12px;height:42px;margin-bottom:10px}
 .gs-inputwrap:focus-within{border-color:var(--accent)}
 .gs-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);
-  font-size:15px;font-family:'Courier New',monospace;font-weight:700;min-width:0}
+  font-size:calc(15px*var(--fs));font-family:'Courier New',monospace;font-weight:700;min-width:0}
 .gs-input::placeholder{font-family:'Segoe UI','Sarabun',sans-serif;font-weight:400;
-  font-size:13px;color:var(--muted)}
+  font-size:calc(13px*var(--fs));color:var(--muted)}
 .gs-results{max-height:56vh;overflow-y:auto;background:var(--card);
   border:1px solid var(--border);border-radius:10px;padding:6px}
-.gs-scope{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;flex-shrink:0}
+.gs-scope{font-size:calc(9px*var(--fs));font-weight:700;padding:1px 6px;border-radius:4px;flex-shrink:0}
 .gs-scope.sn{background:rgba(52,211,153,.15);color:var(--green)}
 .gs-scope.set{background:rgba(124,92,252,.18);color:var(--accent2)}
-.gs-prog{padding:20px;text-align:center;font-size:12px;color:var(--muted)}
+.gs-prog{padding:20px;text-align:center;font-size:calc(12px*var(--fs));color:var(--muted)}
 .gs-bar{background:var(--border);border-radius:20px;height:6px;overflow:hidden;margin-top:10px}
 .gs-bar div{background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;
   border-radius:20px;transition:width .3s}
 
 .sr-toggle{display:flex;align-items:center;gap:8px;padding:8px 10px;margin-top:4px;
-  border-top:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--muted);
+  border-top:1px solid var(--border);cursor:pointer;font-size:calc(11px*var(--fs));color:var(--muted);
   user-select:none;transition:.1s}
 .sr-toggle:hover{color:var(--text)}
 .sr-toggle b{color:var(--accent);font-weight:700}
-.sr-toggle .sr-caret{margin-left:auto;font-size:9px;transition:transform .15s}
+.sr-toggle .sr-caret{margin-left:auto;font-size:calc(9px*var(--fs));transition:transform .15s}
 .sr-toggle.open .sr-caret{transform:rotate(180deg)}
 
 /* ===== ERROR FLASH ===== */
@@ -348,13 +381,13 @@ tr:hover td{background:rgba(91,141,238,.04)}
   60%{transform:translateX(-7px)}
   80%{transform:translateX(7px)}
 }
-.err-ico{font-size:46px;line-height:1;margin-bottom:10px}
-.err-sn{font-family:'Courier New',monospace;font-size:30px;font-weight:900;color:var(--red);
+.err-ico{font-size:calc(46px*var(--fs));line-height:1;margin-bottom:10px}
+.err-sn{font-family:'Courier New',monospace;font-size:calc(30px*var(--fs));font-weight:900;color:var(--red);
   letter-spacing:2px;margin-bottom:8px}
-.err-msg{font-size:17px;font-weight:700;color:var(--text);line-height:1.5}
-.err-hint{font-size:12px;color:var(--muted);margin-top:12px}
+.err-msg{font-size:calc(17px*var(--fs));font-weight:700;color:var(--text);line-height:1.5}
+.err-hint{font-size:calc(12px*var(--fs));color:var(--muted);margin-top:12px}
 .err-btns{display:flex;gap:10px;justify-content:center;margin-top:18px}
-.err-btn{border:none;border-radius:10px;padding:11px 30px;font-size:14px;font-weight:800;
+.err-btn{border:none;border-radius:10px;padding:11px 30px;font-size:calc(14px*var(--fs));font-weight:800;
   cursor:pointer;font-family:inherit;transition:.15s}
 .err-btn:active{transform:scale(.97)}
 .err-btn-stay{background:var(--card2);border:2px solid var(--border);color:var(--muted)}
@@ -367,37 +400,37 @@ tr:hover td{background:rgba(91,141,238,.04)}
 /* ===== ERROR LOG ===== */
 .elog{background:var(--card);border:1px solid rgba(248,113,113,.35);border-radius:10px;margin-bottom:8px}
 .elog-head{display:flex;align-items:center;gap:8px;padding:7px 11px;cursor:pointer;user-select:none;
-  font-size:11px;font-weight:700;color:var(--red)}
+  font-size:calc(11px*var(--fs));font-weight:700;color:var(--red)}
 .elog-head:hover{background:rgba(248,113,113,.06)}
-.elog-cnt{background:rgba(248,113,113,.2);color:var(--red);padding:1px 7px;border-radius:20px;font-size:10px}
-.elog-clear{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px}
+.elog-cnt{background:rgba(248,113,113,.2);color:var(--red);padding:1px 7px;border-radius:20px;font-size:calc(10px*var(--fs))}
+.elog-clear{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:calc(11px*var(--fs))}
 .elog-clear:hover{color:var(--red)}
-.elog-caret{font-size:9px;transition:transform .15s}
+.elog-caret{font-size:calc(9px*var(--fs));transition:transform .15s}
 .elog.open .elog-caret{transform:rotate(180deg)}
 .elog-body{display:none;border-top:1px solid var(--border);max-height:180px;overflow-y:auto}
 .elog.open .elog-body{display:block}
-.elog-row{display:flex;align-items:center;gap:9px;padding:6px 11px;font-size:11px;
+.elog-row{display:flex;align-items:center;gap:9px;padding:6px 11px;font-size:calc(11px*var(--fs));
   border-top:1px solid rgba(255,255,255,.03)}
 .elog-row:first-child{border-top:none}
 .elog-sn{font-family:'Courier New',monospace;font-weight:700;color:var(--red);flex-shrink:0}
 .elog-why{flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.elog-t{font-size:10px;color:var(--muted);opacity:.7;flex-shrink:0}
+.elog-t{font-size:calc(10px*var(--fs));color:var(--muted);opacity:.7;flex-shrink:0}
 
 /* ===== VERIFY MODE ===== */
 .vf-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .vf-tabs{display:flex;gap:3px;background:var(--card);padding:3px;border-radius:8px;
   border:1px solid var(--border);flex-shrink:0}
-.vf-tab{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+.vf-tab{padding:5px 14px;border-radius:6px;font-size:calc(11px*var(--fs));font-weight:700;cursor:pointer;
   border:none;background:transparent;color:var(--muted);transition:.15s}
 .vf-tab:hover{color:var(--text)}
 .vf-tab.on-save{background:var(--accent);color:#fff}
 .vf-tab.on-check{background:var(--accent2);color:#fff}
-.vf-stat{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;flex-shrink:0}
+.vf-stat{display:flex;align-items:center;gap:8px;font-size:calc(11px*var(--fs));font-weight:700;flex-shrink:0}
 .vf-s{padding:2px 9px;border-radius:20px}
 .vf-s.ok{background:rgba(52,211,153,.15);color:var(--green)}
 .vf-s.wait{background:rgba(251,191,36,.15);color:var(--yellow)}
 .vf-s.bad{background:rgba(248,113,113,.15);color:var(--red)}
-.vf-reset{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 6px}
+.vf-reset{background:none;border:none;color:var(--muted);cursor:pointer;font-size:calc(11px*var(--fs));padding:2px 6px}
 .vf-reset:hover{color:var(--red)}
 
 .sn-field.checking{border-color:var(--accent2);background:rgba(124,92,252,.06)}
@@ -418,7 +451,7 @@ tr.vf-hit td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   padding:11px 13px;display:flex;flex-direction:column;gap:8px}
 .skel-line{height:10px}
 .skel-wrap{display:flex;flex-direction:column;gap:5px}
-.skel-msg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
+.skel-msg{display:flex;align-items:center;gap:8px;font-size:calc(12px*var(--fs));color:var(--muted);
   padding:4px 2px 8px}
 .skel-msg .spin{width:14px;height:14px;border-width:2px}
 .skel-tbl{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -430,13 +463,73 @@ tr.vf-hit td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 /* tab ที่อยู่ในแคชแล้ว */
 .ztab.cached::after{content:'';position:absolute;top:4px;right:6px;width:5px;height:5px;
   border-radius:50%;background:var(--green);opacity:.8}
+/* หัวข้อโหมด Check Stock: ซ้าย = ตัวตน (Zone/Code/ชื่อ) · ขวา = ตัวเลข */
+.chkhead{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.chk-ident{display:flex;flex-direction:column;gap:2px;padding-right:20px;
+  border-right:1px solid var(--border);min-width:0}
+.chk-ident .l1{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.chk-ident .l1 span{font-family:'Courier New',monospace;font-size:calc(18px*var(--fs));font-weight:900;letter-spacing:.5px}
+.chk-ident .zid{color:var(--accent2)}
+.chk-ident .cid{color:var(--accent)}
+.chk-ident .l2{font-size:calc(13px*var(--fs));font-weight:700;color:var(--text);max-width:420px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chk-ident .l2.dim{color:var(--muted);font-weight:600}
+.chkhead .chk-nums{gap:20px}
+.chkhead .chk-n b{font-size:calc(21px*var(--fs))}
+.chkhead .chk-n.txt b{font-size:calc(14px*var(--fs));font-weight:800;letter-spacing:0}
+.chkhead .chk-n.sm b{font-size:calc(12px*var(--fs));font-weight:700;color:var(--muted)}
+/* สองคอลัมน์: ซ้าย=ยังไม่นับ ขวา=นับแล้ว */
+.sncols{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;min-height:0}
+/* โหมดตารางเต็มจอ: หน้าไม่เลื่อน เลื่อนเฉพาะในคอลัมน์ */
+.right-body.fixed{overflow:hidden}
+.right-body.fixed #snTableArea{flex:1;min-height:0;display:flex;flex-direction:column}
+.right-body.fixed #tblWrap{flex:1;min-height:0;display:flex;flex-direction:column;
+  background:none;border:none;border-radius:0;overflow:visible}
+.right-body.fixed .sncols{flex:1;align-items:stretch}
+.right-body.fixed .sncol{max-height:100%}
+.right-body.fixed .sncol-b{max-height:none;flex:1}
+.sncol{background:var(--card);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;
+  display:flex;flex-direction:column;min-height:0}
+.sncol.todo{border-color:rgba(248,113,113,.30)}
+.sncol.done{border-color:rgba(52,211,153,.35)}
+.sncol-h{display:flex;align-items:center;gap:9px;padding:9px 13px;font-size:calc(12px*var(--fs));font-weight:800;
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;background:var(--surface)}
+.sncol.todo .sncol-h{color:var(--red)}
+.sncol.done .sncol-h{color:var(--green)}
+.sncol-h b{margin-left:auto;font-size:calc(15px*var(--fs));font-weight:900}
+.sncol-b{max-height:calc(100vh - 330px);min-height:170px;overflow-y:auto}
+.sn-item{display:flex;align-items:baseline;gap:10px;padding:8px 13px;border-top:1px solid rgba(255,255,255,.04)}
+.sn-item:first-child{border-top:none}
+.sn-item .n{font-size:calc(10px*var(--fs));color:var(--muted);min-width:26px;flex-shrink:0}
+.sn-item .sn{font-family:'Courier New',monospace;font-size:calc(17px*var(--fs));font-weight:800;letter-spacing:1px}
+.sncol.todo .sn-item .sn{color:var(--text)}
+.sncol.done .sn-item .sn{color:var(--green)}
+.sn-item .meta{font-size:calc(12px*var(--fs));color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-item .rt{font-size:calc(11px*var(--fs));color:var(--muted);flex-shrink:0}
+.sn-item .sn-right{margin-left:auto;display:flex;align-items:baseline;gap:7px;flex-shrink:0}
+.sn-item .dt{font-size:calc(11px*var(--fs));color:var(--muted);font-variant-numeric:tabular-nums}
+.sn-item.just{animation:snJust 1.6s ease-out}
+/* ===== AGING ===== */
+.age{display:inline-block;font-size:calc(11px*var(--fs));font-weight:800;line-height:1;padding:3px 6px;border-radius:6px;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.age.a-g{color:var(--green);background:rgba(52,211,153,.14)}
+.age.a-y{color:var(--yellow);background:rgba(251,191,36,.14)}
+.age.a-r{color:var(--red);background:rgba(248,113,113,.14)}
+.age.a-n{color:var(--muted);background:rgba(255,255,255,.05)}
+@keyframes snJust{
+  0%{transform:translateX(-26px);background:rgba(52,211,153,.35)}
+  30%{transform:translateX(0);background:rgba(52,211,153,.28)}
+  100%{background:transparent}
+}
+@media (prefers-reduced-motion:reduce){.sn-item.just{animation:none;background:rgba(52,211,153,.18)}}
+.sncol-more{padding:7px 13px;font-size:calc(11px*var(--fs));color:var(--muted);border-top:1px solid var(--border)}
 /* ===== CHECK STOCK ===== */
 .left-hdr{gap:8px}
 .grp-mini{margin:0 0 0 auto;padding:2px;gap:2px}
-.grp-mini .grp-tab{flex:none;padding:3px 10px;font-size:10px}
+.grp-mini .grp-tab{flex:none;padding:3px 10px;font-size:calc(10px*var(--fs))}
 .left-hdr .grp-mini + #boxCountLbl{margin-left:8px}
 .ztab{position:relative}
-.zt-st{display:block;font-size:9px;font-weight:700;line-height:1;margin-top:2px;color:var(--muted);letter-spacing:0}
+.zt-st{display:block;font-size:calc(9px*var(--fs));font-weight:700;line-height:1;margin-top:2px;color:var(--muted);letter-spacing:0}
 .ztab.active .zt-st{color:rgba(255,255,255,.85)}
 .zt-st.ok{color:var(--green)}
 .zt-st.er{color:var(--red)}
@@ -450,11 +543,11 @@ tr.vf-hit td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .dt-tab.dt-x.on{background:var(--yellow);color:#1a1d2e;border-color:var(--yellow)}
 .rnd-wrap{display:flex;align-items:center;gap:6px;background:var(--card);
   border:1px solid var(--border);border-radius:8px;padding:2px 6px;height:28px}
-.rnd-wrap .btn{height:22px;padding:0 9px;font-size:10px}
+.rnd-wrap .btn{height:22px;padding:0 9px;font-size:calc(10px*var(--fs))}
 
 .grp-tabs{display:flex;gap:3px;background:var(--card);padding:3px;border-radius:8px;
   border:1px solid var(--border);margin-bottom:6px}
-.grp-tab{flex:1;padding:5px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+.grp-tab{flex:1;padding:5px;border-radius:6px;font-size:calc(11px*var(--fs));font-weight:700;cursor:pointer;
   border:none;background:transparent;color:var(--muted);transition:.15s}
 .grp-tab.on{background:var(--accent);color:#fff}
 
@@ -464,9 +557,9 @@ tr.vf-hit td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .gcard.sel{border-color:var(--accent);background:rgba(91,141,238,.08)}
 .gcard.full{border-color:rgba(52,211,153,.5)}
 .gcard-top{display:flex;align-items:center;gap:6px;margin-bottom:5px}
-.gcard-id{font-family:'Courier New',monospace;font-size:12px;font-weight:800;color:var(--accent)}
-.gcard-nm{flex:1;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gcard-n{font-size:10px;font-weight:700;color:var(--muted);flex-shrink:0}
+.gcard-id{font-family:'Courier New',monospace;font-size:calc(12px*var(--fs));font-weight:800;color:var(--accent)}
+.gcard-nm{flex:1;font-size:calc(11px*var(--fs));color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gcard-n{font-size:calc(10px*var(--fs));font-weight:700;color:var(--muted);flex-shrink:0}
 .gbar{background:var(--border);border-radius:20px;height:5px;overflow:hidden}
 .gbar div{height:100%;border-radius:20px;transition:width .3s;
   background:linear-gradient(90deg,var(--accent2),var(--accent))}
@@ -475,26 +568,26 @@ tr.vf-hit td:first-child{box-shadow:inset 3px 0 0 var(--green)}
 .chk-hero{background:var(--card);border:1px solid var(--border);border-radius:12px;
   padding:13px 16px;margin-bottom:10px}
 .chk-hero-top{display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap}
-.chk-rnd{font-size:14px;font-weight:800}
-.chk-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px}
+.chk-rnd{font-size:calc(14px*var(--fs));font-weight:800}
+.chk-badge{font-size:calc(9px*var(--fs));font-weight:700;padding:2px 8px;border-radius:20px}
 .chk-badge.open{background:rgba(52,211,153,.15);color:var(--green)}
 .chk-badge.closed{background:rgba(107,114,128,.18);color:var(--muted)}
 .chk-nums{display:flex;gap:18px;flex-wrap:wrap}
 .chk-n{display:flex;flex-direction:column;gap:1px}
-.chk-n b{font-size:19px;font-weight:900;line-height:1}
-.chk-n span{font-size:9px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
+.chk-n b{font-size:calc(19px*var(--fs));font-weight:900;line-height:1}
+.chk-n span{font-size:calc(9px*var(--fs));color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
 .chk-n.f b{color:var(--green)}
 .chk-n.m b{color:var(--red)}
 .chk-n.e b{color:var(--yellow)}
 .chk-acts{margin-left:auto;display:flex;gap:6px}
-.chk-scope{font-size:11px;padding:6px 11px;border-radius:8px;margin-bottom:8px;
+.chk-scope{font-size:calc(11px*var(--fs));padding:6px 11px;border-radius:8px;margin-bottom:8px;
   background:rgba(91,141,238,.10);border:1px solid rgba(91,141,238,.3);
   display:flex;align-items:center;gap:8px}
 .chk-scope button{margin-left:auto;background:none;border:none;color:var(--red);
-  cursor:pointer;font-size:11px}
+  cursor:pointer;font-size:calc(11px*var(--fs))}
 
 .dt-tabs{display:flex;gap:4px;margin-bottom:6px}
-.dt-tab{padding:5px 13px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;
+.dt-tab{padding:5px 13px;border-radius:7px;font-size:calc(11px*var(--fs));font-weight:700;cursor:pointer;
   border:1px solid var(--border);background:var(--card);color:var(--muted)}
 .dt-tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.5s}
@@ -503,17 +596,19 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
 </head>
 <body>
 
+<button class="bars-btn no-print" id="barsBtn" onclick="toggleBars()" title="ซ่อน/แสดงแถบด้านบน (F4)">&#9650; ซ่อนแถบบน</button>
+
 <!-- Header -->
 <div class="hdr">
   <div class="logo">&#128230; <b>SN</b> Manager</div>
   <div style="display:flex;gap:4px;background:var(--card);padding:3px;border-radius:8px;border:1px solid var(--border)">
-    <button id="modeSN"  onclick="setMode('sn')"  class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:6px">Box SN</button>
-    <button id="modeSet" onclick="setMode('set')" class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:transparent;color:var(--muted);border-radius:6px">Box Set</button>
-    <button id="modeChk" onclick="setMode('chk')" class="btn btn-sm" style="padding:4px 12px;font-size:11px;font-weight:700;background:transparent;color:var(--muted);border-radius:6px">Check Stock</button>
+    <button id="modeSN"  onclick="setMode('sn')"  class="btn btn-sm" style="padding:4px 12px;font-size:calc(11px*var(--fs));font-weight:700;background:var(--accent);color:#fff;border-radius:6px">Box SN</button>
+    <button id="modeSet" onclick="setMode('set')" class="btn btn-sm" style="padding:4px 12px;font-size:calc(11px*var(--fs));font-weight:700;background:transparent;color:var(--muted);border-radius:6px">Box Set</button>
+    <button id="modeChk" onclick="setMode('chk')" class="btn btn-sm" style="padding:4px 12px;font-size:calc(11px*var(--fs));font-weight:700;background:transparent;color:var(--muted);border-radius:6px">Check Stock</button>
   </div>
   <span id="statusPill" class="pill p-dim">-- เลือกโซน</span>
-  <button class="btn btn-ghost btn-sm no-print" onclick="openGlobalSearch()" style="font-size:11px;margin-left:8px">&#127758; ค้นทุกโซน</button>
-  <button class="btn btn-ghost btn-sm no-print" onclick="openUpload()" style="font-size:11px;margin-left:8px">&#8679; Upload CSV</button>
+  <button class="btn btn-ghost btn-sm no-print" onclick="openGlobalSearch()" style="font-size:calc(11px*var(--fs));margin-left:8px">&#127758; ค้นทุกโซน</button>
+  <button class="btn btn-ghost btn-sm no-print" onclick="openUpload()" style="font-size:calc(11px*var(--fs));margin-left:8px">&#8679; Upload CSV</button>
 </div>
 
 <!-- Zone / Warehouse Bar -->
@@ -531,7 +626,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
   </div>
 
   <div class="ar-wrap no-print" id="arWrap" style="display:none">
-    <button class="btn btn-ghost btn-sm" onclick="refreshDataSN()" id="btnRefresh" style="font-size:11px">&#8635; Refresh</button>
+    <button class="btn btn-ghost btn-sm" onclick="refreshDataSN()" id="btnRefresh" style="font-size:calc(11px*var(--fs))">&#8635; Refresh</button>
     <span class="ar-sep"></span>
     <select id="arInterval" class="ar-sel" onchange="onArIntervalChange()" title="รอบ Auto Refresh">
       <option value="0">ปิด</option>
@@ -564,10 +659,10 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
       <span class="left-title" id="leftTitle">กล่อง (Box)</span>
       <span class="grp-tabs grp-mini" id="grpToggle" style="display:none"></span>
             <span class="idx-badge" id="idxBadge" style="display:none" onclick="rebuildSearchIndex()"></span>
-      <span id="boxCountLbl" style="font-size:11px;color:var(--muted)">--</span>
+      <span id="boxCountLbl" style="font-size:calc(11px*var(--fs));color:var(--muted)">--</span>
     </div>
     <div class="box-list" id="boxList">
-      <div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:12px">เลือกโซนก่อน</p></div>
+      <div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:calc(12px*var(--fs))">เลือกโซนก่อน</p></div>
     </div>
     <div class="left-foot">
       <button class="btn btn-primary btn-full btn-sm no-print" id="btnCreateMain" onclick="curMode==='set'?openCreateSet():openCreateBox()">+ สร้าง Box</button>
@@ -597,7 +692,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
       <!-- SN Input -->
       <div id="snInputArea" style="display:none">
         <div class="sec-lbl">บันทึก SN</div>
-        <div id="kitProgress" style="display:none;font-size:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:6px"></div>
+        <div id="kitProgress" style="display:none;font-size:calc(12px*var(--fs));background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:6px"></div>
 	<div id="errLog"></div>
         <div class="sn-block">
           <div class="sn-row">
@@ -627,7 +722,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
       <div id="defaultEmpty" class="empty-state" style="margin-top:60px">
         <div class="empty-ico">&#128230;</div>
         <p>เลือกโซน แล้วเลือก Box ทางซ้าย</p>
-        <p style="font-size:12px;margin-top:4px;color:var(--muted)">หรือกด <b style="color:var(--accent)">+ สร้าง Box</b></p>
+        <p style="font-size:calc(12px*var(--fs));margin-top:4px;color:var(--muted)">หรือกด <b style="color:var(--accent)">+ สร้าง Box</b></p>
       </div>
     </div>
   </div>
@@ -646,7 +741,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
           1 Code<br><small style="font-weight:400">กำหนด Code เดียว</small>
         </div>
         <div class="ttype" id="tt_m" onclick="setBoxType('multi')">
-          หลาย Code<br><small style="font-weight:400">รับได้ทุก Code</small>
+          หลาย Code<br><small style="font-weight:400" id="tt_m_sub">รับได้ทุก Code</small>
         </div>
       </div>
     </div>
@@ -654,12 +749,13 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
       <div class="fg">
         <label>Code (8 หลัก)</label>
         <input type="text" id="nb_code" list="codeOptions" placeholder="xxxxxxxx" maxlength="8"
-          style="font-family:monospace;font-size:16px;letter-spacing:2px"
+          style="font-family:monospace;font-size:calc(16px*var(--fs));letter-spacing:2px"
           autocomplete="off"
           oninput="onCodeInput()">
         <datalist id="codeOptions"></datalist>
         <div class="name-preview" id="namePreview"></div>
         <div class="name-preview" id="zonePreview" style="margin-top:4px"></div>
+        <div class="code-sum" id="codeSum"></div>
       </div>
     </div>
     <div id="multiArea" style="display:none">
@@ -667,7 +763,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
         <label>Zone (4 ตัวอักษร)</label>
         <input type="text" id="nb_zone_m" list="zoneOptions"
           placeholder="พิมพ์หรือเลือก Zone เช่น DnA1"
-          style="font-family:monospace;font-size:14px;letter-spacing:1px"
+          style="font-family:monospace;font-size:calc(14px*var(--fs));letter-spacing:1px"
           autocomplete="off">
         <datalist id="zoneOptions"></datalist>
       </div>
@@ -701,16 +797,16 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
     <div class="upload-drop" id="uploadDrop" onclick="document.getElementById('csvFile').click()">
       <div class="upload-drop-ico">&#128196;</div>
       <p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>
-      <p style="font-size:11px;margin-top:4px">รองรับ .csv เท่านั้น</p>
+      <p style="font-size:calc(11px*var(--fs));margin-top:4px">รองรับ .csv เท่านั้น</p>
     </div>
     <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="onCSVSelected(this)">
     <div id="uploadPreview" style="display:none">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">ผลการตรวจสอบ</div>
+      <div style="font-size:calc(11px*var(--fs));font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">ผลการตรวจสอบ</div>
       <table class="preview-table">
         <thead><tr><th>Zone</th><th>จำนวน Row</th><th>สถานะ</th></tr></thead>
         <tbody id="previewBody"></tbody>
       </table>
-      <div id="previewErr" style="font-size:12px;color:var(--red);margin-top:8px;display:none"></div>
+      <div id="previewErr" style="font-size:calc(12px*var(--fs));color:var(--red);margin-top:8px;display:none"></div>
     </div>
     <div class="progress-wrap" id="progressWrap">
       <div class="progress-label">
@@ -749,7 +845,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
   <div class="modal" style="width:820px;max-width:96vw">
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:2px">
       <h3 style="margin:0">&#128202; สรุปการนับ</h3>
-      <span id="sumTitle" style="font-size:13px;font-weight:700;color:var(--accent)"></span>
+      <span id="sumTitle" style="font-size:calc(13px*var(--fs));font-weight:700;color:var(--accent)"></span>
     </div>
     <div class="modal-sub" id="sumSub"></div>
     <div id="sumBody"></div>
@@ -796,7 +892,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="rndPrepBar"></div></div>
       <div class="progress-steps" id="rndPrepSteps"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.6;background:var(--card);
+    <div style="font-size:calc(11px*var(--fs));color:var(--muted);line-height:1.6;background:var(--card);
       border-radius:8px;padding:9px 12px;margin-top:10px">
       &#8226; ใช้เวลาประมาณ 5 นาที ห้ามปิดหน้าจอ<br>
       &#8226; เปิดได้ทีละรอบเท่านั้น<br>
@@ -834,14 +930,14 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
       <label>Code A (8 หลัก) — พิมพ์แล้วกด Enter เพื่อเพิ่ม</label>
       <div style="display:flex;gap:6px">
         <input type="text" id="ns_code_input" list="setCodeOptions" placeholder="xxxxxxxx" maxlength="8"
-          style="font-family:monospace;font-size:14px;letter-spacing:2px;flex:1"
+          style="font-family:monospace;font-size:calc(14px*var(--fs));letter-spacing:2px;flex:1"
           autocomplete="off"
           oninput="previewSetCode()"
           onkeydown="if(event.key==='Enter'){addSetCode()}">
         <datalist id="setCodeOptions"></datalist>
         <button class="btn btn-ghost btn-sm" onclick="addSetCode()">+ เพิ่ม</button>
       </div>
-      <div id="setCodePreview" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+      <div id="setCodePreview" style="font-size:calc(12px*var(--fs));color:var(--muted);margin-top:4px"></div>
     </div>
     <div class="fg">
       <label>Code ที่เลือก</label>
@@ -857,7 +953,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
 <script>
 // ====== CONFIG ======
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzQwTW3kw27FbfOnF_RVyGfQKe5jv24wpQh3oiAJ3sqW8VXrGOX6kuxrxLmrrp8GOCm/exec';
-const ZONES   = ['A','B','C','D','E','J'];
+const ZONES   = ['A','B','C','D','E','J','R','S','T','U','N'];
 // ====================
 
 var curZone     = null;
@@ -886,6 +982,7 @@ var _autoPrintKit = false;
 var _printWin = null;
 var _navToken = 0;
 const WH_OWN_DATA = ['002'];          // คลังที่มี Data SN ของตัวเอง
+const MULTI_BOX_ON = false;           // เปิดใช้กล่อง "หลาย Code" — ตั้ง true เมื่อพร้อมใช้
 var _codeIndexKey = null;             // scope ของ index ที่ cache ไว้
 var _uploadTarget = 'zone';           // 'zone' | '002'
 
@@ -901,6 +998,7 @@ window.addEventListener('DOMContentLoaded', function() {
     }, 1200);
   }
   arInit();
+  try { if (localStorage.getItem('bars_off') === '1') toggleBars(false); } catch (e) {}
     document.getElementById('chkZoneTabs').innerHTML = ZONES.map(function(z) {
     return '<button class="ztab" id="ctab_' + z + '" onclick="selectChkZone(\'' + z + '\')">' + z + '</button>';
   }).join('');
@@ -1044,7 +1142,7 @@ async function selectZone(z) {
   } catch(e) {
     if (tok !== _navToken) return;                    // ← error ของรุ่นเก่าก็ไม่ต้องโชว์
     setStatus('err', e.message);
-    document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:12px">' + e.message + '</p></div>';
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:calc(12px*var(--fs))">' + e.message + '</p></div>';
   }
 }
 
@@ -1055,20 +1153,27 @@ function renderBoxList(boxes) {
 
   var show = boxes;
   var chip = '';
+  if (_listQ) {
+    show = show.filter(function(b) {
+      return listMatch(b.box_id, b.box_name, b.code, b.data_zone,
+        b.type === 'single' ? displayName(b.code, b.box_name, 'sn') : '');
+    });
+    chip += listFilterChip(show.length, boxes.length);
+  }
   if (_boxFilter && curMode === 'sn') {
     show = boxes.filter(function(b) { return _boxFilter.ids.indexOf(b.box_id) !== -1; });
-    chip = '<div class="filter-chip">&#128269; <b>' + _boxFilter.label + '</b>'
+    chip += '<div class="filter-chip">&#128269; <b>' + _boxFilter.label + '</b>'
          + '<span style="color:var(--muted)">' + show.length + ' กล่อง</span>'
          + '<button onclick="clearBoxFilter()">&#10005; ล้าง</button></div>';
   }
 
   document.getElementById('boxCountLbl').textContent =
-    (_boxFilter && curMode === 'sn') ? show.length + '/' + boxes.length : boxes.length + ' กล่อง';
+    (show.length !== boxes.length) ? show.length + '/' + boxes.length : boxes.length + ' กล่อง';
 
   if (!show.length) {
     document.getElementById('boxList').innerHTML = chip
-      + '<div class="empty-state"><div class="empty-ico">&#128219;</div><p style="font-size:12px">'
-      + (_boxFilter ? 'ไม่มีกล่องตรงเงื่อนไข' : 'ยังไม่มี Box<br>กด + สร้าง Box') + '</p></div>';
+      + '<div class="empty-state"><div class="empty-ico">&#128219;</div><p style="font-size:calc(12px*var(--fs))">'
+      + ((_boxFilter || _listQ) ? 'ไม่มีกล่องตรงเงื่อนไข' : 'ยังไม่มี Box<br>กด + สร้าง Box') + '</p></div>';
     return;
   }
 
@@ -1109,6 +1214,81 @@ document.getElementById('boxList').addEventListener('click', function(e) {
   if (card) selectBox(card.dataset.id);
 });
 
+
+// ---- แถบข้อมูลของกล่อง/Set ที่เลือก ----
+// ---- หัวข้อ: ซ้าย = ตัวตน · ขวา = ตัวเลข (ใช้ร่วมกันทุกโหมด) ----
+function renderHead(l1, l2, dim, nums) {
+  var t = document.getElementById('rightTitle');
+  var e = document.getElementById('rightSub');
+  if (!t || !e) return;
+  e.className = 'right-sub'; e.textContent = '';
+  t.className = 'chkhead';
+  t.innerHTML = '<div class="chk-ident">'
+      + '<div class="l1">' + l1.map(function(x) {
+          return '<span class="' + (x[1] || '') + '">' + x[0] + '</span>';
+        }).join('') + '</div>'
+      + '<div class="l2' + (dim ? ' dim' : '') + '">' + (l2 || '&nbsp;') + '</div>'
+    + '</div>'
+    + '<div class="chk-nums">'
+    + (nums || []).map(function(n) {
+        return '<div class="chk-n ' + (n[0] || '') + '"><b>' + n[1] + '</b><span>' + n[2] + '</span></div>';
+      }).join('')
+    + '</div>';
+}
+
+function countCodes(rows) {
+  var c = {};
+  rows.forEach(function(r){ if (r.code) c[r.code] = 1; });
+  return Object.keys(c).length;
+}
+
+// อัปเดตให้ตรงกับ cache ปัจจุบัน (เรียกทุกครั้งที่ตารางเปลี่ยน)
+function updateBoxHeader() {
+  if (curMode === 'sn' && curBox) {
+    var b      = curBox;
+    var rows   = _cacheBoxSNs[b.box_id] || [];
+    var single = (b.type === 'single');
+    var nm     = single ? displayName(b.code, b.box_name, 'sn') : (b.box_name || '-');
+    var zones  = {};
+    rows.forEach(function(r){ if (r.zone) zones[r.zone] = 1; });
+    var zl = Object.keys(zones);
+
+    renderHead(
+      [[b.box_id, 'cid'], [single ? (b.code || '-') : (b.data_zone || curZone || '-'), 'zid']],
+      nm, false,
+      [
+        ['f', rows.length.toLocaleString('th-TH'), 'SN ในกล่อง'],
+        ['',  single ? '1' : String(countCodes(rows)), 'Code'],
+        ['txt', single ? (b.data_zone || curZone || '-')
+                       : (zl.length ? zl.slice(0, 2).join(' · ') + (zl.length > 2 ? ' +' + (zl.length - 2) : '')
+                                    : (b.data_zone || '-')), 'Zone'],
+        ['txt', single ? '1 Code' : 'หลาย Code', 'ประเภท'],
+        ['sm',  fmtDate(b.created_date), 'สร้างเมื่อ']
+      ]);
+    return;
+  }
+
+  if (curMode === 'set' && curSet) {
+    var st    = curSet;
+    var codes = setCodesOf(st);
+    var rs    = _cacheSetSNs[st.set_id] || [];
+    var isKit = String(st.set_type) === 'kit';
+    var nums  = [['f', rs.length.toLocaleString('th-TH'), 'SN ใน Set'],
+                 ['',  String(codes.length), 'Code']];
+    if (isKit && codes.length) {
+      var full = Math.floor(rs.length / codes.length), rem = rs.length % codes.length;
+      nums.push(['f', String(full), 'ครบชุด']);
+      if (rem) nums.push(['e', String(rem), 'ค้างชุดถัดไป']);
+    }
+    nums.push(['txt', curWarehouse || '-', 'คลัง']);
+    nums.push(['txt', isKit ? 'Kit' : 'Free', 'ประเภท']);
+    nums.push(['sm',  fmtDate(st.created_date), 'สร้างเมื่อ']);
+
+    renderHead([[st.set_id, 'cid'], [codes.length + ' Code', 'zid']],
+      st.set_name || '-', false, nums);
+  }
+}
+
 function selectBox(boxId) {
   var box = window._boxes && window._boxes[boxId];
   if (!box) return;
@@ -1116,8 +1296,7 @@ function selectBox(boxId) {
   document.querySelectorAll('.bcard').forEach(function(c) { c.classList.remove('sel'); });
   var el = document.getElementById('bc_' + boxId);
   if (el) el.classList.add('sel');
-  document.getElementById('rightTitle').textContent = box.box_id + (box.box_name ? ' - ' + box.box_name : '');
-  document.getElementById('rightSub').textContent   = 'Zone ' + (box.data_zone || curZone) + ' | ' + (box.type === 'single' ? 'Code: ' + box.code : 'หลาย Code');
+  updateBoxHeader();
   document.getElementById('defaultEmpty').style.display  = 'none';
   document.getElementById('snInputArea').style.display   = '';
   document.getElementById('snTableArea').style.display   = '';
@@ -1162,11 +1341,13 @@ function renderSNTable(rows) {
   if (curMode === 'set' && curSet && String(curSet.set_type) === 'kit') {
     renderKitCards(rows || []);
     renderKitProgress();
+    updateBoxHeader();
     return;
   }
   if (!rows.length) {
     document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128219;</div><p>ยังไม่มี SN<br><small>สแกน SN ด้านบนเพื่อบันทึก</small></p></div>';
     renderKitProgress();
+    updateBoxHeader();
     return;
   }
   var tbody = '';
@@ -1178,20 +1359,22 @@ function renderSNTable(rows) {
     tbody += '<tr>'
       + '<td class="row-n">' + (i+1) + '</td>'
       + '<td><span class="mono">' + sn + '</span></td>'
-      + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
+      + '<td style="font-size:calc(12px*var(--fs));font-family:monospace">' + (r.code || '-') + '</td>'
       + '<td>' + name + '</td>'
       + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
-      + '<td style="font-size:11px;color:var(--muted)">' + snDate + '</td>'
-      + '<td style="font-size:11px;color:var(--muted)">' + addDate + '</td>'
+      + '<td style="font-size:calc(11px*var(--fs));color:var(--muted)">' + snDate + '</td>'
+      + '<td>' + agingHTML(r.sn_date) + '</td>'
+      + '<td style="font-size:calc(11px*var(--fs));color:var(--muted)">' + addDate + '</td>'
       + '<td class="no-print"><button class="btn btn-danger btn-xs" onclick="doRemoveSN(\'' + sn + '\')">del</button></td>'
       + '</tr>';
   });
   document.getElementById('tblWrap').innerHTML =
     '<table><thead><tr><th>#</th>'
-    + '<th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>บันทึกเมื่อ</th><th class="no-print">ลบ</th></tr></thead><tbody>'
+    + '<th>SN</th><th>Code</th><th>ชื่อสินค้า</th><th>Zone</th><th>SN Date</th><th>Aging</th><th>บันทึกเมื่อ</th><th class="no-print">ลบ</th></tr></thead><tbody>'
     + tbody + '</tbody></table>';
   paintVfHits();
   renderKitProgress();
+  updateBoxHeader();
 }
 
 // ---- SN Lookup ----
@@ -1545,11 +1728,11 @@ function showPrintProgress(msg, pct) {
     el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 32px;z-index:999;min-width:260px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)';
     document.body.appendChild(el);
   }
-  el.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">' + msg + '</div>'
+  el.innerHTML = '<div style="font-size:calc(13px*var(--fs));font-weight:700;color:var(--text);margin-bottom:12px">' + msg + '</div>'
     + '<div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden">'
       + '<div style="background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;border-radius:20px;transition:width .3s;width:' + pct + '%"></div>'
     + '</div>'
-    + '<div style="font-size:11px;color:var(--muted);margin-top:8px">' + pct + '%</div>';
+    + '<div style="font-size:calc(11px*var(--fs));color:var(--muted);margin-top:8px">' + pct + '%</div>';
 }
 
 function hidePrintProgress() {
@@ -1599,7 +1782,13 @@ function openCreateBox() {
   document.getElementById('namePreview').textContent = '';
   document.getElementById('modalSub').textContent    = 'Zone ' + curZone + ' - Box ID ถัดไป';
   document.getElementById('nextIdBadge').textContent = nextBoxId || '--';
+  boxType = 'single';
   setBoxType('single');
+  var ttm = document.getElementById('tt_m');
+  var sub = document.getElementById('tt_m_sub');
+  if (ttm) ttm.className = 'ttype' + (MULTI_BOX_ON ? '' : ' off');
+  if (sub) sub.textContent = MULTI_BOX_ON ? 'รับได้ทุก Code' : 'ยังไม่เปิดใช้งาน';
+  clearCodeSum();
   enableCreate(false);
   document.getElementById('createModal').classList.add('open');
   setTimeout(function() { document.getElementById('nb_code').focus(); }, 100);
@@ -1608,6 +1797,7 @@ function openCreateBox() {
 function closeCreateBox() { document.getElementById('createModal').classList.remove('open'); previewName = ''; }
 
 function setBoxType(t) {
+  if (t === 'multi' && !MULTI_BOX_ON) { showToast('กล่องหลาย Code ยังไม่เปิดใช้งาน', 'err'); return; }
   boxType = t; previewName = '';
   document.getElementById('tt_s').className = 'ttype' + (t === 'single' ? ' sel-s' : '');
   document.getElementById('tt_m').className = 'ttype' + (t === 'multi'  ? ' sel-m' : '');
@@ -1618,6 +1808,7 @@ function setBoxType(t) {
   document.getElementById('namePreview').textContent = '';
   var zp = document.getElementById('zonePreview');
   if (zp) { zp.className = 'name-preview'; zp.textContent = ''; }
+  clearCodeSum();
   // ล้าง datalist ทั้งคู่
   var cdl = document.getElementById('codeOptions');
   if (cdl) cdl.innerHTML = '';
@@ -1684,7 +1875,7 @@ function onCodeInput() {
   }
 
   clearTimeout(_ct);
-  if (code.length !== 8) return;
+  if (code.length !== 8) { clearCodeSum(); return; }
   _ct = setTimeout(function() { doCodePreview(code); }, 100);
 }
 
@@ -1698,6 +1889,7 @@ function doCodePreview(code) {
     el.className = 'name-preview err';
     el.textContent = 'ยังไม่ได้โหลด Data SN กรุณาเลือกโซนก่อน';
     if (zEl) { zEl.className = 'name-preview'; zEl.textContent = ''; }
+    clearCodeSum();
     enableCreate(false);
     return;
   }
@@ -1706,20 +1898,113 @@ function doCodePreview(code) {
   if (found) {
     var name = String(found.shortname || found.item_name || '').trim();
     previewName = name;
-    el.className = 'name-preview ok';
-    el.textContent = name || '(ไม่มีชื่อ)';
-    if (zEl) {
-      zEl.className = 'name-preview ok';
-      zEl.textContent = 'Zone: ' + (found.zone || curZone);
-    }
+    // ชื่อ + Zone ย้ายไปอยู่ในการ์ดสรุปแล้ว
+    el.className = 'name-preview'; el.textContent = ''; el.style.display = 'none';
+    if (zEl) { zEl.className = 'name-preview'; zEl.textContent = ''; }
+    renderCodeSum(code);
     enableCreate(true);
   } else {
     previewName = '';
+    el.style.display = 'block';
     el.className = 'name-preview warn';
     el.textContent = '⚠ ยังไม่พบ "' + code + '" ใน Data SN — สร้างได้ ชื่อจะเติมให้เองภายหลัง';
     if (zEl) { zEl.className = 'name-preview'; zEl.textContent = ''; }
+    clearCodeSum();
     enableCreate(true);
   }
+}
+
+// ---- สรุปข้อมูลของ Code ที่เลือก (ในหน้าสร้าง Box) ----
+function clearCodeSum() {
+  var el = document.getElementById('codeSum');
+  if (el) { el.className = 'code-sum'; el.innerHTML = ''; }
+}
+
+function renderCodeSum(code) {
+  var el = document.getElementById('codeSum');
+  if (!el) return;
+  code = String(code || '').trim();
+  if (!code || !_cacheDataSN) { clearCodeSum(); return; }
+
+  var rows = _cacheDataSN.filter(function(r) { return String(r.code).trim() === code; });
+  if (!rows.length) { clearCodeSum(); return; }
+
+  var d0    = rows[0];
+  var sname = String(d0.shortname || d0.item_name || '').trim() || '(ไม่มีชื่อ)';
+  var fname = String(d0.item_name || '').trim();
+  var item  = String(d0.item || '').trim();
+
+  // SN ของ Code นี้ที่เข้ากล่องไปแล้ว (จากกล่องในโซนนี้)
+  var inBox = {}, byBox = {};
+  Object.keys(_cacheBoxSNs || {}).forEach(function(bid) {
+    (_cacheBoxSNs[bid] || []).forEach(function(r) {
+      if (String(r.code).trim() !== code) return;
+      var sn = String(r.sn).trim();
+      if (inBox[sn]) return;
+      inBox[sn] = bid;
+      byBox[bid] = (byBox[bid] || 0) + 1;
+    });
+  });
+
+  // รวมยอดทั้ง Code + เฉพาะที่ยังไม่เข้ากล่อง
+  var byZone = {}, costs = {}, allCost = 0, leftCost = 0, left = 0;
+  var ages = [], bk = { g: 0, y: 0, r: 0 };
+  rows.forEach(function(r) {
+    var z = String(r.zone || curZone).trim();
+    byZone[z] = (byZone[z] || 0) + 1;
+    var c = Number(r.cost);
+    if (!isNaN(c) && c) { costs[c] = 1; allCost += c; }
+    if (inBox[String(r.sn).trim()]) return;
+    left++;
+    if (!isNaN(c)) leftCost += c;
+    var a = agingDays(r.sn_date);
+    if (a == null) return;
+    ages.push(a);
+    bk[a < 90 ? 'g' : (a < 180 ? 'y' : 'r')]++;
+  });
+  ages.sort(function(a, b){ return a - b; });
+  var avg = ages.length ? Math.round(ages.reduce(function(s, x){ return s + x; }, 0) / ages.length) : null;
+
+  var cl     = Object.keys(costs).map(Number).sort(function(a, b){ return a - b; });
+  var zones  = Object.keys(byZone).sort();
+  var boxIds = Object.keys(byBox).sort();
+  var full   = (_searchIndexed === 'Z' + curZone);
+  var th     = function(n) { return Number(n).toLocaleString('th-TH'); };
+
+  var h = '<div class="cs-head"><span class="c">' + code + '</span><span class="nm">' + sname + '</span></div>';
+  if (item || (fname && fname !== sname))
+    h += '<div class="cs-sub">' + (item ? 'Item ' + item : '') + (item && fname && fname !== sname ? ' · ' : '')
+       + (fname && fname !== sname ? fname : '') + '</div>';
+  h += '<div class="cs-line">' + zones.map(function(z) {
+         return '<span class="cs-zone">' + z + (zones.length > 1 ? ' · ' + th(byZone[z]) : '') + '</span>';
+       }).join('') + '</div>';
+
+  h += '<div class="cs-row">'
+    +   '<div class="cs-n"><b>'   + th(rows.length)        + '</b><span>SN ทั้งหมด</span></div>'
+    +   '<div class="cs-n g"><b>' + th(rows.length - left) + '</b><span>เข้ากล่องแล้ว</span></div>'
+    +   '<div class="cs-n y"><b>' + th(left)               + '</b><span>ยังไม่เข้ากล่อง</span></div>'
+    + '</div>';
+
+  if (cl.length) h += '<div class="cs-line">มูลค่า/ชิ้น <b>'
+    + (cl.length > 1 ? th(cl[0]) + '–' + th(cl[cl.length - 1]) : th(cl[0]))
+    + '</b> · รวมทั้ง Code <b>' + th(Math.round(allCost)) + '</b> · ยังไม่เข้ากล่อง <b>' + th(Math.round(leftCost)) + '</b></div>';
+
+  if (ages.length) h += '<div class="cs-line">Aging ที่ยังไม่เข้ากล่อง <b>'
+    + th(ages[0]) + '–' + th(ages[ages.length - 1]) + '</b> วัน · เฉลี่ย <b>' + th(avg) + '</b></div>'
+    + '<div class="cs-line">'
+    +   '<span class="age a-g">&lt;90 : ' + th(bk.g) + '</span>'
+    +   '<span class="age a-y">90-179 : ' + th(bk.y) + '</span>'
+    +   '<span class="age a-r">180+ : '   + th(bk.r) + '</span>'
+    + '</div>';
+
+  if (boxIds.length) h += '<div class="cs-line">มีอยู่แล้วใน '
+    + boxIds.slice(0, 6).map(function(b) { return '<span class="cs-box">' + b + ' · ' + th(byBox[b]) + '</span>'; }).join('')
+    + (boxIds.length > 6 ? '<span class="cs-box">+' + th(boxIds.length - 6) + '</span>' : '') + '</div>';
+
+  if (!full) h += '<div class="cs-line" style="color:var(--yellow)">&#9888; ดัชนียังไม่ครบ — นับเฉพาะกล่องที่โหลดแล้ว</div>';
+
+  el.className = 'code-sum on';
+  el.innerHTML = h;
 }
 
 function enableCreate(ok) {
@@ -1786,9 +2071,13 @@ async function doCreateBox() {
 // ---- Helpers ----
 function resetRight() {
   var isSet = (curMode === 'set');
-  document.getElementById('rightTitle').textContent = isSet ? '-- เลือก BoxSet' : '-- เลือก Box';
-  document.getElementById('rightSub').textContent   = isSet
+  var _t = document.getElementById('rightTitle');
+  _t.className = 'right-title';
+  _t.textContent = isSet ? '-- เลือก BoxSet' : curMode === 'chk' ? '-- เลือกรอบนับ' : '-- เลือก Box';
+  document.getElementById('rightSub').className = 'right-sub';
+  document.getElementById('rightSub').textContent = isSet
     ? 'กดเลือก Set ทางซ้ายเพื่อบันทึก SN'
+    : curMode === 'chk' ? 'เลือกรอบและโซนจากด้านบน'
     : 'กดเลือก Box ทางซ้ายเพื่อบันทึก SN';
   document.getElementById('defaultEmpty').style.display = '';
   document.getElementById('snInputArea').style.display  = 'none';
@@ -1814,6 +2103,54 @@ function fmtDate(raw) {
     } catch(e) {}
   }
   return s;
+}
+
+// วันที่แบบสั้น 13/11/68 (ใช้ในคอลัมน์แคบ)
+function fmtDateS(raw) {
+  var d = parseDateAny(raw);
+  if (!d) return raw ? String(raw) : '-';
+  try { return d.toLocaleDateString('th-TH', { year: '2-digit', month: '2-digit', day: '2-digit' }); }
+  catch(e) { return fmtDate(raw); }
+}
+
+// ---- Aging (คำนวณจาก sn_date) ----
+function parseDateAny(raw) {
+  if (!raw && raw !== 0) return null;
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+  var s = String(raw).trim();
+  if (!s || s === '-') return null;
+  var m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)))                       // 2026-11-13 / ISO
+    return new Date(+m[1], +m[2] - 1, +m[3]);
+  if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/))) {   // 13/11/2569 หรือ 13/11/69
+    var y = +m[3];
+    if (y < 100) y += 2500;                                            // 69 -> 2569 (พ.ศ.)
+    if (y > 2400) y -= 543;                                            // พ.ศ. -> ค.ศ.
+    return new Date(y, +m[2] - 1, +m[1]);
+  }
+  var t = Date.parse(s);
+  return isNaN(t) ? null : new Date(t);
+}
+
+function agingDays(raw) {
+  var d = parseDateAny(raw);
+  if (!d) return null;
+  var a = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var n = new Date(); n = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  var days = Math.round((n - a) / 86400000);
+  return days < 0 ? 0 : days;
+}
+
+function ageCls(days) {
+  if (days == null) return 'a-n';
+  if (days < 90)  return 'a-g';
+  if (days < 180) return 'a-y';
+  return 'a-r';
+}
+
+function agingHTML(raw) {
+  var d = agingDays(raw);
+  return '<span class="age ' + ageCls(d) + '">' + (d == null ? '-' : d.toLocaleString('th-TH')) + '</span>';
 }
 
 // ---- API ----
@@ -1861,7 +2198,7 @@ function openUpload() {
   document.getElementById('uploadDrop').innerHTML =
     '<div class="upload-drop-ico">&#128196;</div>' +
     '<p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>' +
-    '<p style="font-size:11px;margin-top:4px">รองรับ .csv เท่านั้น</p>';
+    '<p style="font-size:calc(11px*var(--fs));margin-top:4px">รองรับ .csv เท่านั้น</p>';
   setUploadTarget('zone');
   document.getElementById('btnUploadConfirm').style.display = '';
   enableUpload(false);
@@ -1897,7 +2234,7 @@ function processCSV(file) {
   if (!file.name.toLowerCase().endsWith('.csv')) { showToast('รองรับเฉพาะ .csv', 'err'); return; }
   document.getElementById('uploadDrop').innerHTML =
     '<div class="upload-drop-ico">&#128196;</div><p><b>' + file.name + '</b></p>' +
-    '<p style="font-size:11px;margin-top:4px;color:var(--green)">&#10003; เลือกไฟล์แล้ว</p>';
+    '<p style="font-size:calc(11px*var(--fs));margin-top:4px;color:var(--green)">&#10003; เลือกไฟล์แล้ว</p>';
   // ลอง UTF-8 ก่อน ถ้ามีตัวแทน (replacement char) ให้ลอง TIS-620
   var reader = new FileReader();
   reader.onload = function(e) {
@@ -2000,16 +2337,16 @@ function validateAndPreviewCSV(text) {
   }
 
   // แยกตาม zone
-  var zoneMap = {};
+  var zoneMap = {}, unknownVals = {};
   parsed.rows.forEach(function(r) {
     var z = String(r.zone || '').trim();
     if (!z) return;
-    // หา Zone key (A-J) จากตัวแรกของ zone value
-    var zKey = null;
-    ZONES.forEach(function(k) {
-      if (z.toUpperCase().startsWith(k.toUpperCase())) zKey = k;
-    });
-    if (!zKey) zKey = '_unknown';
+    // หา Zone key จากตัวอักษรแรกของค่า zone (ตาม ZONES)
+    var zU = z.toUpperCase(), zKey = null;
+    for (var zi = 0; zi < ZONES.length; zi++) {
+      if (zU.charAt(0) === ZONES[zi].toUpperCase()) { zKey = ZONES[zi]; break; }
+    }
+    if (!zKey) { zKey = '_unknown'; (unknownVals[zU] = unknownVals[zU] || 0, unknownVals[zU]++); }
     if (!zoneMap[zKey]) zoneMap[zKey] = [];
     zoneMap[zKey].push(r);
   });
@@ -2023,12 +2360,24 @@ function validateAndPreviewCSV(text) {
     var rows = zoneMap[zKey];
     var isUnknown = zKey === '_unknown';
     if (isUnknown) {
-      tbody += '<tr><td style="color:var(--red)">ไม่ระบุ</td><td>' + rows.length + '</td><td class="preview-err">&#10007; ตรวจสอบคอลัมน์ zone</td></tr>';
+      var uv = Object.keys(unknownVals).sort().slice(0, 8).join(', ');
+      tbody += '<tr><td style="color:var(--red)">ไม่ระบุ</td><td>' + rows.length + '</td>'
+             + '<td class="preview-err">&#10007; zone ที่ไม่รู้จัก: ' + (uv || '-')
+             + (Object.keys(unknownVals).length > 8 ? ' …' : '')
+             + '<br><span style="color:var(--muted)">โซนที่ระบบรองรับ: ' + ZONES.join(', ') + '</span></td></tr>';
       hasErr = true;
     } else {
       tbody += '<tr><td><b>Zone ' + zKey + '</b></td><td>' + rows.length + ' rows</td><td class="preview-ok">&#10003; พร้อม Upload</td></tr>';
     }
   });
+
+  // โซนที่ระบบรองรับแต่ไม่มีในไฟล์นี้ — ข้อมูลเดิมในชีตจะไม่ถูกแตะ
+  var absent = ZONES.filter(function(z){ return !zoneMap[z]; });
+  if (absent.length) {
+    tbody += '<tr><td style="color:var(--muted)">' + absent.join(', ') + '</td>'
+           + '<td style="color:var(--muted)">0 rows</td>'
+           + '<td style="color:var(--muted)">— ไม่มีในไฟล์นี้ (ข้อมูลเดิมไม่ถูกลบ)</td></tr>';
+  }
 
   document.getElementById('previewBody').innerHTML = tbody;
   document.getElementById('uploadPreview').style.display = '';
@@ -2379,6 +2728,7 @@ function setMode(mode) {
   document.getElementById('chkZoneTabs').style.display   = mode === 'chk' ? '' : 'none';
 
   curZone = null; curBox = null; curWarehouse = null; curSet = null;
+  fixedList(false);
   document.querySelectorAll('#zoneTabs .ztab, #warehouseTabs .ztab').forEach(function(t){ t.classList.remove('active'); });
   markTabsCached();
   // ข้อมูล Check Stock เก็บไว้ในหน่วยความจำ — สลับโหมดไปมาไม่ต้องโหลดใหม่
@@ -2393,7 +2743,7 @@ function setMode(mode) {
 
   var msg = mode === 'set' ? '-- เลือกคลัง' : '-- เลือกโซน';
   document.getElementById('boxList').innerHTML =
-    '<div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:12px">'
+    '<div class="empty-state"><div class="empty-ico">&#128070;</div><p style="font-size:calc(12px*var(--fs))">'
     + (mode === 'set' ? 'เลือกคลังก่อน' : 'เลือกโซนก่อน') + '</p></div>';
   setStatus('dim', msg);
 
@@ -2468,7 +2818,7 @@ async function selectWarehouse(w) {
   } catch(e) {
     if (tok !== _navToken) return;
     setStatus('err', e.message);
-    document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:12px">' + e.message + '</p></div>';
+    document.getElementById('boxList').innerHTML = '<div class="empty-state"><p style="color:var(--red);font-size:calc(12px*var(--fs))">' + e.message + '</p></div>';
   }
 }
 
@@ -2479,20 +2829,24 @@ function renderSetList(sets) {
 
   var show = sets;
   var chip = '';
+  if (_listQ) {
+    show = show.filter(function(x) { return listMatch(x.set_id, x.set_name, x.codes); });
+    chip += listFilterChip(show.length, sets.length);
+  }
   if (_boxFilter && curMode === 'set') {
     show = sets.filter(function(s) { return _boxFilter.ids.indexOf(s.set_id) !== -1; });
-    chip = '<div class="filter-chip">&#128269; <b>' + _boxFilter.label + '</b>'
+    chip += '<div class="filter-chip">&#128269; <b>' + _boxFilter.label + '</b>'
          + '<span style="color:var(--muted)">' + show.length + ' Set</span>'
          + '<button onclick="clearBoxFilter()">&#10005; ล้าง</button></div>';
   }
 
   document.getElementById('boxCountLbl').textContent =
-    (_boxFilter && curMode === 'set') ? show.length + '/' + sets.length : sets.length + ' Set';
+    (show.length !== sets.length) ? show.length + '/' + sets.length : sets.length + ' Set';
 
   if (!show.length) {
     document.getElementById('boxList').innerHTML = chip
-      + '<div class="empty-state"><div class="empty-ico">&#128218;</div><p style="font-size:12px">'
-      + (_boxFilter ? 'ไม่มี Set ตรงเงื่อนไข' : 'ยังไม่มี BoxSet<br>กด + สร้าง BoxSet') + '</p></div>';
+      + '<div class="empty-state"><div class="empty-ico">&#128218;</div><p style="font-size:calc(12px*var(--fs))">'
+      + ((_boxFilter || _listQ) ? 'ไม่มี Set ตรงเงื่อนไข' : 'ยังไม่มี BoxSet<br>กด + สร้าง BoxSet') + '</p></div>';
     updateFootBtn();
     return;
   }
@@ -2500,14 +2854,14 @@ function renderSetList(sets) {
   document.getElementById('boxList').innerHTML = chip + show.map(function(s) {
     var sel    = curSet && curSet.set_id === s.set_id ? 'sel' : '';
     var codes  = String(s.codes || '').split(',').map(function(c){ return c.trim(); }).filter(Boolean);
-    var codesHtml = codes.map(function(c){ return '<span style="font-family:monospace;font-size:10px;background:rgba(91,141,238,.15);color:var(--accent);padding:1px 5px;border-radius:4px">' + c + '</span>'; }).join(' ');
+    var codesHtml = codes.map(function(c){ return '<span style="font-family:monospace;font-size:calc(10px*var(--fs));background:rgba(91,141,238,.15);color:var(--accent);padding:1px 5px;border-radius:4px">' + c + '</span>'; }).join(' ');
 
     var isKit = String(s.set_type) === 'kit';
     var kitBadge = '';
     if (isKit && codes.length) {
       var full = Math.floor((s.sn_count || 0) / codes.length);
       var rem  = (s.sn_count || 0) % codes.length;
-      kitBadge = '<span class="kit-set-badge" style="font-size:10px;font-weight:700;background:rgba(124,92,252,.18);color:var(--accent2);padding:2px 7px;border-radius:20px;margin-left:4px">'
+      kitBadge = '<span class="kit-set-badge" style="font-size:calc(10px*var(--fs));font-weight:700;background:rgba(124,92,252,.18);color:var(--accent2);padding:2px 7px;border-radius:20px;margin-left:4px">'
                + full + ' ชุด' + (rem ? ' +' + rem : '') + '</span>';
     }
 
@@ -2522,8 +2876,8 @@ function renderSetList(sets) {
         + '<div class="binfo-row"><span class="binfo-lbl">Set</span>'
         + '<span class="bcard-idsm">' + s.set_id + '</span>'
         + (isKit
-            ? '<span style="font-size:9px;font-weight:700;background:rgba(251,191,36,.18);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">Kit</span>'
-            : '<span style="font-size:9px;font-weight:700;background:rgba(52,211,153,.18);color:var(--green);padding:1px 6px;border-radius:4px;margin-left:4px">Free</span>')
+            ? '<span style="font-size:calc(9px*var(--fs));font-weight:700;background:rgba(251,191,36,.18);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">Kit</span>'
+            : '<span style="font-size:calc(9px*var(--fs));font-weight:700;background:rgba(52,211,153,.18);color:var(--green);padding:1px 6px;border-radius:4px;margin-left:4px">Free</span>')
         + '</div>'
         + '<div class="binfo-row"><span class="binfo-lbl">Code</span><span class="binfo-val" style="flex-wrap:wrap;display:flex;gap:3px">' + codesHtml + '</span></div>'
         + '<div class="binfo-row"><span class="binfo-lbl">Date</span><span class="binfo-val">' + fmtDate(s.created_date) + '</span></div>'
@@ -2564,9 +2918,7 @@ async function selectSet(setId) {
   document.querySelectorAll('.bcard').forEach(function(c){ c.classList.remove('sel'); });
   var el = document.getElementById('bc_' + setId);
   if (el) el.classList.add('sel');
-  document.getElementById('rightTitle').textContent = s.set_id + ' - ' + (s.set_name || '');
-  document.getElementById('rightSub').textContent   = 'คลัง ' + curWarehouse + ' | '
-    + (String(s.set_type) === 'kit' ? 'Kit' : 'Free') + ' | ' + setCodesOf(s).length + ' Code';
+  updateBoxHeader();
   document.getElementById('defaultEmpty').style.display = 'none';
   document.getElementById('snInputArea').style.display  = '';
   document.getElementById('snTableArea').style.display  = '';
@@ -2828,7 +3180,7 @@ function renderKitProgress() {
         var ok = !!draft[c];
         var i  = lookupSetCode(c);
         var z  = (draft[c] && draft[c].zone) || (i && i.zone) || '?';
-        return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px;border-radius:4px;'
+        return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:calc(10px*var(--fs));padding:2px 6px;border-radius:4px;'
           + (ok ? 'background:rgba(52,211,153,.15);color:var(--green)'
                 : 'background:rgba(251,191,36,.15);color:var(--yellow)') + '">'
           + (ok ? '&#10003; ' : '')
@@ -2837,7 +3189,7 @@ function renderKitProgress() {
           + '</span>';
       }).join('')
     + '</div>'
-    + '<label style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;cursor:pointer;user-select:none">'
+    + '<label style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:calc(11px*var(--fs));cursor:pointer;user-select:none">'
       + '<input type="checkbox" onchange="toggleAutoPrint(this)"' + (_autoPrintKit ? ' checked' : '')
       + ' style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent)">'
       + '<span style="color:var(--muted)">&#128424; Auto Print — ปริ้นทันทีเมื่อบันทึกครบชุด</span>'
@@ -2881,13 +3233,13 @@ function renderKitCards(rows) {
           if (!r) {
             return '<div class="kit-row pending">'
               + '<span class="kit-rcode">' + c + '</span>'
-              + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
+              + '<span class="zone-tag" style="font-size:calc(9px*var(--fs));padding:1px 6px">' + z + '</span>'
               + '<span class="kit-rname">' + nm + '</span>'
               + '<span class="kit-wait">รอสแกน</span></div>';
           }
           return '<div class="kit-row">'
             + '<span class="kit-rcode">' + c + '</span>'
-            + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
+            + '<span class="zone-tag" style="font-size:calc(9px*var(--fs));padding:1px 6px">' + z + '</span>'
             + '<span class="kit-rname">' + nm + '</span>'
             + '<span class="mono">' + r.sn + '</span>'
             + '</div>';
@@ -2919,14 +3271,14 @@ function renderKitCards(rows) {
       if (!r) {
         return '<div class="kit-row pending">'
           + '<span class="kit-rcode">' + c + '</span>'
-          + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
+          + '<span class="zone-tag" style="font-size:calc(9px*var(--fs));padding:1px 6px">' + z + '</span>'
           + '<span class="kit-rname">' + nm + '</span>'
           + '<span class="kit-wait">รอสแกน</span>'
           + '</div>';
       }
       return '<div class="kit-row">'
         + '<span class="kit-rcode">' + c + '</span>'
-        + '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>'
+        + '<span class="zone-tag" style="font-size:calc(9px*var(--fs));padding:1px 6px">' + z + '</span>'
         + '<span class="kit-rname">' + nm + '</span>'
         + '<span class="mono">' + r.sn + '</span>'
         + '</div>';
@@ -2971,16 +3323,16 @@ function fillSetCodeOptions(prefix) {
 function renderSetCodeList() {
   var listEl = document.getElementById('setCodeList');
   if (!_setSelectedCodes.length) {
-    listEl.innerHTML = '<span style="font-size:11px;color:var(--muted)">ยังไม่ได้เลือก Code</span>';
+    listEl.innerHTML = '<span style="font-size:calc(11px*var(--fs));color:var(--muted)">ยังไม่ได้เลือก Code</span>';
     return;
   }
   listEl.innerHTML = _setSelectedCodes.map(function(c) {
     var iz = lookupSetCode(c);
     return '<div style="display:flex;align-items:center;gap:8px;background:rgba(91,141,238,.10);border-radius:6px;padding:4px 8px">'
-      +   '<span style="font-family:monospace;font-size:12px;color:var(--accent);font-weight:700">' + c + '</span>'
-      +   '<span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + displayName(c, '', 'set') + '</span>'
-      +   '<span style="font-size:10px;font-weight:700;background:rgba(91,141,238,.20);color:var(--accent);padding:1px 6px;border-radius:4px">Zone ' + (iz ? iz.zone : '?') + '</span>'
-      +   '<span style="cursor:pointer;color:var(--red);font-size:12px" onclick="removeSetCode(\'' + c + '\')">&#10005;</span>'
+      +   '<span style="font-family:monospace;font-size:calc(12px*var(--fs));color:var(--accent);font-weight:700">' + c + '</span>'
+      +   '<span style="font-size:calc(12px*var(--fs));flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + displayName(c, '', 'set') + '</span>'
+      +   '<span style="font-size:calc(10px*var(--fs));font-weight:700;background:rgba(91,141,238,.20);color:var(--accent);padding:1px 6px;border-radius:4px">Zone ' + (iz ? iz.zone : '?') + '</span>'
+      +   '<span style="cursor:pointer;color:var(--red);font-size:calc(12px*var(--fs))" onclick="removeSetCode(\'' + c + '\')">&#10005;</span>'
       + '</div>';
   }).join('');
 }
@@ -3578,6 +3930,7 @@ function onSearchInput() {
   clearTimeout(_searchTimer);
   var q = document.getElementById('searchField').value.trim();
   document.getElementById('searchClear').style.display = q ? '' : 'none';
+  setListFilter(q);
   if (q.length < 2) { closeSearchPanel(); return; }
   _searchTimer = setTimeout(function() { runSearch(q); }, 250);
 }
@@ -3612,7 +3965,7 @@ function renderSearchResults(r, q) {
   var html  = '';
 
   function zTag(z) {
-    return z ? '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>' : '';
+    return z ? '<span class="zone-tag" style="font-size:calc(9px*var(--fs));padding:1px 6px">' + z + '</span>' : '';
   }
 
   if (r.dup.length) {
@@ -3795,6 +4148,35 @@ function setBoxFilter(f) {
 
 function clearBoxFilter() { setBoxFilter(null); }
 
+// ---- กรองรายการฝั่งซ้ายตามคำค้น ----
+var _listQ = '';
+
+function setListFilter(q) {
+  var v = String(q || '').trim().toLowerCase();
+  if (v.length < 2) v = '';
+  if (v === _listQ) return;
+  _listQ = v;
+  if (curMode === 'chk')      renderChkList();
+  else if (curMode === 'set') renderSetList(Object.values(window._sets || {}));
+  else                        renderBoxList(Object.values(window._boxes || {}));
+}
+
+// คืน true ถ้าไม่ได้กรอง หรือมีคำค้นอยู่ในข้อความใดข้อความหนึ่ง
+function listMatch() {
+  if (!_listQ) return true;
+  for (var i = 0; i < arguments.length; i++) {
+    if (String(arguments[i] == null ? '' : arguments[i]).toLowerCase().indexOf(_listQ) !== -1) return true;
+  }
+  return false;
+}
+
+function listFilterChip(shown, total) {
+  if (!_listQ) return '';
+  return '<div class="filter-chip">&#128269; <b>' + _listQ + '</b>'
+    + '<span style="color:var(--muted)">' + shown + '/' + total + '</span>'
+    + '<button onclick="clearSearch()">&#10005; ล้าง</button></div>';
+}
+
 function closeSearchPanel() {
   document.getElementById('searchPanel').classList.remove('open');
   _srCursor = -1;
@@ -3804,6 +4186,7 @@ function clearSearch() {
   var f = document.getElementById('searchField');
   f.value = '';
   document.getElementById('searchClear').style.display = 'none';
+  setListFilter('');
   closeSearchPanel();
   var sn = document.getElementById('snField');
   if (sn && document.getElementById('snInputArea').style.display !== 'none') sn.focus();
@@ -4082,7 +4465,7 @@ function renderGsIdle() {
 function gsProgress(done, total, label) {
   document.getElementById('gsResults').innerHTML =
     '<div class="gs-prog" style="padding:12px 14px 6px;text-align:left">'
-    + '<div style="display:flex;justify-content:space-between;font-size:12px"><span>' + label + '</span>'
+    + '<div style="display:flex;justify-content:space-between;font-size:calc(12px*var(--fs))"><span>' + label + '</span>'
     + '<span>' + done + '/' + total + '</span></div>'
     + '<div class="gs-bar"><div style="width:' + Math.round(done / total * 100) + '%"></div></div></div>'
     + skelSearch(6, '');
@@ -4244,7 +4627,7 @@ function renderGlobalResults(snHits, codeAgg, zoneAgg, locHits, q) {
   }
 
   function zTag(z) {
-    return z ? '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>' : '';
+    return z ? '<span class="zone-tag" style="font-size:calc(9px*var(--fs));padding:1px 6px">' + z + '</span>' : '';
   }
 
   // --- SN ---
@@ -4331,8 +4714,8 @@ function renderGlobalResults(snHits, codeAgg, zoneAgg, locHits, q) {
         + '<span class="sr-mono">' + b.id + '</span>'
         + scopeTag(b.kind, b.scope)
         + '<span class="sr-name">' + b.name
-        + (b.code ? ' <span style="color:var(--muted);font-family:monospace;font-size:10px">· ' + b.code + '</span>' : '')
-        + (b.codes ? ' <span style="color:var(--muted);font-size:10px">· ' + b.codes.split(',').length + ' Code</span>' : '')
+        + (b.code ? ' <span style="color:var(--muted);font-family:monospace;font-size:calc(10px*var(--fs))">· ' + b.code + '</span>' : '')
+        + (b.codes ? ' <span style="color:var(--muted);font-size:calc(10px*var(--fs))">· ' + b.codes.split(',').length + ' Code</span>' : '')
         + '</span></div>';
     });
     html += '</div>';
@@ -4865,45 +5248,57 @@ function renderGrpToggle() {
 
 function updateChkHeader() {
   var t = document.getElementById('rightTitle');
-  var s = document.getElementById('rightSub');
-  if (!t || !s) return;
-  if (!curRound) { t.textContent = '-- เลือกรอบนับ'; s.textContent = 'เลือกรอบจากด้านบน หรือกด + รอบใหม่'; return; }
-  if (!_chkZone) {
-    t.textContent = curRound.round_id + ' - ' + (curRound.round_name || '');
-    s.textContent = 'เลือกโซนที่จะนับจากแท็บด้านบน';
-    return;
-  }
-  if (_chkLoad.state !== 'ready') {
-    t.textContent = 'โซน ' + _chkZone;
-    s.textContent = _chkLoad.msg || '';
-    return;
-  }
-  var baht = function(v){ return Math.round(v).toLocaleString('th-TH') + ' บาท'; };
+  var e = document.getElementById('rightSub');
+  if (!t || !e) return;
+  e.className = 'right-sub'; e.textContent = '';
 
+  function plain(title, sub) {
+    t.className = 'right-title'; t.innerHTML = ''; t.textContent = title;
+    e.textContent = sub || '';
+  }
+  if (!curRound) { plain('-- เลือกรอบนับ', 'เลือกรอบจากด้านบน หรือกด + รอบใหม่'); return; }
+  if (!_chkZone) { plain(curRound.round_id + ' - ' + (curRound.round_name || ''), 'เลือกโซนที่จะนับจากแท็บด้านบน'); return; }
+  if (_chkLoad.state !== 'ready') { plain('โซน ' + _chkZone, _chkLoad.msg || ''); return; }
+
+  // ซ้าย: Zone ย่อย + Code บรรทัดเดียวกัน ชื่อสินค้าอยู่ใต้
+  var zid = '', cid = '', name = '', dim = false, zcls = 'zid', ccls = 'cid';
   if (_dtTab === 'extra') {
-    t.textContent = 'โซน ' + _chkZone + ' - ของแปลกปน';
-    s.textContent = Object.keys(_chkExtra).length + ' รายการ | สแกนเจอแต่ไม่มีใน Data SN ของโซนนี้';
-    return;
-  }
-  if (!_grpSel) {
-    var st = zoneStat(_chkZone);
-    t.textContent = 'โซน ' + _chkZone + ' - ทั้งโซน';
-    s.textContent = curRound.round_id + ' | นับแล้ว ' + st.found.toLocaleString('th-TH')
-      + '/' + st.total.toLocaleString('th-TH') + ' | เหลือ ' + st.miss.toLocaleString('th-TH')
-      + (st.value ? ' | มูลค่าที่ยังไม่พบ ' + baht(st.value) : '');
-    return;
-  }
-  var g = chkGroups().find(function(x){ return x.key === _grpSel; });
-  if (!g) { t.textContent = _grpSel; s.textContent = ''; return; }
-  if (_grpBy === 'code') {
-    t.textContent = g.key + (g.name ? ' - ' + g.name : '');
-    s.textContent = 'Zone ' + (g.zone || '-') + ' | นับแล้ว ' + g.done + '/' + g.total
-      + ' | เหลือ ' + (g.total - g.done) + (g.value ? ' | ' + baht(g.value) : '');
+    zid = 'โซน ' + _chkZone; cid = 'แปลกปน';
+    name = 'สแกนเจอแต่ไม่มีใน Data SN โซนนี้'; dim = true;
+  } else if (!_grpSel) {
+    zid = 'โซน ' + _chkZone; cid = 'ทั้งโซน';
+    name = chkGroups().length + ' กลุ่ม'; dim = true;
   } else {
-    t.textContent = 'Zone ' + g.key;
-    s.textContent = Object.keys(g.codes).length + ' Code | นับแล้ว ' + g.done + '/' + g.total
-      + ' | เหลือ ' + (g.total - g.done) + (g.value ? ' | ' + baht(g.value) : '');
+    var g = chkGroups().find(function(x){ return x.key === _grpSel; });
+    if (!g) { plain(_grpSel, ''); return; }
+    if (_grpBy === 'code') { zid = g.key; cid = g.zone || '-'; zcls = 'cid'; ccls = 'zid'; name = g.name || '-'; }
+    else { zid = g.key; cid = Object.keys(g.codes).length + ' Code';
+           name = Object.keys(g.codes).slice(0, 4).join(' · ')
+                + (Object.keys(g.codes).length > 4 ? ' +' + (Object.keys(g.codes).length - 4) : '');
+           dim = true; }
   }
+
+  // ขวา: ตัวเลข
+  var nums;
+  if (_dtTab === 'extra') {
+    var n = Object.keys(_chkExtra).length;
+    nums = [['e', n.toLocaleString('th-TH'), 'รายการ']];
+  } else {
+    var src = _grpSel ? (function() {
+      var g2 = chkGroups().find(function(x){ return x.key === _grpSel; }) || { total: 0, done: 0, value: 0 };
+      return { total: g2.total, found: g2.done, miss: g2.total - g2.done, extra: 0, value: g2.value };
+    })() : zoneStat(_chkZone);
+    nums = [
+      ['',  src.total.toLocaleString('th-TH'), 'ควรมี'],
+      ['f', src.found.toLocaleString('th-TH'), 'นับแล้ว'],
+      ['m', src.miss.toLocaleString('th-TH'),  'ยังไม่พบ']
+    ];
+    if (src.extra) nums.push(['e', String(src.extra), 'แปลกปน']);
+    nums.push(['', (src.total ? Math.round(src.found / src.total * 100) : 0) + '%', 'คืบหน้า']);
+    if (src.value) nums.push(['m', Math.round(src.value).toLocaleString('th-TH'), 'มูลค่าที่ยังไม่พบ']);
+  }
+
+  renderHead([[zid, zcls], [cid, ccls]], name, dim, nums);
 }
 
 // ยิง SN ได้เฉพาะตอนโหลดโซนเสร็จ และรอบยังเปิดอยู่
@@ -4956,30 +5351,38 @@ function renderChkList() {
 
   if (!curRound || !_chkZone || _chkLoad.state !== 'ready' || !_snapArr.length) {
     var body;
-    if (!curRound)      body = '<div class="empty-ico">&#128202;</div><p style="font-size:12px">เลือกรอบนับก่อน</p>';
-    else if (!_chkZone) body = '<div class="empty-ico">&#128070;</div><p style="font-size:12px">เลือกโซน</p>';
+    if (!curRound)      body = '<div class="empty-ico">&#128202;</div><p style="font-size:calc(12px*var(--fs))">เลือกรอบนับก่อน</p>';
+    else if (!_chkZone) body = '<div class="empty-ico">&#128070;</div><p style="font-size:calc(12px*var(--fs))">เลือกโซน</p>';
     else if (_chkLoad.state === 'loading') {
       el.innerHTML = skelCards(8, _chkLoad.msg, true);
       cnt.textContent = '--';
       return;
     }
     else if (_chkLoad.state === 'error')
-      body = '<div class="empty-ico">&#9888;</div><p style="font-size:12px;color:var(--red)">' + _chkLoad.msg + '</p>'
+      body = '<div class="empty-ico">&#9888;</div><p style="font-size:calc(12px*var(--fs));color:var(--red)">' + _chkLoad.msg + '</p>'
            + '<button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="retryZone()">&#8635; ลองใหม่</button>';
     else if (_chkLoad.state === 'nozone')
-      body = '<div class="empty-ico">&#128237;</div><p style="font-size:12px;color:var(--yellow)">' + _chkLoad.msg + '</p>'
+      body = '<div class="empty-ico">&#128237;</div><p style="font-size:calc(12px*var(--fs));color:var(--yellow)">' + _chkLoad.msg + '</p>'
            + '<button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="retryZone()">&#8635; ตรวจอีกครั้ง</button>';
     else if (_chkLoad.state === 'ready')
-      body = '<div class="empty-ico">&#128237;</div><p style="font-size:12px">โซน ' + _chkZone + ' ไม่มี SN ในรอบนี้</p>';
+      body = '<div class="empty-ico">&#128237;</div><p style="font-size:calc(12px*var(--fs))">โซน ' + _chkZone + ' ไม่มี SN ในรอบนี้</p>';
     else { el.innerHTML = skelCards(6, '', true); cnt.textContent = '--'; return; }
     el.innerHTML = '<div class="empty-state">' + body + '</div>';
     cnt.textContent = '--';
     return;
   }
 
-  var gs = chkGroups();
-  cnt.textContent = gs.length + ' กลุ่ม';
-  el.innerHTML = gs.map(function(g) {
+  var all = chkGroups();
+  var gs  = _listQ ? all.filter(function(g) {
+      return listMatch(g.key, g.name, Object.keys(g.codes).join(' '));
+    }) : all;
+  cnt.textContent = (gs.length !== all.length ? gs.length + '/' + all.length : all.length + ' กลุ่ม');
+  if (!gs.length) {
+    el.innerHTML = listFilterChip(0, all.length)
+      + '<div class="empty-state"><p style="font-size:calc(12px*var(--fs))">ไม่มีกลุ่มตรงคำค้น</p></div>';
+    return;
+  }
+  el.innerHTML = listFilterChip(gs.length, all.length) + gs.map(function(g) {
     var pct  = g.total ? Math.round(g.done / g.total * 100) : 0;
     var full = (g.done >= g.total && g.total > 0);
     return '<div class="gcard' + (full ? ' full' : '') + (_grpSel === g.key ? ' sel' : '') + '" data-grp="' + g.key + '">'
@@ -5009,53 +5412,15 @@ function selectGroup(key) {
 
 function setDtTab(t) { _dtTab = t; chkRender(); }
 
-// ---- หน้าหลัก ----
-function chkHeroHTML() {
-  var st   = zoneStat(_chkZone);
-  var open = String(curRound.status).trim() !== 'closed';
-  return '<div class="chk-hero" style="margin-top:12px;margin-bottom:0">'
-    + '<div class="chk-hero-top">'
-      + '<span class="chk-rnd">สรุปโซน ' + _chkZone + '</span>'
-      + '<span class="chk-badge ' + (open ? 'open' : 'closed') + '">' + (open ? 'กำลังนับ' : 'ปิดแล้ว') + '</span>'
-    + '</div>'
-    + '<div class="chk-nums">'
-      + '<div class="chk-n"><b>' + st.total.toLocaleString('th-TH') + '</b><span>ควรมี</span></div>'
-      + '<div class="chk-n f"><b>' + st.found.toLocaleString('th-TH') + '</b><span>นับแล้ว</span></div>'
-      + '<div class="chk-n m"><b>' + st.miss.toLocaleString('th-TH') + '</b><span>ยังไม่พบ</span></div>'
-      + (st.extra ? '<div class="chk-n e" style="cursor:pointer" title="ดูรายการแปลกปน" onclick="setDtTab(\'extra\')"><b>' + st.extra + '</b><span>แปลกปน &#9656;</span></div>' : '')
-      + '<div class="chk-n"><b>' + (st.total ? Math.round(st.found / st.total * 100) : 0) + '%</b><span>คืบหน้า</span></div>'
-      + (st.value ? '<div class="chk-n m"><b>' + Math.round(st.value).toLocaleString('th-TH') + '</b><span>มูลค่าที่ยังไม่พบ (บาท)</span></div>' : '')
-    + '</div></div>';
-}
-
-function snTableHTML(pool, withTime) {
-  var show = pool.slice(0, 300);
-  var html = '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:auto">'
-    + '<table><thead><tr><th>#</th><th>SN</th><th>Code</th><th>ชื่อสินค้า</th>'
-    + '<th>Zone</th><th>Cost</th>' + (withTime ? '<th>เวลา</th>' : '') + '</tr></thead><tbody>';
-  show.forEach(function(r, i) {
-    var c = _chkSet[r.sn];
-    html += '<tr' + (c && c.fresh ? ' class="row-new"' : '') + '>'
-      + '<td class="row-n">' + (i + 1) + '</td>'
-      + '<td><span class="mono">' + r.sn + '</span></td>'
-      + '<td style="font-size:12px;font-family:monospace">' + (r.code || '-') + '</td>'
-      + '<td>' + (r.shortname || '-') + '</td>'
-      + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
-      + '<td class="cost-v">' + (r.cost ? Number(r.cost).toLocaleString('th-TH') : '-') + '</td>'
-      + (withTime ? '<td style="font-size:11px;color:var(--muted)">' + (c ? fmtTime(c.at) : '') + '</td>' : '')
-      + '</tr>';
-  });
-  html += '</tbody></table></div>';
-  if (pool.length > 300) {
-    html += '<div style="font-size:11px;color:var(--muted);padding:7px 4px">แสดง 300 แถวแรก จากทั้งหมด '
-      + pool.length.toLocaleString('th-TH') + '</div>';
-  }
-  return html;
+function fixedList(on) {
+  var rb = document.querySelector('.right-body');
+  if (rb) rb.classList.toggle('fixed', !!on && curMode === 'chk');
 }
 
 function renderChkMain() {
   var el = document.getElementById('tblWrap');
   if (!el) return;
+  fixedList(false);
 
   if (!curRound) {
     el.innerHTML = '<div class="empty-state"><div class="empty-ico">&#128202;</div>'
@@ -5065,7 +5430,7 @@ function renderChkMain() {
   if (!_chkZone) {
     el.innerHTML = '<div class="empty-state"><div class="empty-ico">&#128070;</div>'
       + '<p>' + curRound.round_id + ' - ' + (curRound.round_name || '') + '</p>'
-      + '<p style="font-size:12px;margin-top:4px;color:var(--muted)">เลือกโซนที่จะนับจากแท็บด้านบน</p></div>';
+      + '<p style="font-size:calc(12px*var(--fs));margin-top:4px;color:var(--muted)">เลือกโซนที่จะนับจากแท็บด้านบน</p></div>';
     return;
   }
   if (_chkLoad.state === 'loading' || _chkLoad.state === 'idle') {
@@ -5088,7 +5453,7 @@ function renderChkMain() {
       + '<button class="dt-tab" onclick="setDtTab(\'todo\')">&#8592; กลับ</button>'
       + '<button class="dt-tab dt-x on">&#9888; แปลกปน ' + xList.length + '</button></div>';
     if (!xList.length) {
-      html += '<div class="empty-state" style="padding:24px"><p style="font-size:12px">ไม่มีของแปลกปน</p></div>';
+      html += '<div class="empty-state" style="padding:24px"><p style="font-size:calc(12px*var(--fs))">ไม่มีของแปลกปน</p></div>';
     } else {
       html += '<div style="background:var(--card);border:1px solid rgba(251,191,36,.35);border-radius:12px;overflow:auto">'
         + '<table><thead><tr><th>#</th><th>SN</th><th>เป็นของ</th><th>ชื่อสินค้า</th><th>เวลา</th><th class="no-print">ค้น</th></tr></thead><tbody>';
@@ -5101,52 +5466,81 @@ function renderChkMain() {
           + '<td>' + (h ? '<span class="gs-scope sn">โซน ' + h.z + '</span> <span class="zone-tag">' + (h.row.zone || '-') + '</span>'
                         : '<span style="color:var(--muted)">ไม่พบในทุกโซน</span>') + '</td>'
           + '<td>' + (h ? (h.row.shortname || h.row.code || '-') : '-') + '</td>'
-          + '<td style="font-size:11px;color:var(--muted)">' + (c.at ? fmtTime(c.at) : '-') + '</td>'
+          + '<td style="font-size:calc(11px*var(--fs));color:var(--muted)">' + (c.at ? fmtTime(c.at) : '-') + '</td>'
           + '<td class="no-print"><button class="btn btn-ghost btn-xs" onclick="findExtraSN(\'' + sn + '\')">&#128269; หากล่อง</button></td>'
           + '</tr>';
       });
       html += '</tbody></table></div>';
     }
-    el.innerHTML = html + chkHeroHTML();
+    el.innerHTML = html;
     return;
   }
 
-  // ---- ทั้งโซน ----
-  if (!_grpSel) {
-    html += '<div class="empty-state" style="padding:26px">'
-      + '<p style="font-size:13px">สแกนได้เลยทั้งโซน หรือเลือกกลุ่มทางซ้ายเพื่อดูรายการ SN</p>'
-      + (xList.length ? '<button class="dt-tab dt-x" style="margin-top:10px" onclick="setDtTab(\'extra\')">&#9888; ดูของแปลกปน ' + xList.length + '</button>' : '')
-      + '</div>';
-    el.innerHTML = html + chkHeroHTML();
-    return;
-  }
-
-  // ---- กลุ่มที่เลือก ----
-  var rows = _snapArr.filter(function(r) {
-    return (_grpBy === 'code' ? r.code : r.zone) === _grpSel;
-  });
+  // ---- รายการ SN: ซ้าย = ยังไม่นับ · ขวา = นับแล้ว ----
+  var rows = _grpSel
+    ? _snapArr.filter(function(r){ return (_grpBy === 'code' ? r.code : r.zone) === _grpSel; })
+    : _snapArr;
   var gDone = rows.filter(function(r){ return _chkSet[r.sn]; });
   var gTodo = rows.filter(function(r){ return !_chkSet[r.sn]; });
 
   html += '<div class="dt-tabs">'
-    + '<button class="dt-tab' + (_dtTab === 'todo' ? ' on' : '') + '" onclick="setDtTab(\'todo\')">ยังไม่นับ ' + gTodo.length + '</button>'
-    + '<button class="dt-tab' + (_dtTab === 'done' ? ' on' : '') + '" onclick="setDtTab(\'done\')">นับแล้ว ' + gDone.length + '</button>'
+    + '<button class="dt-tab' + (_grpSel ? '' : ' on') + '" onclick="selectGroup(_grpSel)">'
+      + (_grpSel ? '&#10005; ดูทั้งโซน' : 'ทั้งโซน ' + rows.length.toLocaleString('th-TH') + ' SN') + '</button>'
     + (xList.length ? '<button class="dt-tab dt-x" onclick="setDtTab(\'extra\')">&#9888; แปลกปน ' + xList.length + '</button>' : '')
-    + '<button class="dt-tab" style="margin-left:auto" onclick="selectGroup(\'' + _grpSel + '\')">&#10005; ทั้งโซน</button>'
     + '</div>';
 
-  var pool = (_dtTab === 'done' ? gDone : gTodo);
+  html += '<div class="sncols">'
+    + snColHTML('todo', 'ยังไม่นับ', gTodo)
+    + snColHTML('done', 'นับแล้ว', gDone)
+    + '</div>';
+  el.innerHTML = html;
+  fixedList(true);
+
+  // เลื่อนไปหา SN ที่เพิ่งค้นเจอ
   if (_chkFocusSN) {
-    var fi = pool.findIndex(function(r){ return r.sn === _chkFocusSN; });
-    if (fi > 0) pool = [pool[fi]].concat(pool.slice(0, fi), pool.slice(fi + 1));
+    var hit = el.querySelector('[data-sn="' + _chkFocusSN + '"]');
+    if (hit) hit.scrollIntoView({ block: 'center' });
   }
-  if (!pool.length) {
-    html += '<div class="empty-state" style="padding:24px"><p style="font-size:12px">'
-      + (_dtTab === 'done' ? 'ยังไม่มีที่นับ' : '&#10003; นับครบทุกชิ้นแล้ว') + '</p></div>';
-  } else {
-    html += snTableHTML(pool, _dtTab === 'done');
+}
+
+// หนึ่งคอลัมน์ของรายการ SN
+function snColHTML(kind, label, list) {
+  var byCode = (_grpBy === 'code' && _grpSel);   // เลือก Code แล้ว — ไม่ต้องซ้ำ Code/ชื่อ/Zone
+  var cap    = 300;
+  var show   = list;
+  if (_chkFocusSN) {
+    var fi = show.findIndex(function(r){ return r.sn === _chkFocusSN; });
+    if (fi >= cap) show = [show[fi]].concat(show.slice(0, fi), show.slice(fi + 1));
   }
-  el.innerHTML = html + chkHeroHTML();
+  show = show.slice(0, cap);
+
+  var body = show.map(function(r, i) {
+    var c = _chkSet[r.sn];
+    return '<div class="sn-item' + (c && c.fresh ? ' just' : '') + '" data-sn="' + r.sn + '">'
+      + '<span class="n">' + (i + 1) + '</span>'
+      + '<span class="sn">' + r.sn + '</span>'
+      + (byCode ? '' : '<span class="meta">' + (r.code || '') + (r.shortname ? ' · ' + r.shortname : '')
+                        + (r.zone ? ' · ' + r.zone : '') + '</span>')
+      + '<span class="sn-right">'
+        + (r.sn_date ? '<span class="dt">' + fmtDateS(r.sn_date) + '</span>' : '')
+        + agingHTML(r.sn_date)
+        + (kind === 'done' && c ? '<span class="rt">' + fmtTime(c.at) + '</span>'
+                                : (r.cost ? '<span class="rt">' + Number(r.cost).toLocaleString('th-TH') + '</span>' : ''))
+      + '</span>'
+      + '</div>';
+  }).join('');
+
+  if (!list.length) {
+    body = '<div class="empty-state" style="padding:22px"><p style="font-size:calc(12px*var(--fs))">'
+      + (kind === 'done' ? 'ยังไม่ได้นับสักชิ้น' : '&#10003; นับครบแล้ว') + '</p></div>';
+  } else if (list.length > cap) {
+    body += '<div class="sncol-more">แสดง ' + cap + ' จาก ' + list.length.toLocaleString('th-TH') + ' รายการ</div>';
+  }
+
+  return '<div class="sncol ' + kind + '">'
+    + '<div class="sncol-h">' + (kind === 'done' ? '&#10003; ' : '&#9711; ') + label
+    + '<b>' + list.length.toLocaleString('th-TH') + '</b></div>'
+    + '<div class="sncol-b">' + body + '</div></div>';
 }
 
 // ---- รอบ ----
@@ -5363,11 +5757,17 @@ function doStockScan(sn) {
 
   var gKey = _grpBy === 'code' ? row.code : row.zone;
   if (_grpSel && gKey !== _grpSel) {
+    var from = _grpSel;
+    _grpSel = gKey;                 // ย้ายไปกลุ่มของ SN นี้ให้เลย
+    _chkFocusSN = sn;
     playErrorSound();
-    flashError(sn, 'SN นี้อยู่กลุ่ม ' + gKey + ' ไม่ใช่ ' + _grpSel + ' — บันทึกให้แล้ว');
+    flashError(sn, 'SN นี้อยู่กลุ่ม ' + gKey + ' ไม่ใช่ ' + from + ' — บันทึกแล้ว และย้ายมาที่กลุ่ม ' + gKey + ' ให้');
   }
 
-  Z.set[sn] = { at: now, by: '', fresh: false };
+  Z.set[sn] = { at: now, by: '', fresh: true };
+  setTimeout(function() {
+    if (Z.set[sn]) { Z.set[sn].fresh = false; chkRender(); }
+  }, 1700);
   _chkQueue.push({ sn: sn, status: 'found', zone: _chkZone });
   saveChkQueue();
 
@@ -5555,11 +5955,11 @@ function renderSummary() {
       + '<div class="chk-n"><b>' + tp + '%</b><span>คืบหน้า</span></div>'
       + '<div class="chk-n m"><b>' + Math.round(T.value).toLocaleString('th-TH') + '</b><span>มูลค่าที่ยังไม่พบ (บาท)</span></div>'
     + '</div>'
-    + (pending ? '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">ยังโหลดไม่ครบ ' + pending + ' โซน — ตัวเลขรวมจะเพิ่มเมื่อโหลดเสร็จ</div>' : '')
+    + (pending ? '<div style="font-size:calc(11px*var(--fs));color:var(--muted);margin-bottom:8px">ยังโหลดไม่ครบ ' + pending + ' โซน — ตัวเลขรวมจะเพิ่มเมื่อโหลดเสร็จ</div>' : '')
     + '<div style="border:1px solid var(--border);border-radius:10px;overflow:auto">'
     + '<table><thead><tr><th>โซน</th><th>ควรมี</th><th>นับแล้ว</th><th>ยังไม่พบ</th><th>แปลกปน</th><th>คืบหน้า</th><th>มูลค่าที่ยังไม่พบ</th></tr></thead>'
     + '<tbody>' + (rows || '<tr><td colspan="7" style="color:var(--muted)">รอบนี้ยังไม่มีข้อมูลโซน</td></tr>') + '</tbody></table></div>'
-    + '<div style="font-size:11px;color:var(--muted);margin-top:8px">คลิกแถวเพื่อไปที่โซนนั้น</div>';
+    + '<div style="font-size:calc(11px*var(--fs));color:var(--muted);margin-top:8px">คลิกแถวเพื่อไปที่โซนนั้น</div>';
 
   document.getElementById('sumActs').innerHTML = (open
       ? '<button class="btn btn-danger btn-sm" onclick="closeSummary();doCloseRound()">&#128274; ปิดรอบ</button>'
@@ -5771,7 +6171,7 @@ function renderChkSearch(r, q) {
   }
 
   function zTag(z) {
-    return z ? '<span class="zone-tag" style="font-size:9px;padding:1px 6px">' + z + '</span>' : '';
+    return z ? '<span class="zone-tag" style="font-size:calc(9px*var(--fs));padding:1px 6px">' + z + '</span>' : '';
   }
   function prog(g) {
     var full = g.done >= g.total;
@@ -5986,9 +6386,23 @@ function setUploadTarget(t) {
   document.getElementById('uploadDrop').innerHTML =
     '<div class="upload-drop-ico">&#128196;</div>' +
     '<p>ลากไฟล์มาวาง หรือ <b>คลิกเลือกไฟล์</b></p>' +
-    '<p style="font-size:11px;margin-top:4px">รองรับ .csv เท่านั้น</p>';
+    '<p style="font-size:calc(11px*var(--fs));margin-top:4px">รองรับ .csv เท่านั้น</p>';
   enableUpload(false);
 }
+
+function toggleBars(on) {
+  var off = (on === undefined) ? !document.body.classList.contains('bars-off') : !on;
+  document.body.classList.toggle('bars-off', off);
+  var b = document.getElementById('barsBtn');
+  if (b) b.innerHTML = off ? '&#9660; แสดงแถบบน' : '&#9650; ซ่อนแถบบน';
+  try { localStorage.setItem('bars_off', off ? '1' : '0'); } catch (e) {}
+  var f = document.getElementById('snField');
+  if (f && !f.disabled && document.getElementById('snInputArea').style.display !== 'none') f.focus();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'F4') { e.preventDefault(); toggleBars(); }
+});
 
 function isEdge() {
   return /Edg\//.test(navigator.userAgent);
