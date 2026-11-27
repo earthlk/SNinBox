@@ -150,6 +150,19 @@ tr:hover td{background:rgba(91,141,238,.04)}
 .ttype:hover{border-color:var(--muted);color:var(--text)}
 .ttype.sel-s{border-color:var(--green);background:rgba(52,211,153,.08);color:var(--green)}
 .ttype.sel-m{border-color:var(--yellow);background:rgba(251,191,36,.08);color:var(--yellow)}
+/* ===== กล่องที่มี SN ถูกตัดสต็อกแล้ว ===== */
+.bcard.stale{border-color:var(--red);background:rgba(248,113,113,.07)}
+.bcard.stale:hover{border-color:var(--red)}
+.bcard-stale{display:flex;align-items:center;gap:5px;margin-top:6px;padding:4px 7px;border-radius:6px;
+  background:rgba(248,113,113,.16);color:var(--red);font-size:calc(11px*var(--fs));font-weight:800}
+.box-lock{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding:11px 13px;border-radius:10px;
+  border:1px solid var(--red);background:rgba(248,113,113,.10)}
+.box-lock .ico{font-size:calc(19px*var(--fs));line-height:1}
+.box-lock b{color:var(--red);font-size:calc(13px*var(--fs))}
+.box-lock p{font-size:calc(12px*var(--fs));color:var(--text);margin-top:3px}
+.box-lock small{display:block;font-size:calc(11px*var(--fs));color:var(--muted);margin-top:4px}
+tr.stale-row td{background:rgba(248,113,113,.10)}
+tr.stale-row .mono{color:var(--red)}
 /* ===== สรุปข้อมูล Code ในหน้าสร้าง Box ===== */
 .code-sum{display:none;margin-top:9px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 11px}
 .code-sum.on{display:block}
@@ -689,6 +702,9 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
     <div class="right-body">
       <div class="print-hdr" id="printHdr"><h2 id="pTitle"></h2><p id="pSub"></p></div>
 
+      <!-- กล่องถูกล็อก: มี SN ที่ถูกตัดสต็อกไปแล้ว -->
+      <div id="boxLock" class="box-lock" style="display:none"></div>
+
       <!-- SN Input -->
       <div id="snInputArea" style="display:none">
         <div class="sec-lbl">บันทึก SN</div>
@@ -697,10 +713,12 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
         <div class="sn-block">
           <div class="sn-row">
             <input class="sn-field" id="snField" type="text"
-              placeholder="กรอก หรือ สแกน SN แล้วกด Enter..."
-              autocomplete="off"
-              oninput="onSNInput()"
-              onkeydown="if(event.key==='Enter'){clearTimeout(_lt);doLookupAndSave(this.value.trim())}">
+              placeholder="สแกนบาร์โค้ดเท่านั้น..."
+              autocomplete="off" autocapitalize="off" spellcheck="false"
+              oninput="onSNInput(event)"
+              onkeydown="onSNKeyDown(event)"
+              onpaste="return blockManual(event,'ห้ามวางบาร์โค้ด')"
+              ondrop="return blockManual(event,'ห้ามลากข้อความมาวาง')">
             <button class="btn btn-ghost btn-sm no-print" onclick="clearSN()">&#10005;</button>
           </div>
           <div class="sn-result" id="snResult">
@@ -716,6 +734,17 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
         <div class="tbl-wrap" id="tblWrap">
           <div style="padding:10px"><div class="skel-tbl"><div class="skel-tr" style="grid-template-columns:1fr 3fr 2fr"><div class="skel skel-line"></div><div class="skel skel-line"></div><div class="skel skel-line"></div></div></div></div>
         </div>
+      </div>
+
+      <!-- SN ของ Code นี้ที่ยังไม่เข้ากล่อง — ซ่อนไว้ กดโชว์ -->
+      <div id="unboxArea" style="display:none;margin-top:14px">
+        <div class="sec-lbl" style="display:flex;align-items:center;gap:8px">
+          <span>ยังไม่เข้ากล่อง</span>
+          <span id="unboxN" class="age a-y"></span>
+          <button class="btn btn-ghost btn-sm no-print" id="unboxBtn" onclick="toggleUnbox()"
+            style="margin-left:auto">&#9662; โชว์</button>
+        </div>
+        <div class="tbl-wrap no-print" id="unboxWrap" style="display:none"></div>
       </div>
 
       <!-- Default -->
@@ -953,7 +982,7 @@ tr.row-new td{background:rgba(52,211,153,.16)!important;transition:background 1.
 <script>
 // ====== CONFIG ======
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzQwTW3kw27FbfOnF_RVyGfQKe5jv24wpQh3oiAJ3sqW8VXrGOX6kuxrxLmrrp8GOCm/exec';
-const ZONES   = ['A','B','C','D','E','J','R','S','T','U','N'];
+const ZONES   = ['A','B','C','D','E','J','K','R','S','T','U','N'];
 // ====================
 
 var curZone     = null;
@@ -1179,13 +1208,14 @@ function renderBoxList(boxes) {
 
   document.getElementById('boxList').innerHTML = chip + show.map(function(b) {
     var sel   = curBox && curBox.box_id === b.box_id ? 'sel' : '';
+    var st    = boxStale(b);
     var badge = b.type === 'single' ? 'badge-single' : 'badge-multi';
     var label = b.type === 'single' ? '1 Code' : 'หลาย Code';
     var date  = fmtDate(b.created_date);
     var codeRow = (b.type === 'single' && b.code)
       ? '<div class="binfo-row"><span class="binfo-lbl">Code</span><span class="binfo-val" style="font-family:monospace;color:var(--accent)">' + b.code + '</span></div>'
       : '';
-    return '<div class="bcard ' + sel + '" id="bc_' + b.box_id + '" data-id="' + b.box_id + '">'
+    return '<div class="bcard ' + sel + (st ? ' stale' : '') + '" id="bc_' + b.box_id + '" data-id="' + b.box_id + '">'
       + '<button class="bcard-del no-print" data-del="' + b.box_id + '">&#10005;</button>'
       + '<div class="bcard-head">'
         + '<span class="bcard-name">'
@@ -1202,6 +1232,7 @@ function renderBoxList(boxes) {
         + '<div class="binfo-row"><span class="binfo-lbl">Zone</span><span class="binfo-val">' + (b.data_zone || curZone) + '</span></div>'
         + '<div class="binfo-row"><span class="binfo-lbl">Date</span><span class="binfo-val">' + date + '</span></div>'
       + '</div>'
+      + (st ? '<div class="bcard-stale">&#9888; ตัดสต็อกแล้ว ' + st.toLocaleString('th-TH') + ' SN · ล็อกกล่อง</div>' : '')
       + '</div>';
   }).join('');
 }
@@ -1289,6 +1320,30 @@ function updateBoxHeader() {
   }
 }
 
+// ---- กล่องที่มี SN ถูกตัดสต็อกไปแล้ว (เทียบกับ Data SN ล่าสุดตอน Upload) ----
+function boxStale(b) { return b ? Number(b.stale_count || 0) : 0; }
+
+function hideBoxLock() {
+  var el = document.getElementById('boxLock');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+// คืน true เมื่อกล่องถูกล็อก และจัดการแสดงแบนเนอร์ + ซ่อนช่องสแกนให้ด้วย
+function applyBoxLock(box) {
+  var el = document.getElementById('boxLock');
+  var st = boxStale(box);
+  if (!el) return st > 0;
+  if (!st) { hideBoxLock(); return false; }
+  el.style.display = '';
+  el.innerHTML = '<span class="ico">&#128274;</span><div>'
+    + '<b>กล่องนี้ถูกล็อก — มี SN ที่ถูกตัดสต็อกไปแล้ว ' + st.toLocaleString('th-TH') + ' ตัว</b>'
+    + '<p>SN ในกล่องนี้ไม่มีอยู่ใน Data SN ล่าสุด แปลว่าของถูกตัดออกจากสต็อกไปแล้ว จึงเพิ่ม SN เข้ากล่องนี้ไม่ได้อีก</p>'
+    + '<small>ต้องสร้างกล่องใหม่เพื่อบันทึก SN ต่อ · แถวสีแดงในตารางด้านล่างคือ SN ที่ถูกตัดสต็อก</small>'
+    + '</div>';
+  document.getElementById('snInputArea').style.display = 'none';
+  return true;
+}
+
 function selectBox(boxId) {
   var box = window._boxes && window._boxes[boxId];
   if (!box) return;
@@ -1303,6 +1358,7 @@ function selectBox(boxId) {
   document.getElementById('btnPrint').style.display      = '';
     document.getElementById('vfTabs').style.display = '';
   document.getElementById('snTableLbl').textContent      = 'รายการ SN ใน ' + box.box_id;
+  if (applyBoxLock(box)) document.getElementById('vfTabs').style.display = 'none';
   clearSN();
   renderErrLog();
   renderVfStat();
@@ -1342,21 +1398,31 @@ function renderSNTable(rows) {
     renderKitCards(rows || []);
     renderKitProgress();
     updateBoxHeader();
+    renderUnbox();
     return;
   }
   if (!rows.length) {
     document.getElementById('tblWrap').innerHTML = '<div class="empty-state"><div class="empty-ico">&#128219;</div><p>ยังไม่มี SN<br><small>สแกน SN ด้านบนเพื่อบันทึก</small></p></div>';
     renderKitProgress();
     updateBoxHeader();
+    renderUnbox();
     return;
   }
+  // SN ที่ไม่มีใน Data SN ล่าสุด = ถูกตัดสต็อกไปแล้ว (ไฮไลต์แดง)
+  var live = null;
+  if (curMode === 'sn' && _cacheDataSN) {
+    live = {};
+    _cacheDataSN.forEach(function(d) { live[normSN(d.sn)] = 1; });
+  }
+
   var tbody = '';
   rows.forEach(function(r, i) {
     var sn      = String(r.sn || '-');
     var name    = String(r.shortname || r.item_name || '-');
     var snDate  = fmtDate(r.sn_date);
     var addDate = fmtDate(r.added_date);
-    tbody += '<tr>'
+    var gone    = live && !live[normSN(r.sn)];
+    tbody += '<tr' + (gone ? ' class="stale-row" title="ถูกตัดสต็อกแล้ว — ไม่มีใน Data SN ล่าสุด"' : '') + '>'
       + '<td class="row-n">' + (i+1) + '</td>'
       + '<td><span class="mono">' + sn + '</span></td>'
       + '<td style="font-size:calc(12px*var(--fs));font-family:monospace">' + (r.code || '-') + '</td>'
@@ -1375,10 +1441,130 @@ function renderSNTable(rows) {
   paintVfHits();
   renderKitProgress();
   updateBoxHeader();
+  renderUnbox();
+}
+
+// ---- SN ของ Code นี้ที่ยังไม่เข้ากล่อง (ซ่อนไว้ กดโชว์) ----
+var _unboxOn = false;
+
+function toggleUnbox() {
+  _unboxOn = !_unboxOn;
+  renderUnbox();
+}
+
+// คืน SN ใน Data SN ของ Code นี้ ที่ยังไม่อยู่ในกล่องไหนของโซน
+function unboxRows() {
+  if (curMode !== 'sn' || !curBox || !_cacheDataSN) return null;
+  if (String(curBox.type) !== 'single') return null;      // กล่องหลาย Code ไม่มี Code เดียวให้เทียบ
+  var code = String(curBox.code || '').trim();
+  if (!code) return null;
+
+  var inBox = {};
+  Object.keys(_cacheBoxSNs || {}).forEach(function(bid) {
+    (_cacheBoxSNs[bid] || []).forEach(function(r) {
+      if (String(r.code).trim() === code) inBox[String(r.sn).trim()] = 1;
+    });
+  });
+  return _cacheDataSN.filter(function(r) {
+    return String(r.code).trim() === code && !inBox[String(r.sn).trim()];
+  });
+}
+
+function renderUnbox() {
+  var area = document.getElementById('unboxArea');
+  if (!area) return;
+  var list = unboxRows();
+  if (!list) { area.style.display = 'none'; return; }
+
+  var nEl = document.getElementById('unboxN');
+  var btn = document.getElementById('unboxBtn');
+  var box = document.getElementById('unboxWrap');
+  area.style.display = '';
+  nEl.className = 'age ' + (list.length ? 'a-y' : 'a-g');
+  nEl.textContent = list.length.toLocaleString('th-TH') + ' SN';
+  btn.innerHTML = _unboxOn ? '&#9652; ซ่อน' : '&#9662; โชว์';
+  btn.style.display = list.length ? '' : 'none';
+
+  if (!_unboxOn || !list.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+
+  var cap  = 500;
+  var show = list.slice(0, cap);
+  var full = (_searchIndexed === 'Z' + curZone);
+
+  var tbody = show.map(function(r, i) {
+    return '<tr>'
+      + '<td class="row-n">' + (i + 1) + '</td>'
+      + '<td><span class="mono">' + String(r.sn || '-') + '</span></td>'
+      + '<td><span class="zone-tag">' + (r.zone || '-') + '</span></td>'
+      + '<td style="font-size:calc(11px*var(--fs));color:var(--muted)">' + fmtDate(r.sn_date) + '</td>'
+      + '<td>' + agingHTML(r.sn_date) + '</td>'
+      + '<td style="font-size:calc(11px*var(--fs));color:var(--muted)">'
+        + (r.cost ? Number(r.cost).toLocaleString('th-TH') : '-') + '</td>'
+      + '</tr>';
+  }).join('');
+
+  box.style.display = '';
+  box.innerHTML =
+      (full ? '' : '<div style="padding:8px 12px;font-size:calc(11px*var(--fs));color:var(--yellow)">'
+                 + '&#9888; ดัชนียังไม่ครบ — บาง SN ที่เข้ากล่องอื่นไปแล้วอาจยังโผล่ในรายการนี้</div>')
+    + '<table><thead><tr><th>#</th><th>SN</th><th>Zone</th><th>SN Date</th><th>Aging</th><th>มูลค่า</th>'
+    + '</tr></thead><tbody>' + tbody + '</tbody></table>'
+    + (list.length > cap
+        ? '<div style="padding:8px 12px;font-size:calc(11px*var(--fs));color:var(--muted)">'
+          + 'แสดง ' + cap.toLocaleString('th-TH') + ' จาก ' + list.length.toLocaleString('th-TH') + ' รายการ</div>'
+        : '');
+}
+
+// ═══ บังคับให้บันทึกได้เฉพาะจากเครื่องสแกนบาร์โค้ด ═══════════
+// สแกนเนอร์ยิงคีย์เร็วกว่าคนพิมพ์หลายเท่า และไม่เคยกด Backspace/ลูกศร
+// เพิ่มตัวเลขนี้ถ้าเครื่องสแกนรุ่นที่ใช้ตั้ง inter-character delay ไว้สูง
+const SCAN_MS_PER_CHAR = 50;
+var _scanT0 = 0, _scanN = 0, _scanManual = false;
+
+function resetScanGuard() { _scanT0 = 0; _scanN = 0; _scanManual = false; }
+
+function blockManual(e, msg) {
+  if (e && e.preventDefault) e.preventDefault();
+  var f = document.getElementById('snField');
+  if (f) { f.value = ''; f.focus(); }
+  resetScanGuard();
+  clearTimeout(_lt);
+  resetSNResult();
+  showToast(msg + ' — ใช้เครื่องสแกนเท่านั้น', 'err');
+  return false;
+}
+
+function onSNKeyDown(e) {
+  if (e.key === 'Enter') {
+    clearTimeout(_lt);
+    var v  = String(e.target.value || '').trim();
+    if (!v) return;
+    var dt   = Date.now() - _scanT0;
+    var scan = _scanT0 && !_scanManual && _scanN >= v.length && dt <= v.length * SCAN_MS_PER_CHAR;
+    resetScanGuard();
+    if (!scan) {
+      e.target.value = '';
+      resetSNResult();
+      showSNErr('ต้องสแกนด้วยเครื่องอ่านบาร์โค้ดเท่านั้น — พิมพ์เองหรือวางไม่ได้', v);
+      return;
+    }
+    doLookupAndSave(v);
+    return;
+  }
+  if (e.ctrlKey || e.metaKey) { _scanManual = true; return; }                 // ctrl+v / cmd+v
+  if (e.key === 'Backspace' || e.key === 'Delete') { _scanManual = true; return; }
+  if (e.key.indexOf('Arrow') === 0) { _scanManual = true; return; }
+  if (e.key.length !== 1) return;                                            // Shift, Tab, F1...
+  if (!_scanT0 || !e.target.value) { _scanT0 = Date.now(); _scanN = 0; _scanManual = false; }
+  _scanN++;
 }
 
 // ---- SN Lookup ----
-function onSNInput() {
+function onSNInput(e) {
+  // กันวาง/ลากข้อความที่เล็ดลอดจาก event paste (เช่น คลิกกลางบน Linux)
+  if (e && (e.inputType === 'insertFromPaste' || e.inputType === 'insertFromDrop')) {
+    return blockManual(e, 'ห้ามวางบาร์โค้ด');
+  }
   clearTimeout(_lt);
   var sn = document.getElementById('snField').value.trim();
   resetSNResult();
@@ -1443,6 +1629,10 @@ async function doLookupAndSave(sn) {
 
   // Box SN mode
   if (!curZone || !curBox) return;
+  if (boxStale(curBox)) {
+    showSNErr('กล่อง ' + curBox.box_id + ' ถูกล็อก — มี SN ที่ถูกตัดสต็อกไปแล้ว ต้องสร้างกล่องใหม่', sn);
+    return;
+  }
   var cached = lookupSNFromCache(sn);
   if (cached) { showSNOk(cached); await saveSN(); return; }
   showSNErr('ไม่พบ SN "' + sn + '" ใน Data SN');
@@ -1514,6 +1704,7 @@ function resetSNResult() {
 function clearSN() {
   var f = document.getElementById('snField');
   if (f) { f.value = ''; f.focus(); }
+  resetScanGuard();
   resetSNResult();
 }
 
@@ -2082,6 +2273,8 @@ function resetRight() {
   document.getElementById('defaultEmpty').style.display = '';
   document.getElementById('snInputArea').style.display  = 'none';
   document.getElementById('snTableArea').style.display  = 'none';
+  document.getElementById('unboxArea').style.display    = 'none';
+  hideBoxLock();
   document.getElementById('btnPrint').style.display     = 'none';
     document.getElementById('vfTabs').style.display = 'none';
   document.getElementById('vfStat').style.display = 'none';
@@ -2278,11 +2471,18 @@ function parseCSV(text) {
     if (inQ) {
       if (c === '"') {
         if (text[i + 1] === '"') { field += '"'; i++; }   // "" = " ตัวจริง
-        else inQ = false;
+        // ปิด quote ได้เฉพาะเมื่อตัวถัดไปคือ delimiter/ขึ้นบรรทัด/จบไฟล์
+        // ไม่งั้นถือเป็นเครื่องหมายนิ้วในชื่อสินค้า เช่น 16" — กันไม่ให้กลืนทั้งไฟล์
+        else {
+          var nx = text[i + 1];
+          if (nx === undefined || nx === delim || nx === '\r' || nx === '\n') inQ = false;
+          else field += '"';
+        }
       } else field += c;
       continue;
     }
-    if (c === '"')   { inQ = true; continue; }
+    // " มีความหมายเฉพาะตอนขึ้นต้น field เท่านั้น ถ้าโผล่กลางข้อความถือเป็นตัวอักษรธรรมดา
+    if (c === '"' && field === '') { inQ = true; continue; }
     if (c === delim) { row.push(field); field = ''; continue; }
     if (c === '\r')  { if (text[i + 1] === '\n') i++; row.push(field); grid.push(row); row = []; field = ''; continue; }
     if (c === '\n')  { row.push(field); grid.push(row); row = []; field = ''; continue; }
@@ -2379,6 +2579,14 @@ function validateAndPreviewCSV(text) {
            + '<td style="color:var(--muted)">— ไม่มีในไฟล์นี้ (ข้อมูลเดิมไม่ถูกลบ)</td></tr>';
   }
 
+  // สรุปจำนวนแถวที่อ่านได้ + เตือนถ้าไฟล์มีแถวที่คอลัมน์ไม่ครบ (CSV เพี้ยน)
+  tbody += '<tr><td colspan="2" style="color:var(--muted)">รวมอ่านได้ ' + parsed.rows.length.toLocaleString('th-TH') + ' rows</td>'
+         + '<td style="color:' + (parsed.badRows.length ? 'var(--yellow)' : 'var(--muted)') + '">'
+         + (parsed.badRows.length
+             ? '&#9888; ' + parsed.badRows.length.toLocaleString('th-TH') + ' แถวคอลัมน์ไม่ครบ — ตรวจไฟล์ต้นทาง'
+             : 'คอลัมน์ครบทุกแถว')
+         + '</td></tr>';
+
   document.getElementById('previewBody').innerHTML = tbody;
   document.getElementById('uploadPreview').style.display = '';
   document.getElementById('previewErr').style.display = 'none';
@@ -2426,7 +2634,7 @@ async function doUpload() {
     document.getElementById('progressText').textContent = text;
   }
 
-  var done = 0, failZones = [];
+  var done = 0, failZones = [], staleBoxes = [];
   for (var i = 0; i < zones.length; i++) {
     var z      = zones[i];
     var stepEl = document.getElementById('step_' + z);
@@ -2457,8 +2665,19 @@ async function doUpload() {
       var resIdx = await api({ action: 'rebuildIndex', zone: z }, 'POST');
       if (!resIdx || resIdx.error) throw new Error('CodeIndex: ' + ((resIdx && resIdx.error) || 'ไม่มีการตอบกลับ'));
 
+      // เทียบ SN ในกล่องกับ Data SN ชุดใหม่ — ที่หายไปคือถูกตัดสต็อกแล้ว
+      stepEl.innerHTML = '&#9654; Zone ' + z + ' — กำลังตรวจ SN ที่ถูกตัดสต็อก...';
+      var staleTxt = '';
+      try {
+        var resSt = await api({ action: 'checkStaleSNs', zone: z }, 'POST');
+        if (resSt && !resSt.error && resSt.boxes && resSt.boxes.length) {
+          resSt.boxes.forEach(function(x) { staleBoxes.push(z + ' / ' + x.box_id + ' (' + x.stale + ' SN)'); });
+          staleTxt = ' | <span style="color:var(--red)">&#9888; ล็อก ' + resSt.boxes.length + ' กล่อง</span>';
+        }
+      } catch(e) { console.warn('checkStaleSNs ' + z, e); }
+
       stepEl.className = 'progress-step step-done';
-      stepEl.innerHTML = '&#10003; Zone ' + z + ' — ' + allRows.length + ' rows | ' + resIdx.codes + ' Code';
+      stepEl.innerHTML = '&#10003; Zone ' + z + ' — ' + allRows.length + ' rows | ' + resIdx.codes + ' Code' + staleTxt;
 
       if (resIdx.conflicts && resIdx.conflicts.length) {
         showToast('⚠ Zone ' + z + ': Code อยู่หลายโซนย่อย ' + resIdx.conflicts.length + ' ตัว', 'err');
@@ -2477,6 +2696,11 @@ async function doUpload() {
   setProgress(100, 'Upload เสร็จสิ้น!');
   if (failZones.length) showToast('Upload เสร็จ — มีปัญหา ' + failZones.length + ' โซน: ' + failZones.join(', '), 'err');
   else showToast('Upload เสร็จสิ้น ' + zones.length + ' โซน', 'ok');
+
+  if (staleBoxes.length) {
+    showToast('\u26a0 ล็อก ' + staleBoxes.length + ' กล่อง — มี SN ที่ถูกตัดสต็อกแล้ว', 'err');
+    console.warn('กล่องที่ถูกล็อก:', staleBoxes);
+  }
 
   _cacheCodeIndex = null; _codeIndexKey = null; _cacheSetDataSN = {};
   _stashGen++; _snStash = {}; _setStash = {}; markTabsCached();
@@ -2924,6 +3148,8 @@ async function selectSet(setId) {
   document.getElementById('snTableArea').style.display  = '';
   document.getElementById('btnPrint').style.display     = '';
     document.getElementById('vfTabs').style.display = '';
+  document.getElementById('unboxArea').style.display    = 'none';
+  hideBoxLock();
   document.getElementById('snTableLbl').textContent     = 'รายการ SN ใน ' + s.set_id;
   document.getElementById('tblWrap').innerHTML = skelTable(8, 'กำลังโหลดข้อมูล ' + setId + '...');
   clearSN();
@@ -5885,6 +6111,8 @@ async function selectChkZone(z) {
 
   document.getElementById('snInputArea').style.display = '';
   document.getElementById('snTableArea').style.display = '';
+  document.getElementById('unboxArea').style.display = 'none';
+  hideBoxLock();
   document.getElementById('defaultEmpty').style.display = 'none';
   document.getElementById('snTableLbl').textContent = 'รายการ SN';
 
